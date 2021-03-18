@@ -235,7 +235,7 @@ pub trait ConvFloat<T> {
     /// Returns the largest integer less than or equal to `x`.
     fn conv_floor(x: T) -> Self;
     /// Convert the ceiling to an integer
-    /// 
+    ///
     /// Returns the smallest integer greater than or equal to `x`.
     fn conv_ceil(x: T) -> Self;
 }
