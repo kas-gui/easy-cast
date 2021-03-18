@@ -6,15 +6,15 @@ Easy-cast
 
 Type conversion, success expected
 
-Use [`Conv`] and [`Cast`] when:
+Use the `Conv` and `Cast` traits when:
 
--   [`From`] and [`Into`] are not enough
+-   `From` and `Into` are not enough
 -   it is expected that the value can be represented exactly by the target type
 -   you could use `as`, but want some assurance it's doing the right thing
 -   you are converting numbers (future versions *might* consider supporting
     other conversions)
 
-Use [`ConvFloat`] and [`CastFloat`] when:
+Use the `ConvFloat` and `CastFloat` traits when:
 
 -   You are converting from `f32` or `f64`
 -   You specifically want the nearest or ceiling or floor, but don't need
