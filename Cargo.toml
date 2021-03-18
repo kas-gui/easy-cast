@@ -1,0 +1,11 @@
+[package]
+name = "easy-cast"
+version = "0.1.0"
+authors = ["Diggory Hardy <git@dhardy.name>"]
+edition = "2018"
+license = "Apache-2.0"
+description = "Type conversions which are expected to succeed"
+readme = "README.md"
+documentation = "https://docs.rs/easy-cast/"
+keywords = ["cast", "into", "from", "conversion"]
+repository = "https://github.com/kas-gui/easy-cast"
