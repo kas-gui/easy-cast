@@ -19,8 +19,7 @@ fn float_casts() {
 }
 
 #[test]
+#[should_panic]
 fn u32_max_f32() {
-    let a = u32::MAX;
-    let b: f32 = a.cast();
-    assert_eq!(b as u64, u32::MAX as u64);
+    f32::conv(u32::MAX);
 }

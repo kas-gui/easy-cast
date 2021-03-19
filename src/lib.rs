@@ -202,21 +202,42 @@ macro_rules! impl_via_as_revert_check {
             }
         }
     };
+}
+
+impl_via_as_revert_check!(u32: isize);
+impl_via_as_revert_check!(i64: usize);
+impl_via_as_revert_check!(isize: u32);
+impl_via_as_revert_check!(usize: i64);
+impl_via_as_revert_check!(f64: f32);
+
+macro_rules! impl_via_digits_check {
+    ($x:ty: $y:ty) => {
+        impl Conv<$x> for $y {
+            #[inline]
+            fn conv(x: $x) -> $y {
+                let src_ty_bits = u32::conv(std::mem::size_of::<$x>() * 8);
+                let src_digits = src_ty_bits - (x.leading_zeros() + x.trailing_zeros());
+                let dst_digits = <$y>::MANTISSA_DIGITS;
+                dbg!(src_ty_bits, src_digits, dst_digits);
+                assert!(src_digits <= dst_digits);
+                x as $y
+            }
+        }
+    };
     ($x:ty: $y:ty, $($yy:ty),+) => {
-        impl_via_as_revert_check!($x: $y);
-        impl_via_as_revert_check!($x: $($yy),+);
+        impl_via_digits_check!($x: $y);
+        impl_via_digits_check!($x: $($yy),+);
     };
 }
 
-impl_via_as_revert_check!(i32: f32);
-impl_via_as_revert_check!(u32: isize, f32);
-impl_via_as_revert_check!(i64: usize, f32, f64);
-impl_via_as_revert_check!(u64: f32, f64);
-impl_via_as_revert_check!(i128: f32, f64);
-impl_via_as_revert_check!(u128: f32, f64);
-impl_via_as_revert_check!(isize: u32, f32, f64);
-impl_via_as_revert_check!(usize: i64, f32, f64);
-impl_via_as_revert_check!(f64: f32);
+impl_via_digits_check!(i32: f32);
+impl_via_digits_check!(u32: f32);
+impl_via_digits_check!(i64: f32, f64);
+impl_via_digits_check!(u64: f32, f64);
+impl_via_digits_check!(i128: f32, f64);
+impl_via_digits_check!(u128: f32, f64);
+impl_via_digits_check!(isize: f32, f64);
+impl_via_digits_check!(usize: f32, f64);
 
 /// Nearest / floor / ceil conversions from floating point types
 ///
