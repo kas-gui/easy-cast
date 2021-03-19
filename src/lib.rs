@@ -151,52 +151,89 @@ impl_via_as_range_check!(i32: i8, i16, u8, u16);
 impl_via_as_range_check!(i64: i8, i16, i32, u8, u16, u32);
 impl_via_as_range_check!(i128: i8, i16, i32, i64, u8, u16, u32, u64);
 
-macro_rules! impl_int_generic {
+macro_rules! impl_int_signed_dest {
     ($x:ty: $y:ty) => {
         impl Conv<$x> for $y {
             #[inline]
             fn conv(x: $x) -> $y {
-                let dst_is_signed = <$y>::MIN < 0;
-                if size_of::<$x>() < size_of::<$y>() {
-                    debug_assert!(dst_is_signed || x >= 0);
-                } else if size_of::<$x>() == size_of::<$y>() {
-                    if dst_is_signed {
-                        debug_assert!(x <= <$y>::MAX as $x);
-                    } else {
-                        debug_assert!(x >= 0);
-                    }
-                } else {
-                    // src size > dst size
-                    if dst_is_signed {
-                        debug_assert!(<$y>::MIN as $x <= x && x <= <$y>::MAX as $x);
-                    } else {
-                        debug_assert!(x >= 0 && x <= <$y>::MAX as $x);
-                    }
+                if size_of::<$x>() == size_of::<$y>() {
+                    debug_assert!(x <= <$y>::MAX as $x);
+                } else if size_of::<$x>() > size_of::<$y>() {
+                    debug_assert!(<$y>::MIN as $x <= x && x <= <$y>::MAX as $x);
                 }
                 x as $y
             }
         }
     };
     ($x:ty: $y:ty, $($yy:ty),+) => {
-        impl_int_generic!($x: $y);
-        impl_int_generic!($x: $($yy),+);
+        impl_int_signed_dest!($x: $y);
+        impl_int_signed_dest!($x: $($yy),+);
     };
 }
 
-impl_int_generic!(i8: isize, usize);
-impl_int_generic!(i16: isize, usize);
-impl_int_generic!(i32: isize, usize);
-impl_int_generic!(i64: isize, usize);
-impl_int_generic!(i128: isize, usize);
-impl_int_generic!(u8: isize, usize);
-impl_int_generic!(u16: isize, usize);
-impl_int_generic!(u32: isize, usize);
-impl_int_generic!(u64: isize, usize);
-impl_int_generic!(u128: isize, usize);
-impl_int_generic!(isize: i8, i16, i32, i64, i128);
-impl_int_generic!(isize: u8, u16, u32, u64, u128, usize);
-impl_int_generic!(usize: i8, i16, i32, i64, i128, isize);
-impl_int_generic!(usize: u8, u16, u32, u64, u128);
+impl_int_signed_dest!(i8: isize);
+impl_int_signed_dest!(i16: isize);
+impl_int_signed_dest!(i32: isize);
+impl_int_signed_dest!(i64: isize);
+impl_int_signed_dest!(i128: isize);
+impl_int_signed_dest!(u8: isize);
+impl_int_signed_dest!(u16: isize);
+impl_int_signed_dest!(u32: isize);
+impl_int_signed_dest!(u64: isize);
+impl_int_signed_dest!(u128: isize);
+impl_int_signed_dest!(isize: i8, i16, i32, i64, i128);
+impl_int_signed_dest!(usize: i8, i16, i32, i64, i128, isize);
+
+macro_rules! impl_int_signed_to_unsigned {
+    ($x:ty: $y:ty) => {
+        impl Conv<$x> for $y {
+            #[inline]
+            fn conv(x: $x) -> $y {
+                debug_assert!(x >= 0);
+                if size_of::<$x>() > size_of::<$y>() {
+                    debug_assert!(x <= <$y>::MAX as $x);
+                }
+                x as $y
+            }
+        }
+    };
+    ($x:ty: $y:ty, $($yy:ty),+) => {
+        impl_int_signed_to_unsigned!($x: $y);
+        impl_int_signed_to_unsigned!($x: $($yy),+);
+    };
+}
+
+impl_int_signed_to_unsigned!(i8: usize);
+impl_int_signed_to_unsigned!(i16: usize);
+impl_int_signed_to_unsigned!(i32: usize);
+impl_int_signed_to_unsigned!(i64: usize);
+impl_int_signed_to_unsigned!(i128: usize);
+impl_int_signed_to_unsigned!(isize: u8, u16, u32, u64, u128, usize);
+
+macro_rules! impl_int_unsigned_to_unsigned {
+    ($x:ty: $y:ty) => {
+        impl Conv<$x> for $y {
+            #[inline]
+            fn conv(x: $x) -> $y {
+                if size_of::<$x>() > size_of::<$y>() {
+                    debug_assert!(x <= <$y>::MAX as $x);
+                }
+                x as $y
+            }
+        }
+    };
+    ($x:ty: $y:ty, $($yy:ty),+) => {
+        impl_int_unsigned_to_unsigned!($x: $y);
+        impl_int_unsigned_to_unsigned!($x: $($yy),+);
+    };
+}
+
+impl_int_unsigned_to_unsigned!(u8: usize);
+impl_int_unsigned_to_unsigned!(u16: usize);
+impl_int_unsigned_to_unsigned!(u32: usize);
+impl_int_unsigned_to_unsigned!(u64: usize);
+impl_int_unsigned_to_unsigned!(u128: usize);
+impl_int_unsigned_to_unsigned!(usize: u8, u16, u32, u64, u128);
 
 impl Conv<f64> for f32 {
     #[inline]
