@@ -23,9 +23,12 @@ Use the `ConvFloat` and `CastFloat` traits when:
 ## Assertions
 
 All type conversions which are potentially fallible assert on failure in
-debug builds. In release builds assertions are omitted, except where the
-source type is floating-point. It is thus possible that incorrect values may
-be produced.
+debug builds. In release builds assertions may be omitted, thus making
+incorrect conversions possible.
+
+If the `always_assert` feature flag is set, assertions will be turned on in
+all builds. Some additional feature flags are available for finer-grained
+control (see [Cargo.toml](Cargo.toml)).
 
 
 Copyright and Licence

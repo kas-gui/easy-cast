@@ -1,6 +1,6 @@
 [package]
 name = "easy-cast"
-version = "0.1.0"
+version = "0.2.0"
 authors = ["Diggory Hardy <git@dhardy.name>"]
 edition = "2018"
 license = "Apache-2.0"
@@ -9,3 +9,18 @@ readme = "README.md"
 documentation = "https://docs.rs/easy-cast/"
 keywords = ["cast", "into", "from", "conversion"]
 repository = "https://github.com/kas-gui/easy-cast"
+
+[features]
+# Note: assertions are always used in debug builds; these only affect release builds:
+
+# Always use all assertions
+always_assert = ["assert_float", "assert_non_neg", "assert_range"]
+
+# Always assert when converting from floating-point types
+assert_float = []
+
+# Always assert source is not neg when converting to unsigned
+assert_non_neg = []
+
+# Always assert value is within target type's range
+assert_range = []
