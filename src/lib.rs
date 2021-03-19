@@ -28,21 +28,6 @@
 
 use std::mem::size_of;
 
-// Borrowed from static_assertions:
-macro_rules! const_assert {
-    ($x:expr $(,)?) => {
-        #[allow(unknown_lints, eq_op)]
-        const _: [(); 0 - !{
-            const ASSERT: bool = $x;
-            ASSERT
-        } as usize] = [];
-    };
-}
-
-const_assert!(size_of::<isize>() >= size_of::<i32>());
-const_assert!(size_of::<isize>() <= size_of::<i64>());
-const_assert!(size_of::<usize>() == size_of::<isize>());
-
 /// Like [`From`], but supporting potentially-fallible conversions
 ///
 /// This trait is intended to replace *many* uses of the `as` keyword for
@@ -88,37 +73,15 @@ macro_rules! impl_via_from {
 }
 
 impl_via_from!(f32: f64);
-impl_via_from!(i8: f32, f64, i16, i32, i64, i128, isize);
-impl_via_from!(i16: f32, f64, i32, i64, i128, isize);
+impl_via_from!(i8: f32, f64, i16, i32, i64, i128);
+impl_via_from!(i16: f32, f64, i32, i64, i128);
 impl_via_from!(i32: f64, i64, i128);
 impl_via_from!(i64: i128);
-impl_via_from!(u8: f32, f64, i16, i32, i64, i128, isize);
-impl_via_from!(u8: u16, u32, u64, u128, usize);
-impl_via_from!(u16: f32, f64, i32, i64, i128, u32, u64, u128, usize);
+impl_via_from!(u8: f32, f64, i16, i32, i64, i128);
+impl_via_from!(u8: u16, u32, u64, u128);
+impl_via_from!(u16: f32, f64, i32, i64, i128, u32, u64, u128);
 impl_via_from!(u32: f64, i64, i128, u64, u128);
 impl_via_from!(u64: i128, u128);
-
-// These rely on the const assertions above
-macro_rules! impl_via_as {
-    ($x:ty: $y:ty) => {
-        impl Conv<$x> for $y {
-            #[inline]
-            fn conv(x: $x) -> $y {
-                x as $y
-            }
-        }
-    };
-    ($x:ty: $y:ty, $($yy:ty),+) => {
-        impl_via_as!($x: $y);
-        impl_via_as!($x: $($yy),+);
-    };
-}
-
-impl_via_as!(i32: isize);
-impl_via_as!(isize: i64, i128);
-impl_via_as!(u16: isize);
-impl_via_as!(u32: usize);
-impl_via_as!(usize: i128, u64, u128);
 
 macro_rules! impl_via_as_neg_check {
     ($x:ty: $y:ty) => {
@@ -136,12 +99,11 @@ macro_rules! impl_via_as_neg_check {
     };
 }
 
-impl_via_as_neg_check!(i8: u8, u16, u32, u64, u128, usize);
-impl_via_as_neg_check!(i16: u16, u32, u64, u128, usize);
-impl_via_as_neg_check!(i32: u32, u64, u128, usize);
+impl_via_as_neg_check!(i8: u8, u16, u32, u64, u128);
+impl_via_as_neg_check!(i16: u16, u32, u64, u128);
+impl_via_as_neg_check!(i32: u32, u64, u128);
 impl_via_as_neg_check!(i64: u64, u128);
 impl_via_as_neg_check!(i128: u128);
-impl_via_as_neg_check!(isize: u64, u128, usize);
 
 // Assumption: $y::MAX is representable as $x
 macro_rules! impl_via_as_max_check {
@@ -163,10 +125,9 @@ macro_rules! impl_via_as_max_check {
 impl_via_as_max_check!(u8: i8);
 impl_via_as_max_check!(u16: i8, i16, u8);
 impl_via_as_max_check!(u32: i8, i16, i32, u8, u16);
-impl_via_as_max_check!(u64: i8, i16, i32, i64, isize, u8, u16, u32, usize);
-impl_via_as_max_check!(u128: i8, i16, i32, i64, i128, isize);
-impl_via_as_max_check!(u128: u8, u16, u32, u64, usize);
-impl_via_as_max_check!(usize: i8, i16, i32, isize, u8, u16, u32);
+impl_via_as_max_check!(u64: i8, i16, i32, i64, u8, u16, u32);
+impl_via_as_max_check!(u128: i8, i16, i32, i64, i128);
+impl_via_as_max_check!(u128: u8, u16, u32, u64);
 
 // Assumption: $y::MAX and $y::MIN are representable as $x
 macro_rules! impl_via_as_range_check {
@@ -187,35 +148,71 @@ macro_rules! impl_via_as_range_check {
 
 impl_via_as_range_check!(i16: i8, u8);
 impl_via_as_range_check!(i32: i8, i16, u8, u16);
-impl_via_as_range_check!(i64: i8, i16, i32, isize, u8, u16, u32);
-impl_via_as_range_check!(i128: i8, i16, i32, i64, isize, u8, u16, u32, u64, usize);
-impl_via_as_range_check!(isize: i8, i16, i32, u8, u16);
+impl_via_as_range_check!(i64: i8, i16, i32, u8, u16, u32);
+impl_via_as_range_check!(i128: i8, i16, i32, i64, u8, u16, u32, u64);
 
-macro_rules! impl_via_as_revert_check {
+macro_rules! impl_int_generic {
     ($x:ty: $y:ty) => {
         impl Conv<$x> for $y {
             #[inline]
             fn conv(x: $x) -> $y {
-                let y = x as $y;
-                debug_assert_eq!(x, y as $x);
-                y
+                let dst_is_signed = <$y>::MIN < 0;
+                if size_of::<$x>() < size_of::<$y>() {
+                    debug_assert!(dst_is_signed || x >= 0);
+                } else if size_of::<$x>() == size_of::<$y>() {
+                    if dst_is_signed {
+                        debug_assert!(x <= <$y>::MAX as $x);
+                    } else {
+                        debug_assert!(x >= 0);
+                    }
+                } else {
+                    // src size > dst size
+                    if dst_is_signed {
+                        debug_assert!(<$y>::MIN as $x <= x && x <= <$y>::MAX as $x);
+                    } else {
+                        debug_assert!(x >= 0 && x <= <$y>::MAX as $x);
+                    }
+                }
+                x as $y
             }
         }
     };
+    ($x:ty: $y:ty, $($yy:ty),+) => {
+        impl_int_generic!($x: $y);
+        impl_int_generic!($x: $($yy),+);
+    };
 }
 
-impl_via_as_revert_check!(u32: isize);
-impl_via_as_revert_check!(i64: usize);
-impl_via_as_revert_check!(isize: u32);
-impl_via_as_revert_check!(usize: i64);
-impl_via_as_revert_check!(f64: f32);
+impl_int_generic!(i8: isize, usize);
+impl_int_generic!(i16: isize, usize);
+impl_int_generic!(i32: isize, usize);
+impl_int_generic!(i64: isize, usize);
+impl_int_generic!(i128: isize, usize);
+impl_int_generic!(u8: isize, usize);
+impl_int_generic!(u16: isize, usize);
+impl_int_generic!(u32: isize, usize);
+impl_int_generic!(u64: isize, usize);
+impl_int_generic!(u128: isize, usize);
+impl_int_generic!(isize: i8, i16, i32, i64, i128);
+impl_int_generic!(isize: u8, u16, u32, u64, u128, usize);
+impl_int_generic!(usize: i8, i16, i32, i64, i128, isize);
+impl_int_generic!(usize: u8, u16, u32, u64, u128);
+
+impl Conv<f64> for f32 {
+    #[inline]
+    fn conv(x: f64) -> f32 {
+        let y = x as f32;
+        debug_assert_eq!(x, y as f64);
+        y
+    }
+}
 
 macro_rules! impl_via_digits_check {
     ($x:ty: $y:ty) => {
         impl Conv<$x> for $y {
             #[inline]
             fn conv(x: $x) -> $y {
-                let src_ty_bits = u32::conv(std::mem::size_of::<$x>() * 8);
+                let src_ty_bits = u32::conv(size_of::<$x>() * 8);
                 let src_digits = src_ty_bits - (x.leading_zeros() + x.trailing_zeros());
                 let dst_digits = <$y>::MANTISSA_DIGITS;
                 dbg!(src_ty_bits, src_digits, dst_digits);
