@@ -17,3 +17,10 @@ fn float_casts() {
     assert_eq!(u8::conv_floor(13.8f64), 13);
     assert_eq!(u32::conv_ceil(13.1f32), 14);
 }
+
+#[test]
+fn u32_max_f32() {
+    let a = u32::MAX;
+    let b: f32 = a.cast();
+    assert_eq!(b as u64, u32::MAX as u64);
+}
