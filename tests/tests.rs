@@ -17,3 +17,9 @@ fn float_casts() {
     assert_eq!(u8::conv_floor(13.8f64), 13);
     assert_eq!(u32::conv_ceil(13.1f32), 14);
 }
+
+#[test]
+#[should_panic]
+fn u32_max_f32() {
+    f32::conv(u32::MAX);
+}
