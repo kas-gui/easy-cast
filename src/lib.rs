@@ -29,6 +29,8 @@
 //! all builds. Some additional feature flags are available for finer-grained
 //! control (see `Cargo.toml`).
 
+#![deny(missing_docs)]
+
 use std::mem::size_of;
 
 /// Like [`From`], but supporting potentially-fallible conversions
@@ -51,6 +53,7 @@ use std::mem::size_of;
 ///
 /// [`From`]: std::convert::From
 pub trait Conv<T> {
+    /// Convert from `T` to `Self` (see trait doc)
     fn conv(v: T) -> Self;
 }
 
@@ -381,6 +384,7 @@ impl ConvFloat<f32> for u128 {
 
 /// Like [`Into`], but for [`Conv`]
 pub trait Cast<T> {
+    /// Cast from `Self` to `T` (see trait doc)
     fn cast(self) -> T;
 }
 
