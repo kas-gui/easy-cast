@@ -30,6 +30,11 @@ If the `always_assert` feature flag is set, assertions will be turned on in
 all builds. Some additional feature flags are available for finer-grained
 control (see [Cargo.toml](Cargo.toml)).
 
+## MSRV
+
+The Minumum Supported Rust Version is 1.36.0 (older versions may work but are
+untested).
+
 
 Copyright and Licence
 -------

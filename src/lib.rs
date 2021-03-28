@@ -111,17 +111,17 @@ impl_via_as_neg_check!(i128: u128);
 
 // Assumption: $y::MAX is representable as $x
 macro_rules! impl_via_as_max_check {
-    ($x:ty: $y:ty) => {
+    ($x:ty: $y:tt) => {
         impl Conv<$x> for $y {
             #[inline]
             fn conv(x: $x) -> $y {
                 #[cfg(any(debug_assertions, feature = "assert_range"))]
-                assert!(x <= <$y>::MAX as $x);
+                assert!(x <= std::$y::MAX as $x);
                 x as $y
             }
         }
     };
-    ($x:ty: $y:ty, $($yy:ty),+) => {
+    ($x:ty: $y:tt, $($yy:tt),+) => {
         impl_via_as_max_check!($x: $y);
         impl_via_as_max_check!($x: $($yy),+);
     };
@@ -136,17 +136,17 @@ impl_via_as_max_check!(u128: u8, u16, u32, u64);
 
 // Assumption: $y::MAX and $y::MIN are representable as $x
 macro_rules! impl_via_as_range_check {
-    ($x:ty: $y:ty) => {
+    ($x:ty: $y:tt) => {
         impl Conv<$x> for $y {
             #[inline]
             fn conv(x: $x) -> $y {
                 #[cfg(any(debug_assertions, feature = "assert_range"))]
-                assert!(<$y>::MIN as $x <= x && x <= <$y>::MAX as $x);
+                assert!(std::$y::MIN as $x <= x && x <= std::$y::MAX as $x);
                 x as $y
             }
         }
     };
-    ($x:ty: $y:ty, $($yy:ty),+) => {
+    ($x:ty: $y:tt, $($yy:tt),+) => {
         impl_via_as_range_check!($x: $y);
         impl_via_as_range_check!($x: $($yy),+);
     };
@@ -158,22 +158,22 @@ impl_via_as_range_check!(i64: i8, i16, i32, u8, u16, u32);
 impl_via_as_range_check!(i128: i8, i16, i32, i64, u8, u16, u32, u64);
 
 macro_rules! impl_int_signed_dest {
-    ($x:ty: $y:ty) => {
+    ($x:ty: $y:tt) => {
         impl Conv<$x> for $y {
             #[inline]
             fn conv(x: $x) -> $y {
                 if size_of::<$x>() == size_of::<$y>() {
                     #[cfg(any(debug_assertions, feature = "assert_range"))]
-                    assert!(x <= <$y>::MAX as $x);
+                    assert!(x <= std::$y::MAX as $x);
                 } else if size_of::<$x>() > size_of::<$y>() {
                     #[cfg(any(debug_assertions, feature = "assert_range"))]
-                    assert!(<$y>::MIN as $x <= x && x <= <$y>::MAX as $x);
+                    assert!(std::$y::MIN as $x <= x && x <= std::$y::MAX as $x);
                 }
                 x as $y
             }
         }
     };
-    ($x:ty: $y:ty, $($yy:ty),+) => {
+    ($x:ty: $y:tt, $($yy:tt),+) => {
         impl_int_signed_dest!($x: $y);
         impl_int_signed_dest!($x: $($yy),+);
     };
@@ -193,7 +193,7 @@ impl_int_signed_dest!(isize: i8, i16, i32, i64, i128);
 impl_int_signed_dest!(usize: i8, i16, i32, i64, i128, isize);
 
 macro_rules! impl_int_signed_to_unsigned {
-    ($x:ty: $y:ty) => {
+    ($x:ty: $y:tt) => {
         impl Conv<$x> for $y {
             #[inline]
             fn conv(x: $x) -> $y {
@@ -201,13 +201,13 @@ macro_rules! impl_int_signed_to_unsigned {
                 assert!(x >= 0);
                 if size_of::<$x>() > size_of::<$y>() {
                     #[cfg(any(debug_assertions, feature = "assert_range"))]
-                    assert!(x <= <$y>::MAX as $x);
+                    assert!(x <= std::$y::MAX as $x);
                 }
                 x as $y
             }
         }
     };
-    ($x:ty: $y:ty, $($yy:ty),+) => {
+    ($x:ty: $y:tt, $($yy:tt),+) => {
         impl_int_signed_to_unsigned!($x: $y);
         impl_int_signed_to_unsigned!($x: $($yy),+);
     };
@@ -221,19 +221,19 @@ impl_int_signed_to_unsigned!(i128: usize);
 impl_int_signed_to_unsigned!(isize: u8, u16, u32, u64, u128, usize);
 
 macro_rules! impl_int_unsigned_to_unsigned {
-    ($x:ty: $y:ty) => {
+    ($x:ty: $y:tt) => {
         impl Conv<$x> for $y {
             #[inline]
             fn conv(x: $x) -> $y {
                 if size_of::<$x>() > size_of::<$y>() {
                     #[cfg(any(debug_assertions, feature = "assert_range"))]
-                    assert!(x <= <$y>::MAX as $x);
+                    assert!(x <= std::$y::MAX as $x);
                 }
                 x as $y
             }
         }
     };
-    ($x:ty: $y:ty, $($yy:ty),+) => {
+    ($x:ty: $y:tt, $($yy:tt),+) => {
         impl_int_unsigned_to_unsigned!($x: $y);
         impl_int_unsigned_to_unsigned!($x: $($yy),+);
     };
@@ -257,21 +257,21 @@ impl Conv<f64> for f32 {
 }
 
 macro_rules! impl_via_digits_check {
-    ($x:ty: $y:ty) => {
+    ($x:ty: $y:tt) => {
         impl Conv<$x> for $y {
             #[inline]
             fn conv(x: $x) -> $y {
                 if cfg!(any(debug_assertions, feature = "assert_digits")) {
                     let src_ty_bits = u32::conv(size_of::<$x>() * 8);
                     let src_digits = src_ty_bits - (x.leading_zeros() + x.trailing_zeros());
-                    let dst_digits = <$y>::MANTISSA_DIGITS;
+                    let dst_digits = std::$y::MANTISSA_DIGITS;
                     assert!(src_digits <= dst_digits);
                 }
                 x as $y
             }
         }
     };
-    ($x:ty: $y:ty, $($yy:ty),+) => {
+    ($x:ty: $y:tt, $($yy:tt),+) => {
         impl_via_digits_check!($x: $y);
         impl_via_digits_check!($x: $($yy),+);
     };
@@ -309,15 +309,15 @@ pub trait ConvFloat<T> {
 }
 
 macro_rules! impl_float {
-    ($x:ty: $y:ty) => {
+    ($x:ty: $y:tt) => {
         impl ConvFloat<$x> for $y {
             #[inline]
             fn conv_nearest(x: $x) -> $y {
                 let x = x.round();
                 if cfg!(any(debug_assertions, feature = "assert_float")) {
                     // Tested: these limits work for $x=f32 and all $y except u128
-                    const LBOUND: $x = <$y>::MIN as $x;
-                    const UBOUND: $x = <$y>::MAX as $x + 1.0;
+                    const LBOUND: $x = std::$y::MIN as $x;
+                    const UBOUND: $x = std::$y::MAX as $x + 1.0;
                     assert!(x >= LBOUND && x < UBOUND);
                 }
                 x as $y
@@ -325,8 +325,8 @@ macro_rules! impl_float {
             #[inline]
             fn conv_floor(x: $x) -> $y {
                 if cfg!(any(debug_assertions, feature = "assert_float")) {
-                    const LBOUND: $x = <$y>::MIN as $x;
-                    const UBOUND: $x = <$y>::MAX as $x + 1.0;
+                    const LBOUND: $x = std::$y::MIN as $x;
+                    const UBOUND: $x = std::$y::MAX as $x + 1.0;
                     assert!(x >= LBOUND && x < UBOUND);
                 }
                 x as $y
@@ -335,15 +335,15 @@ macro_rules! impl_float {
             fn conv_ceil(x: $x) -> $y {
                 let x = x.ceil();
                 if cfg!(any(debug_assertions, feature = "assert_float")) {
-                    const LBOUND: $x = <$y>::MIN as $x;
-                    const UBOUND: $x = <$y>::MAX as $x + 1.0;
+                    const LBOUND: $x = std::$y::MIN as $x;
+                    const UBOUND: $x = std::$y::MAX as $x + 1.0;
                     assert!(x >= LBOUND && x < UBOUND);
                 }
                 x as $y
             }
         }
     };
-    ($x:ty: $y:ty, $($yy:ty),+) => {
+    ($x:ty: $y:tt, $($yy:tt),+) => {
         impl_float!($x: $y);
         impl_float!($x: $($yy),+);
     };

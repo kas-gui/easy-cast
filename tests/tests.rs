@@ -21,5 +21,5 @@ fn float_casts() {
 #[test]
 #[should_panic]
 fn u32_max_f32() {
-    f32::conv(u32::MAX);
+    f32::conv(std::u32::MAX);
 }
