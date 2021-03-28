@@ -31,6 +31,7 @@
 
 #![deny(missing_docs)]
 #![cfg_attr(not(feature = "std"), no_std)]
+#![cfg_attr(doc_cfg, feature(doc_cfg))]
 
 use core::mem::size_of;
 
@@ -298,6 +299,7 @@ impl_via_digits_check!(usize: f32, f64);
 /// If the source value is out-of-range or not-a-number then the conversion must
 /// fail with a panic.
 #[cfg(feature = "std")]
+#[cfg_attr(doc_cfg, doc(cfg(feature = "std")))]
 pub trait ConvFloat<T> {
     /// Convert to the nearest integer
     ///
@@ -404,6 +406,7 @@ impl<S, T: Conv<S>> Cast<T> for S {
 
 /// Like [`Into`], but for [`ConvFloat`]
 #[cfg(feature = "std")]
+#[cfg_attr(doc_cfg, doc(cfg(feature = "std")))]
 pub trait CastFloat<T> {
     /// Cast to the nearest integer
     ///
