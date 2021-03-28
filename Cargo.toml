@@ -11,6 +11,11 @@ keywords = ["cast", "into", "from", "conversion"]
 repository = "https://github.com/kas-gui/easy-cast"
 
 [features]
+default = ["std"]
+
+# Without std, float conversions are disabled
+std = []
+
 # Note: assertions are always used in debug builds; these only affect release builds:
 
 # Always use all assertions

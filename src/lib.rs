@@ -30,8 +30,9 @@
 //! control (see `Cargo.toml`).
 
 #![deny(missing_docs)]
+#![cfg_attr(not(feature = "std"), no_std)]
 
-use std::mem::size_of;
+use core::mem::size_of;
 
 /// Like [`From`], but supporting potentially-fallible conversions
 ///
@@ -51,7 +52,7 @@ use std::mem::size_of;
 /// Note that you *may not* want to use this where loss of precision is
 /// acceptable, e.g. if an approximate conversion `x as f64` suffices.
 ///
-/// [`From`]: std::convert::From
+/// [`From`]: core::convert::From
 pub trait Conv<T> {
     /// Convert from `T` to `Self` (see trait doc)
     fn conv(v: T) -> Self;
@@ -119,7 +120,7 @@ macro_rules! impl_via_as_max_check {
             #[inline]
             fn conv(x: $x) -> $y {
                 #[cfg(any(debug_assertions, feature = "assert_range"))]
-                assert!(x <= std::$y::MAX as $x);
+                assert!(x <= core::$y::MAX as $x);
                 x as $y
             }
         }
@@ -144,7 +145,7 @@ macro_rules! impl_via_as_range_check {
             #[inline]
             fn conv(x: $x) -> $y {
                 #[cfg(any(debug_assertions, feature = "assert_range"))]
-                assert!(std::$y::MIN as $x <= x && x <= std::$y::MAX as $x);
+                assert!(core::$y::MIN as $x <= x && x <= core::$y::MAX as $x);
                 x as $y
             }
         }
@@ -167,10 +168,10 @@ macro_rules! impl_int_signed_dest {
             fn conv(x: $x) -> $y {
                 if size_of::<$x>() == size_of::<$y>() {
                     #[cfg(any(debug_assertions, feature = "assert_range"))]
-                    assert!(x <= std::$y::MAX as $x);
+                    assert!(x <= core::$y::MAX as $x);
                 } else if size_of::<$x>() > size_of::<$y>() {
                     #[cfg(any(debug_assertions, feature = "assert_range"))]
-                    assert!(std::$y::MIN as $x <= x && x <= std::$y::MAX as $x);
+                    assert!(core::$y::MIN as $x <= x && x <= core::$y::MAX as $x);
                 }
                 x as $y
             }
@@ -204,7 +205,7 @@ macro_rules! impl_int_signed_to_unsigned {
                 assert!(x >= 0);
                 if size_of::<$x>() > size_of::<$y>() {
                     #[cfg(any(debug_assertions, feature = "assert_range"))]
-                    assert!(x <= std::$y::MAX as $x);
+                    assert!(x <= core::$y::MAX as $x);
                 }
                 x as $y
             }
@@ -230,7 +231,7 @@ macro_rules! impl_int_unsigned_to_unsigned {
             fn conv(x: $x) -> $y {
                 if size_of::<$x>() > size_of::<$y>() {
                     #[cfg(any(debug_assertions, feature = "assert_range"))]
-                    assert!(x <= std::$y::MAX as $x);
+                    assert!(x <= core::$y::MAX as $x);
                 }
                 x as $y
             }
@@ -267,7 +268,7 @@ macro_rules! impl_via_digits_check {
                 if cfg!(any(debug_assertions, feature = "assert_digits")) {
                     let src_ty_bits = u32::conv(size_of::<$x>() * 8);
                     let src_digits = src_ty_bits - (x.leading_zeros() + x.trailing_zeros());
-                    let dst_digits = std::$y::MANTISSA_DIGITS;
+                    let dst_digits = core::$y::MANTISSA_DIGITS;
                     assert!(src_digits <= dst_digits);
                 }
                 x as $y
@@ -296,6 +297,7 @@ impl_via_digits_check!(usize: f32, f64);
 ///
 /// If the source value is out-of-range or not-a-number then the conversion must
 /// fail with a panic.
+#[cfg(feature = "std")]
 pub trait ConvFloat<T> {
     /// Convert to the nearest integer
     ///
@@ -311,6 +313,7 @@ pub trait ConvFloat<T> {
     fn conv_ceil(x: T) -> Self;
 }
 
+#[cfg(feature = "std")]
 macro_rules! impl_float {
     ($x:ty: $y:tt) => {
         impl ConvFloat<$x> for $y {
@@ -353,11 +356,16 @@ macro_rules! impl_float {
 }
 
 // Assumption: usize < 128-bit
+#[cfg(feature = "std")]
 impl_float!(f32: i8, i16, i32, i64, i128, isize);
+#[cfg(feature = "std")]
 impl_float!(f32: u8, u16, u32, u64, usize);
+#[cfg(feature = "std")]
 impl_float!(f64: i8, i16, i32, i64, i128, isize);
+#[cfg(feature = "std")]
 impl_float!(f64: u8, u16, u32, u64, u128, usize);
 
+#[cfg(feature = "std")]
 impl ConvFloat<f32> for u128 {
     #[inline]
     fn conv_nearest(x: f32) -> u128 {
@@ -395,6 +403,7 @@ impl<S, T: Conv<S>> Cast<T> for S {
 }
 
 /// Like [`Into`], but for [`ConvFloat`]
+#[cfg(feature = "std")]
 pub trait CastFloat<T> {
     /// Cast to the nearest integer
     ///
@@ -410,6 +419,7 @@ pub trait CastFloat<T> {
     fn cast_ceil(self) -> T;
 }
 
+#[cfg(feature = "std")]
 impl<S, T: ConvFloat<S>> CastFloat<T> for S {
     fn cast_nearest(self) -> T {
         T::conv_nearest(self)
