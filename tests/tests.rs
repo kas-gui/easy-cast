@@ -10,16 +10,18 @@ fn int_casts() {
 }
 
 #[test]
+#[cfg(feature = "std")]
 fn float_casts() {
     assert_eq!(u64::conv_nearest(13.2f32), 13);
     let x: i128 = 13.5f32.cast_nearest();
     assert_eq!(x, 14);
     assert_eq!(u8::conv_floor(13.8f64), 13);
     assert_eq!(u32::conv_ceil(13.1f32), 14);
+    assert_eq!(i64::conv_floor(-3168565.13), -3168566);
 }
 
 #[test]
 #[should_panic]
 fn u32_max_f32() {
-    f32::conv(u32::MAX);
+    f32::conv(core::u32::MAX);
 }

@@ -30,6 +30,15 @@ If the `always_assert` feature flag is set, assertions will be turned on in
 all builds. Some additional feature flags are available for finer-grained
 control (see [Cargo.toml](Cargo.toml)).
 
+## MSRV and no_std
+
+The Minumum Supported Rust Version is 1.36.0 (older versions may work but are
+untested).
+
+By default, `std` support is required. With default features disabled `no_std`
+is supported, but the `ConvFloat` and `CastFloat` traits are unavailable.
+Enabling the `libm` feature will re-enable these traits.
+
 
 Copyright and Licence
 -------
