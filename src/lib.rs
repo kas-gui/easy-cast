@@ -334,7 +334,7 @@ impl FloatRound for f64 {
 pub trait ConvFloat<T> {
     /// Convert to integer (truncate)
     ///
-    /// Rounds towards zero.
+    /// Rounds towards zero (same as `as`).
     fn conv_trunc(x: T) -> Self;
     /// Convert to the nearest integer
     ///
@@ -461,7 +461,7 @@ impl<S, T: Conv<S>> Cast<T> for S {
 pub trait CastFloat<T> {
     /// Cast to integer, truncating
     ///
-    /// Rounds towards zero.
+    /// Rounds towards zero (same as `as`).
     fn cast_trunc(self) -> T;
     /// Cast to the nearest integer
     ///
