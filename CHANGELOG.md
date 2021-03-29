@@ -3,6 +3,7 @@ Changelog
 
 ## [0.3.0] — 2021-03-29
 
+-   Add `conv_trunc` / `cast_trunc` (#11)
 -   Explicitly support Rust 1.36.0 (and potentially older; #10)
 -   Support `no_std` (#10)
 -   Fix rounding for `floor` on negative values (#10)

@@ -332,6 +332,10 @@ impl FloatRound for f64 {
 #[cfg(any(feature = "std", feature = "libm"))]
 #[cfg_attr(doc_cfg, doc(cfg(any(feature = "std", feature = "libm"))))]
 pub trait ConvFloat<T> {
+    /// Convert to integer (truncate)
+    ///
+    /// Rounds towards zero.
+    fn conv_trunc(x: T) -> Self;
     /// Convert to the nearest integer
     ///
     /// Half-way cases are rounded away from `0`.
@@ -351,6 +355,16 @@ pub trait ConvFloat<T> {
 macro_rules! impl_float {
     ($x:ty: $y:tt) => {
         impl ConvFloat<$x> for $y {
+            #[inline]
+            fn conv_trunc(x: $x) -> $y {
+                if cfg!(any(debug_assertions, feature = "assert_float")) {
+                    // Tested: these limits work for $x=f32 and all $y except u128
+                    const LBOUND: $x = core::$y::MIN as $x - 1.0;
+                    const UBOUND: $x = core::$y::MAX as $x + 1.0;
+                    assert!(x > LBOUND && x < UBOUND);
+                }
+                x as $y
+            }
             #[inline]
             fn conv_nearest(x: $x) -> $y {
                 let x = x.round();
@@ -403,6 +417,12 @@ impl_float!(f64: u8, u16, u32, u64, u128, usize);
 #[cfg(any(feature = "std", feature = "libm"))]
 impl ConvFloat<f32> for u128 {
     #[inline]
+    fn conv_trunc(x: f32) -> u128 {
+        #[cfg(any(debug_assertions, feature = "assert_float"))]
+        assert!(x >= 0.0 && x.is_finite());
+        x as u128
+    }
+    #[inline]
     fn conv_nearest(x: f32) -> u128 {
         let x = x.round();
         // Note: f32::MAX < u128::MAX
@@ -412,9 +432,7 @@ impl ConvFloat<f32> for u128 {
     }
     #[inline]
     fn conv_floor(x: f32) -> u128 {
-        #[cfg(any(debug_assertions, feature = "assert_float"))]
-        assert!(x >= 0.0 && x.is_finite());
-        x as u128
+        ConvFloat::conv_trunc(x)
     }
     #[inline]
     fn conv_ceil(x: f32) -> u128 {
@@ -441,6 +459,10 @@ impl<S, T: Conv<S>> Cast<T> for S {
 #[cfg(any(feature = "std", feature = "libm"))]
 #[cfg_attr(doc_cfg, doc(cfg(any(feature = "std", feature = "libm"))))]
 pub trait CastFloat<T> {
+    /// Cast to integer, truncating
+    ///
+    /// Rounds towards zero.
+    fn cast_trunc(self) -> T;
     /// Cast to the nearest integer
     ///
     /// Half-way cases are rounded away from `0`.
@@ -457,6 +479,9 @@ pub trait CastFloat<T> {
 
 #[cfg(any(feature = "std", feature = "libm"))]
 impl<S, T: ConvFloat<S>> CastFloat<T> for S {
+    fn cast_trunc(self) -> T {
+        T::conv_trunc(self)
+    }
     fn cast_nearest(self) -> T {
         T::conv_nearest(self)
     }
