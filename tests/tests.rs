@@ -17,6 +17,7 @@ fn float_casts() {
     assert_eq!(x, 14);
     assert_eq!(u8::conv_floor(13.8f64), 13);
     assert_eq!(u32::conv_ceil(13.1f32), 14);
+    assert_eq!(i64::conv_floor(-3168565.13), -3168566);
 }
 
 #[test]

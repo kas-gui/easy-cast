@@ -332,6 +332,7 @@ macro_rules! impl_float {
             }
             #[inline]
             fn conv_floor(x: $x) -> $y {
+                let x = x.floor();
                 if cfg!(any(debug_assertions, feature = "assert_float")) {
                     const LBOUND: $x = std::$y::MIN as $x;
                     const UBOUND: $x = std::$y::MAX as $x + 1.0;
