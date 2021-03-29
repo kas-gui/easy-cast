@@ -13,7 +13,7 @@ repository = "https://github.com/kas-gui/easy-cast"
 [features]
 default = ["std"]
 
-# Without std, float conversions are disabled
+# Without std, float conversions are disabled (unless libm is used)
 std = []
 
 # Note: assertions are always used in debug builds; these only affect release builds:
@@ -29,3 +29,8 @@ assert_non_neg = []
 
 # Always assert value is within target type's range
 assert_range = []
+
+[dependencies.libm]
+# libm may be used instead of std to provide float conversions
+version = "0.2.1"
+optional = true

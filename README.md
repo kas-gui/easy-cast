@@ -37,6 +37,7 @@ untested).
 
 By default, `std` support is required. With default features disabled `no_std`
 is supported, but the `ConvFloat` and `CastFloat` traits are unavailable.
+Enabling the `libm` feature will re-enable these traits.
 
 
 Copyright and Licence

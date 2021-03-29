@@ -291,6 +291,37 @@ impl_via_digits_check!(u128: f32, f64);
 impl_via_digits_check!(isize: f32, f64);
 impl_via_digits_check!(usize: f32, f64);
 
+#[cfg(all(not(feature = "std"), feature = "libm"))]
+trait FloatRound {
+    fn round(self) -> Self;
+    fn floor(self) -> Self;
+    fn ceil(self) -> Self;
+}
+#[cfg(all(not(feature = "std"), feature = "libm"))]
+impl FloatRound for f32 {
+    fn round(self) -> Self {
+        libm::roundf(self)
+    }
+    fn floor(self) -> Self {
+        libm::floorf(self)
+    }
+    fn ceil(self) -> Self {
+        libm::ceilf(self)
+    }
+}
+#[cfg(all(not(feature = "std"), feature = "libm"))]
+impl FloatRound for f64 {
+    fn round(self) -> Self {
+        libm::round(self)
+    }
+    fn floor(self) -> Self {
+        libm::floor(self)
+    }
+    fn ceil(self) -> Self {
+        libm::ceil(self)
+    }
+}
+
 /// Nearest / floor / ceil conversions from floating point types
 ///
 /// This trait is explicitly for conversions from floating-point values to
@@ -298,8 +329,8 @@ impl_via_digits_check!(usize: f32, f64);
 ///
 /// If the source value is out-of-range or not-a-number then the conversion must
 /// fail with a panic.
-#[cfg(feature = "std")]
-#[cfg_attr(doc_cfg, doc(cfg(feature = "std")))]
+#[cfg(any(feature = "std", feature = "libm"))]
+#[cfg_attr(doc_cfg, doc(cfg(any(feature = "std", feature = "libm"))))]
 pub trait ConvFloat<T> {
     /// Convert to the nearest integer
     ///
@@ -315,7 +346,8 @@ pub trait ConvFloat<T> {
     fn conv_ceil(x: T) -> Self;
 }
 
-#[cfg(feature = "std")]
+#[cfg(any(feature = "std", feature = "libm"))]
+#[cfg_attr(doc_cfg, doc(cfg(any(feature = "std", feature = "libm"))))]
 macro_rules! impl_float {
     ($x:ty: $y:tt) => {
         impl ConvFloat<$x> for $y {
@@ -324,8 +356,8 @@ macro_rules! impl_float {
                 let x = x.round();
                 if cfg!(any(debug_assertions, feature = "assert_float")) {
                     // Tested: these limits work for $x=f32 and all $y except u128
-                    const LBOUND: $x = std::$y::MIN as $x;
-                    const UBOUND: $x = std::$y::MAX as $x + 1.0;
+                    const LBOUND: $x = core::$y::MIN as $x;
+                    const UBOUND: $x = core::$y::MAX as $x + 1.0;
                     assert!(x >= LBOUND && x < UBOUND);
                 }
                 x as $y
@@ -334,8 +366,8 @@ macro_rules! impl_float {
             fn conv_floor(x: $x) -> $y {
                 let x = x.floor();
                 if cfg!(any(debug_assertions, feature = "assert_float")) {
-                    const LBOUND: $x = std::$y::MIN as $x;
-                    const UBOUND: $x = std::$y::MAX as $x + 1.0;
+                    const LBOUND: $x = core::$y::MIN as $x;
+                    const UBOUND: $x = core::$y::MAX as $x + 1.0;
                     assert!(x >= LBOUND && x < UBOUND);
                 }
                 x as $y
@@ -344,8 +376,8 @@ macro_rules! impl_float {
             fn conv_ceil(x: $x) -> $y {
                 let x = x.ceil();
                 if cfg!(any(debug_assertions, feature = "assert_float")) {
-                    const LBOUND: $x = std::$y::MIN as $x;
-                    const UBOUND: $x = std::$y::MAX as $x + 1.0;
+                    const LBOUND: $x = core::$y::MIN as $x;
+                    const UBOUND: $x = core::$y::MAX as $x + 1.0;
                     assert!(x >= LBOUND && x < UBOUND);
                 }
                 x as $y
@@ -359,16 +391,16 @@ macro_rules! impl_float {
 }
 
 // Assumption: usize < 128-bit
-#[cfg(feature = "std")]
+#[cfg(any(feature = "std", feature = "libm"))]
 impl_float!(f32: i8, i16, i32, i64, i128, isize);
-#[cfg(feature = "std")]
+#[cfg(any(feature = "std", feature = "libm"))]
 impl_float!(f32: u8, u16, u32, u64, usize);
-#[cfg(feature = "std")]
+#[cfg(any(feature = "std", feature = "libm"))]
 impl_float!(f64: i8, i16, i32, i64, i128, isize);
-#[cfg(feature = "std")]
+#[cfg(any(feature = "std", feature = "libm"))]
 impl_float!(f64: u8, u16, u32, u64, u128, usize);
 
-#[cfg(feature = "std")]
+#[cfg(any(feature = "std", feature = "libm"))]
 impl ConvFloat<f32> for u128 {
     #[inline]
     fn conv_nearest(x: f32) -> u128 {
@@ -406,8 +438,8 @@ impl<S, T: Conv<S>> Cast<T> for S {
 }
 
 /// Like [`Into`], but for [`ConvFloat`]
-#[cfg(feature = "std")]
-#[cfg_attr(doc_cfg, doc(cfg(feature = "std")))]
+#[cfg(any(feature = "std", feature = "libm"))]
+#[cfg_attr(doc_cfg, doc(cfg(any(feature = "std", feature = "libm"))))]
 pub trait CastFloat<T> {
     /// Cast to the nearest integer
     ///
@@ -423,7 +455,7 @@ pub trait CastFloat<T> {
     fn cast_ceil(self) -> T;
 }
 
-#[cfg(feature = "std")]
+#[cfg(any(feature = "std", feature = "libm"))]
 impl<S, T: ConvFloat<S>> CastFloat<T> for S {
     fn cast_nearest(self) -> T {
         T::conv_nearest(self)
