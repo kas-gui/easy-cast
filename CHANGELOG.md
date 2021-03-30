@@ -1,6 +1,10 @@
 Changelog
 =========
 
+## [0.4.0] — 2021-04-??
+
+-   Add `try_conv` and `try_cast` methods
+
 ## [0.3.0] — 2021-03-29
 
 -   Add `conv_trunc` / `cast_trunc` (#11)

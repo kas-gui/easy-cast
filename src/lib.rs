@@ -35,6 +35,32 @@
 
 use core::mem::size_of;
 
+/// Error types for conversions
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum Error {
+    /// Source value lies outside of target type's range
+    Range,
+    /// Loss of precision and/or outside of target type's range
+    Inexact,
+}
+
+#[cfg(feature = "std")]
+impl std::fmt::Display for Error {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "easy-cast conversion error: {}",
+            match self {
+                Error::Range => "source value not in target range",
+                Error::Inexact => "loss of precision or range error",
+            }
+        )
+    }
+}
+
+#[cfg(feature = "std")]
+impl std::error::Error for Error {}
+
 /// Like [`From`], but supporting potentially-fallible conversions
 ///
 /// This trait is intended to replace *many* uses of the `as` keyword for
@@ -54,14 +80,28 @@ use core::mem::size_of;
 /// acceptable, e.g. if an approximate conversion `x as f64` suffices.
 ///
 /// [`From`]: core::convert::From
-pub trait Conv<T> {
+pub trait Conv<T>: Sized {
     /// Convert from `T` to `Self` (see trait doc)
+    ///
+    /// Exact conversion is expected. In Debug builds, conversions must be
+    /// checked with a panic on failure. In Release builds conversions may or
+    /// may not be checked (depending on crate features).
     fn conv(v: T) -> Self;
+
+    /// Try converting from `T` to `Self`, failing on error
+    ///
+    /// Unlike [`Conv::conv`], conversions must be checked in all build modes.
+    fn try_conv(v: T) -> Result<Self, Error>;
 }
 
 impl<T> Conv<T> for T {
+    #[inline]
     fn conv(v: T) -> Self {
         v
+    }
+    #[inline]
+    fn try_conv(v: T) -> Result<Self, Error> {
+        Ok(v)
     }
 }
 
@@ -71,6 +111,10 @@ macro_rules! impl_via_from {
             #[inline]
             fn conv(x: $x) -> $y {
                 <$y>::from(x)
+            }
+            #[inline]
+            fn try_conv(x: $x) -> Result<Self, Error> {
+                Ok(<$y>::from(x))
             }
         }
     };
@@ -100,6 +144,14 @@ macro_rules! impl_via_as_neg_check {
                 assert!(x >= 0);
                 x as $y
             }
+            #[inline]
+            fn try_conv(x: $x) -> Result<Self, Error> {
+                if x >= 0 {
+                    Ok(x as $y)
+                } else {
+                    Err(Error::Range)
+                }
+            }
         }
     };
     ($x:ty: $y:ty, $($yy:ty),+) => {
@@ -123,6 +175,14 @@ macro_rules! impl_via_as_max_check {
                 #[cfg(any(debug_assertions, feature = "assert_range"))]
                 assert!(x <= core::$y::MAX as $x);
                 x as $y
+            }
+            #[inline]
+            fn try_conv(x: $x) -> Result<Self, Error> {
+                if x <= core::$y::MAX as $x {
+                    Ok(x as $y)
+                } else {
+                    Err(Error::Range)
+                }
             }
         }
     };
@@ -148,6 +208,14 @@ macro_rules! impl_via_as_range_check {
                 #[cfg(any(debug_assertions, feature = "assert_range"))]
                 assert!(core::$y::MIN as $x <= x && x <= core::$y::MAX as $x);
                 x as $y
+            }
+            #[inline]
+            fn try_conv(x: $x) -> Result<Self, Error> {
+                if core::$y::MIN as $x <= x && x <= core::$y::MAX as $x {
+                    Ok(x as $y)
+                } else {
+                    Err(Error::Range)
+                }
             }
         }
     };
@@ -175,6 +243,21 @@ macro_rules! impl_int_signed_dest {
                     assert!(core::$y::MIN as $x <= x && x <= core::$y::MAX as $x);
                 }
                 x as $y
+            }
+            #[inline]
+            fn try_conv(x: $x) -> Result<Self, Error> {
+                if size_of::<$x>() == size_of::<$y>() {
+                    if x <= core::$y::MAX as $x {
+                        return Ok(x as $y);
+                    }
+                } else if size_of::<$x>() > size_of::<$y>() {
+                    if core::$y::MIN as $x <= x && x <= core::$y::MAX as $x {
+                        return Ok(x as $y);
+                    }
+                } else {
+                    return Ok(x as $y);
+                }
+                Err(Error::Range)
             }
         }
     };
@@ -210,6 +293,17 @@ macro_rules! impl_int_signed_to_unsigned {
                 }
                 x as $y
             }
+            #[inline]
+            fn try_conv(x: $x) -> Result<Self, Error> {
+                if size_of::<$x>() > size_of::<$y>() {
+                    if x >= 0 && x <= core::$y::MAX as $x {
+                        return Ok(x as $y);
+                    }
+                } else if x >= 0 {
+                    return Ok(x as $y);
+                }
+                Err(Error::Range)
+            }
         }
     };
     ($x:ty: $y:tt, $($yy:tt),+) => {
@@ -236,6 +330,17 @@ macro_rules! impl_int_unsigned_to_unsigned {
                 }
                 x as $y
             }
+            #[inline]
+            fn try_conv(x: $x) -> Result<Self, Error> {
+                if size_of::<$x>() > size_of::<$y>() {
+                    if x <= core::$y::MAX as $x {
+                        return Ok(x as $y);
+                    }
+                } else {
+                    return Ok(x as $y);
+                }
+                Err(Error::Range)
+            }
         }
     };
     ($x:ty: $y:tt, $($yy:tt),+) => {
@@ -259,20 +364,38 @@ impl Conv<f64> for f32 {
         assert_eq!(x, y as f64);
         y
     }
+    #[inline]
+    fn try_conv(x: f64) -> Result<Self, Error> {
+        let y = x as f32;
+        if x == y as f64 {
+            Ok(y)
+        } else {
+            Err(Error::Inexact)
+        }
+    }
 }
 
 macro_rules! impl_via_digits_check {
     ($x:ty: $y:tt) => {
         impl Conv<$x> for $y {
             #[inline]
-            fn conv(x: $x) -> $y {
+            fn conv(x: $x) -> Self {
                 if cfg!(any(debug_assertions, feature = "assert_digits")) {
-                    let src_ty_bits = u32::conv(size_of::<$x>() * 8);
-                    let src_digits = src_ty_bits - (x.leading_zeros() + x.trailing_zeros());
-                    let dst_digits = core::$y::MANTISSA_DIGITS;
-                    assert!(src_digits <= dst_digits);
+                    Self::try_conv(x).expect("inexact int→float conversion")
+                } else {
+                    x as $y
                 }
-                x as $y
+            }
+            #[inline]
+            fn try_conv(x: $x) -> Result<Self, Error> {
+                let src_ty_bits = u32::conv(size_of::<$x>() * 8);
+                let src_digits = src_ty_bits - (x.leading_zeros() + x.trailing_zeros());
+                let dst_digits = core::$y::MANTISSA_DIGITS;
+                if src_digits <= dst_digits {
+                    Ok(x as $y)
+                } else {
+                    Err(Error::Inexact)
+                }
             }
         }
     };
@@ -446,12 +569,24 @@ impl ConvFloat<f32> for u128 {
 /// Like [`Into`], but for [`Conv`]
 pub trait Cast<T> {
     /// Cast from `Self` to `T` (see trait doc)
+    ///
+    /// Exact conversion is expected. In Debug builds, conversions must be
+    /// checked with a panic on failure. In Release builds conversions may or
+    /// may not be checked (depending on crate features).
     fn cast(self) -> T;
+
+    /// Try converting from `Self` to `T`, failing on error
+    ///
+    /// Unlike [`Cast::cast`], conversions must be checked in all build modes.
+    fn try_cast(self) -> Result<T, Error>;
 }
 
 impl<S, T: Conv<S>> Cast<T> for S {
     fn cast(self) -> T {
         T::conv(self)
+    }
+    fn try_cast(self) -> Result<T, Error> {
+        T::try_conv(self)
     }
 }
 
