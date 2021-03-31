@@ -673,9 +673,11 @@ pub trait Cast<T> {
 }
 
 impl<S, T: Conv<S>> Cast<T> for S {
+    #[inline]
     fn cast(self) -> T {
         T::conv(self)
     }
+    #[inline]
     fn try_cast(self) -> Result<T, Error> {
         T::try_conv(self)
     }
@@ -701,20 +703,58 @@ pub trait CastFloat<T> {
     ///
     /// Returns the smallest integer greater than or equal to `self`.
     fn cast_ceil(self) -> T;
+
+    /// Try converting to integer with truncation
+    ///
+    /// Rounds towards zero (same as `as`).
+    fn try_cast_trunc(self) -> Result<T, Error>;
+    /// Try converting to the nearest integer
+    ///
+    /// Half-way cases are rounded away from `0`.
+    fn try_cast_nearest(self) -> Result<T, Error>;
+    /// Try converting the floor to an integer
+    ///
+    /// Returns the largest integer less than or equal to `x`.
+    fn try_cast_floor(self) -> Result<T, Error>;
+    /// Try convert the ceiling to an integer
+    ///
+    /// Returns the smallest integer greater than or equal to `x`.
+    fn try_cast_ceil(self) -> Result<T, Error>;
 }
 
 #[cfg(any(feature = "std", feature = "libm"))]
 impl<S, T: ConvFloat<S>> CastFloat<T> for S {
+    #[inline]
     fn cast_trunc(self) -> T {
         T::conv_trunc(self)
     }
+    #[inline]
     fn cast_nearest(self) -> T {
         T::conv_nearest(self)
     }
+    #[inline]
     fn cast_floor(self) -> T {
         T::conv_floor(self)
     }
+    #[inline]
     fn cast_ceil(self) -> T {
         T::conv_ceil(self)
+    }
+
+    #[inline]
+    fn try_cast_trunc(self) -> Result<T, Error> {
+        T::try_conv_trunc(self)
+    }
+    #[inline]
+    fn try_cast_nearest(self) -> Result<T, Error> {
+        T::try_conv_nearest(self)
+    }
+    #[inline]
+    fn try_cast_floor(self) -> Result<T, Error> {
+        T::try_conv_floor(self)
+    }
+    #[inline]
+    fn try_cast_ceil(self) -> Result<T, Error> {
+        T::try_conv_ceil(self)
     }
 }
