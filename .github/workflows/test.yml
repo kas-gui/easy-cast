@@ -29,4 +29,8 @@ jobs:
           command: fmt
           args: --all -- --check
       - name: Test
-        run: cargo test --all-features
+        run: |
+          cargo test
+          cargo test --all-features
+          cargo test --no-default-features
+          cargo test --no-default-features --features libm
