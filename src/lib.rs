@@ -476,6 +476,18 @@ pub trait ConvFloat<T>: Sized {
     ///
     /// Rounds towards zero (same as `as`).
     fn try_conv_trunc(x: T) -> Result<Self, Error>;
+    /// Try converting to the nearest integer
+    ///
+    /// Half-way cases are rounded away from `0`.
+    fn try_conv_nearest(x: T) -> Result<Self, Error>;
+    /// Try converting the floor to an integer
+    ///
+    /// Returns the largest integer less than or equal to `x`.
+    fn try_conv_floor(x: T) -> Result<Self, Error>;
+    /// Try convert the ceiling to an integer
+    ///
+    /// Returns the smallest integer greater than or equal to `x`.
+    fn try_conv_ceil(x: T) -> Result<Self, Error>;
 }
 
 #[cfg(any(feature = "std", feature = "libm"))]
@@ -493,34 +505,27 @@ macro_rules! impl_float {
             }
             #[inline]
             fn conv_nearest(x: $x) -> $y {
-                let x = x.round();
                 if cfg!(any(debug_assertions, feature = "assert_float")) {
-                    // Tested: these limits work for $x=f32 and all $y except u128
-                    const LBOUND: $x = core::$y::MIN as $x;
-                    const UBOUND: $x = core::$y::MAX as $x + 1.0;
-                    assert!(x >= LBOUND && x < UBOUND);
+                    Self::try_conv_nearest(x).expect("float-to-int conversion: range error")
+                } else {
+                    x.round() as $y
                 }
-                x as $y
             }
             #[inline]
             fn conv_floor(x: $x) -> $y {
-                let x = x.floor();
                 if cfg!(any(debug_assertions, feature = "assert_float")) {
-                    const LBOUND: $x = core::$y::MIN as $x;
-                    const UBOUND: $x = core::$y::MAX as $x + 1.0;
-                    assert!(x >= LBOUND && x < UBOUND);
+                    Self::try_conv_floor(x).expect("float-to-int conversion: range error")
+                } else {
+                    x.floor() as $y
                 }
-                x as $y
             }
             #[inline]
             fn conv_ceil(x: $x) -> $y {
-                let x = x.ceil();
                 if cfg!(any(debug_assertions, feature = "assert_float")) {
-                    const LBOUND: $x = core::$y::MIN as $x;
-                    const UBOUND: $x = core::$y::MAX as $x + 1.0;
-                    assert!(x >= LBOUND && x < UBOUND);
+                    Self::try_conv_ceil(x).expect("float-to-int conversion: range error")
+                } else {
+                    x.ceil() as $y
                 }
-                x as $y
             }
 
             #[inline]
@@ -529,6 +534,42 @@ macro_rules! impl_float {
                 const LBOUND: $x = core::$y::MIN as $x - 1.0;
                 const UBOUND: $x = core::$y::MAX as $x + 1.0;
                 if x > LBOUND && x < UBOUND {
+                    Ok(x as $y)
+                } else {
+                    Err(Error::Range)
+                }
+            }
+            #[inline]
+            fn try_conv_nearest(x: $x) -> Result<Self, Error> {
+                // Tested: these limits work for $x=f32 and all $y except u128
+                const LBOUND: $x = core::$y::MIN as $x;
+                const UBOUND: $x = core::$y::MAX as $x + 1.0;
+                let x = x.round();
+                if x >= LBOUND && x < UBOUND {
+                    Ok(x as $y)
+                } else {
+                    Err(Error::Range)
+                }
+            }
+            #[inline]
+            fn try_conv_floor(x: $x) -> Result<Self, Error> {
+                // Tested: these limits work for $x=f32 and all $y except u128
+                const LBOUND: $x = core::$y::MIN as $x;
+                const UBOUND: $x = core::$y::MAX as $x + 1.0;
+                let x = x.floor();
+                if x >= LBOUND && x < UBOUND {
+                    Ok(x as $y)
+                } else {
+                    Err(Error::Range)
+                }
+            }
+            #[inline]
+            fn try_conv_ceil(x: $x) -> Result<Self, Error> {
+                // Tested: these limits work for $x=f32 and all $y except u128
+                const LBOUND: $x = core::$y::MIN as $x;
+                const UBOUND: $x = core::$y::MAX as $x + 1.0;
+                let x = x.ceil();
+                if x >= LBOUND && x < UBOUND {
                     Ok(x as $y)
                 } else {
                     Err(Error::Range)
@@ -564,11 +605,11 @@ impl ConvFloat<f32> for u128 {
     }
     #[inline]
     fn conv_nearest(x: f32) -> u128 {
-        let x = x.round();
-        // Note: f32::MAX < u128::MAX
-        #[cfg(any(debug_assertions, feature = "assert_float"))]
-        assert!(x >= 0.0 && x.is_finite());
-        x as u128
+        if cfg!(any(debug_assertions, feature = "assert_float")) {
+            Self::try_conv_nearest(x).expect("float-to-int conversion: range error")
+        } else {
+            x.round() as u128
+        }
     }
     #[inline]
     fn conv_floor(x: f32) -> u128 {
@@ -576,15 +617,38 @@ impl ConvFloat<f32> for u128 {
     }
     #[inline]
     fn conv_ceil(x: f32) -> u128 {
-        let x = x.ceil();
-        #[cfg(any(debug_assertions, feature = "assert_float"))]
-        assert!(x >= 0.0 && x.is_finite());
-        x as u128
+        if cfg!(any(debug_assertions, feature = "assert_float")) {
+            Self::try_conv_ceil(x).expect("float-to-int conversion: range error")
+        } else {
+            x.ceil() as u128
+        }
     }
 
     #[inline]
     fn try_conv_trunc(x: f32) -> Result<Self, Error> {
         // Note: f32::MAX < u128::MAX
+        if x >= 0.0 && x.is_finite() {
+            Ok(x as u128)
+        } else {
+            Err(Error::Range)
+        }
+    }
+    #[inline]
+    fn try_conv_nearest(x: f32) -> Result<Self, Error> {
+        let x = x.round();
+        if x >= 0.0 && x.is_finite() {
+            Ok(x as u128)
+        } else {
+            Err(Error::Range)
+        }
+    }
+    #[inline]
+    fn try_conv_floor(x: f32) -> Result<Self, Error> {
+        Self::try_conv_trunc(x)
+    }
+    #[inline]
+    fn try_conv_ceil(x: f32) -> Result<Self, Error> {
+        let x = x.ceil();
         if x >= 0.0 && x.is_finite() {
             Ok(x as u128)
         } else {
