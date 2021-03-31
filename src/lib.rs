@@ -378,25 +378,6 @@ impl_int_unsigned_to_unsigned!(u64: usize);
 impl_int_unsigned_to_unsigned!(u128: usize);
 impl_int_unsigned_to_unsigned!(usize: u8, u16, u32, u64, u128);
 
-impl Conv<f64> for f32 {
-    #[inline]
-    fn conv(x: f64) -> f32 {
-        let y = x as f32;
-        #[cfg(any(debug_assertions, feature = "assert_float"))]
-        assert_eq!(x, y as f64);
-        y
-    }
-    #[inline]
-    fn try_conv(x: f64) -> Result<Self, Error> {
-        let y = x as f32;
-        if x == y as f64 {
-            Ok(y)
-        } else {
-            Err(Error::Inexact)
-        }
-    }
-}
-
 macro_rules! impl_via_digits_check {
     ($x:ty: $y:tt) => {
         impl Conv<$x> for $y {
