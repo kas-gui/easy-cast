@@ -454,8 +454,8 @@ impl FloatRound for f64 {
 /// fail with a panic.
 #[cfg(any(feature = "std", feature = "libm"))]
 #[cfg_attr(doc_cfg, doc(cfg(any(feature = "std", feature = "libm"))))]
-pub trait ConvFloat<T> {
-    /// Convert to integer (truncate)
+pub trait ConvFloat<T>: Sized {
+    /// Convert to integer with truncatation
     ///
     /// Rounds towards zero (same as `as`).
     fn conv_trunc(x: T) -> Self;
@@ -471,6 +471,11 @@ pub trait ConvFloat<T> {
     ///
     /// Returns the smallest integer greater than or equal to `x`.
     fn conv_ceil(x: T) -> Self;
+
+    /// Try converting to integer with truncation
+    ///
+    /// Rounds towards zero (same as `as`).
+    fn try_conv_trunc(x: T) -> Result<Self, Error>;
 }
 
 #[cfg(any(feature = "std", feature = "libm"))]
@@ -481,12 +486,10 @@ macro_rules! impl_float {
             #[inline]
             fn conv_trunc(x: $x) -> $y {
                 if cfg!(any(debug_assertions, feature = "assert_float")) {
-                    // Tested: these limits work for $x=f32 and all $y except u128
-                    const LBOUND: $x = core::$y::MIN as $x - 1.0;
-                    const UBOUND: $x = core::$y::MAX as $x + 1.0;
-                    assert!(x > LBOUND && x < UBOUND);
+                    Self::try_conv_trunc(x).expect("float-to-int conversion: range error")
+                } else {
+                    x as $y
                 }
-                x as $y
             }
             #[inline]
             fn conv_nearest(x: $x) -> $y {
@@ -519,6 +522,18 @@ macro_rules! impl_float {
                 }
                 x as $y
             }
+
+            #[inline]
+            fn try_conv_trunc(x: $x) -> Result<Self, Error> {
+                // Tested: these limits work for $x=f32 and all $y except u128
+                const LBOUND: $x = core::$y::MIN as $x - 1.0;
+                const UBOUND: $x = core::$y::MAX as $x + 1.0;
+                if x > LBOUND && x < UBOUND {
+                    Ok(x as $y)
+                } else {
+                    Err(Error::Range)
+                }
+            }
         }
     };
     ($x:ty: $y:tt, $($yy:tt),+) => {
@@ -541,9 +556,11 @@ impl_float!(f64: u8, u16, u32, u64, u128, usize);
 impl ConvFloat<f32> for u128 {
     #[inline]
     fn conv_trunc(x: f32) -> u128 {
-        #[cfg(any(debug_assertions, feature = "assert_float"))]
-        assert!(x >= 0.0 && x.is_finite());
-        x as u128
+        if cfg!(any(debug_assertions, feature = "assert_float")) {
+            Self::try_conv_trunc(x).expect("float-to-int conversion: range error")
+        } else {
+            x as u128
+        }
     }
     #[inline]
     fn conv_nearest(x: f32) -> u128 {
@@ -563,6 +580,16 @@ impl ConvFloat<f32> for u128 {
         #[cfg(any(debug_assertions, feature = "assert_float"))]
         assert!(x >= 0.0 && x.is_finite());
         x as u128
+    }
+
+    #[inline]
+    fn try_conv_trunc(x: f32) -> Result<Self, Error> {
+        // Note: f32::MAX < u128::MAX
+        if x >= 0.0 && x.is_finite() {
+            Ok(x as u128)
+        } else {
+            Err(Error::Range)
+        }
     }
 }
 
