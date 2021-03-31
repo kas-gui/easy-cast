@@ -5,6 +5,8 @@ Changelog
 
 -   Add `try_conv` and `try_cast` methods (#12)
 -   Add `try_conv_nearest` etc. (#12)
+-   Removed `Conv<f64> for f32` (#12)
+-   Replaced `assert_range` and `assert_non_neg` with `assert_int` (#12)
 
 ## [0.3.0] — 2021-03-29
 
