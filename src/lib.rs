@@ -49,7 +49,7 @@ impl std::fmt::Display for Error {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(
             f,
-            "easy-cast conversion error: {}",
+            "cast conversion: {}",
             match self {
                 Error::Range => "source value not in target range",
                 Error::Inexact => "loss of precision or range error",
@@ -381,7 +381,7 @@ macro_rules! impl_via_digits_check {
             #[inline]
             fn conv(x: $x) -> Self {
                 if cfg!(any(debug_assertions, feature = "assert_digits")) {
-                    Self::try_conv(x).expect("inexact int→float conversion")
+                    Self::try_conv(x).expect("int-to-float conversion: inexact")
                 } else {
                     x as $y
                 }
