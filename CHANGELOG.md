@@ -1,9 +1,10 @@
 Changelog
 =========
 
-## [0.4.0] — 2021-04-??
+## [0.4.0] — 2021-04-01
 
--   Add `try_conv` and `try_cast` methods
+-   Add `try_conv` and `try_cast` methods (#12)
+-   Add `try_conv_nearest` etc. (#12)
 
 ## [0.3.0] — 2021-03-29
 

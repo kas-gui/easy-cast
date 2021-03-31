@@ -5,19 +5,38 @@
 
 //! Type conversion, success expected
 //!
-//! Use [`Conv`] and [`Cast`] when:
+//! This library is written to make numeric type conversions easy. Such
+//! conversions usually fall into one of the following cases:
 //!
-//! -   [`From`] and [`Into`] are not enough
-//! -   it is expected that the value can be represented exactly by the target type
-//! -   you could use `as`, but want some assurance it's doing the right thing
-//! -   you are converting numbers (future versions *might* consider supporting
-//!     other conversions)
+//! -   the conversion must preserve values exactly (use [`From`] or [`Into`]
+//!     or [`Conv`] or [`Cast`])
+//! -   the conversion is expected to preserve values exactly, though this is
+//!     not ensured by the types in question (use [`Conv`] or [`Cast`])
+//! -   the conversion could fail and must be checked at run-time (use
+//!     [`TryFrom`] or [`TryInto`] or [`Conv::try_conv`] or [`Cast::try_cast`])
+//! -   the conversion is from floating point values to integers and should
+//!     round to the "nearest" integer (use [`ConvFloat`] or [`CastFloat`])
+//! -   the conversion is from `f32` to `f64` or vice-versa; in this case use of
+//!     `as f32` / `as f64` is likely acceptable since `f32` has special
+//!     representations for non-finite values and conversion to `f64` is exact
+//! -   truncating conversion (modular arithmetic) is desired; in this case `as`
+//!     probably does exactly what you want
+//! -   saturating conversion is desired (less common; not supported here)
 //!
-//! Use [`ConvFloat`] and [`CastFloat`] when:
+//! If you are wondering "why not just use `as`", there are a few reasons:
 //!
-//! -   You are converting from `f32` or `f64`
-//! -   You specifically want the nearest or ceiling or floor, but don't need
-//!     detailed control over rounding (e.g. round-to-even)
+//! -   integer conversions may silently truncate
+//! -   integer conversions to/from signed types silently reinterpret
+//! -   prior to Rust 1.45.0 float-to-int conversions were not fully defined;
+//!     since this version they use saturating conversion (NaN converts to 0)
+//! -   you want some assurance (at least in debug builds) that the conversion
+//!     will preserve values correctly without having to proof-read code
+//!
+//! When should you *not* use this library?
+//!
+//! -   Only numeric conversions are supported
+//! -   Conversions from floats do not provide fine control of rounding modes
+//! -   This library has not been thoroughly tested correctness
 //!
 //! ## Assertions
 //!
@@ -28,6 +47,16 @@
 //! If the `always_assert` feature flag is set, assertions will be turned on in
 //! all builds. Some additional feature flags are available for finer-grained
 //! control (see `Cargo.toml`).
+//!
+//! ## no_std support
+//!
+//! When the crate's default features are disabled (and `std` is not enabled)
+//! then the library supports `no_std`. In this case, [`ConvFloat`] and
+//! [`CastFloat`] are only available if the `libm` optional dependency is
+//! enabled.
+//!
+//! [`TryFrom`]: core::convert::TryFrom
+//! [`TryInto`]: core::convert::TryInto
 
 #![deny(missing_docs)]
 #![cfg_attr(not(feature = "std"), no_std)]
@@ -64,33 +93,25 @@ impl std::error::Error for Error {}
 /// Like [`From`], but supporting potentially-fallible conversions
 ///
 /// This trait is intended to replace *many* uses of the `as` keyword for
-/// conversions, though not all.
-/// Very roughly, it is `T::try_from(x).unwrap()`, restricted to numeric
-/// conversions (or like [`From`] but with more assumptions).
+/// numeric conversions, though not all.
+/// Conversions from floating-point types are excluded since it is very easy to
+/// (accidentally) produce non-integer values; instead use [`ConvFloat`].
 ///
-/// -   Conversions should preserve values precisely
-/// -   Conversions should succeed, but may fail (panic)
-/// -   We assume that `isize` and `usize` are 32 or 64 bits
+/// Two methods are provided:
 ///
-/// Fallible conversions are allowed. In Debug builds failure must always panic
-/// but in Release builds this is not required (similar to overflow checks on
-/// integer arithmetic).
-///
-/// Note that you *may not* want to use this where loss of precision is
-/// acceptable, e.g. if an approximate conversion `x as f64` suffices.
-///
-/// [`From`]: core::convert::From
+/// -   [`Conv::conv`] is for "success expected" conversions. In debug builds
+///     and when using the `always_assert` feature flag, inexact conversions
+///     will panic. In other cases, conversions may produce incorrect values
+///     (according to the behaviour of `as`). This is similar to the behviour of
+///     Rust's overflow checks on integer arithmetic, and intended for usage
+///     when the user is "reasonably sure" that conversion will succeed.
+/// -   [`Conv::try_conv`] is for fallible conversions, and always produces an
+///     error if the conversion would be inexact.
 pub trait Conv<T>: Sized {
-    /// Convert from `T` to `Self` (see trait doc)
-    ///
-    /// Exact conversion is expected. In Debug builds, conversions must be
-    /// checked with a panic on failure. In Release builds conversions may or
-    /// may not be checked (depending on crate features).
+    /// Convert from `T` to `Self`
     fn conv(v: T) -> Self;
 
-    /// Try converting from `T` to `Self`, failing on error
-    ///
-    /// Unlike [`Conv::conv`], conversions must be checked in all build modes.
+    /// Try converting from `T` to `Self`
     fn try_conv(v: T) -> Result<Self, Error>;
 }
 
@@ -448,10 +469,23 @@ impl FloatRound for f64 {
 /// Nearest / floor / ceil conversions from floating point types
 ///
 /// This trait is explicitly for conversions from floating-point values to
-/// integers.
+/// integers, supporting four rounding modes for fallible and for
+/// "success expected" conversions.
 ///
-/// If the source value is out-of-range or not-a-number then the conversion must
-/// fail with a panic.
+/// Two sets of methods are provided:
+///
+/// -   `conv_*` methods are for "success expected" conversions. In debug builds
+///     and when using the `always_assert` or the `assert_float` feature flag,
+///     out-of-range conversions will panic. In other cases, conversions may
+///     produce incorrect values (according to the behaviour of as, which is
+///     saturating cast since Rust 1.45.0 and undefined for older compilers).
+///     Non-finite source values (`inf` and `NaN`) are considered out-of-range.
+/// -   `try_conv_*` methods are for fallible conversions and always produce an
+///     error if the conversion would be out of range.
+///
+/// For `f64` to `f32` where loss-of-precision is allowable, it is probably
+/// acceptable to use `as` (and if need be, check that the result is finite
+/// with `x.is_finite()`). The reverse, `f32` to `f64`, is always exact.
 #[cfg(any(feature = "std", feature = "libm"))]
 #[cfg_attr(doc_cfg, doc(cfg(any(feature = "std", feature = "libm"))))]
 pub trait ConvFloat<T>: Sized {
@@ -658,17 +692,22 @@ impl ConvFloat<f32> for u128 {
 }
 
 /// Like [`Into`], but for [`Conv`]
+///
+/// Two methods are provided:
+///
+/// -   [`Cast::cast`] is for "success expected" conversions. In debug builds
+///     and when using the `always_assert` feature flag, inexact conversions
+///     will panic. In other cases, conversions may produce incorrect values
+///     (according to the behaviour of `as`). This is similar to the behviour of
+///     Rust's overflow checks on integer arithmetic, and intended for usage
+///     when the user is "reasonably sure" that conversion will succeed.
+/// -   [`Cast::try_cast`] is for fallible conversions, and always produces an
+///     error if the conversion would be inexact.
 pub trait Cast<T> {
-    /// Cast from `Self` to `T` (see trait doc)
-    ///
-    /// Exact conversion is expected. In Debug builds, conversions must be
-    /// checked with a panic on failure. In Release builds conversions may or
-    /// may not be checked (depending on crate features).
+    /// Cast from `Self` to `T`
     fn cast(self) -> T;
 
-    /// Try converting from `Self` to `T`, failing on error
-    ///
-    /// Unlike [`Cast::cast`], conversions must be checked in all build modes.
+    /// Try converting from `Self` to `T`
     fn try_cast(self) -> Result<T, Error>;
 }
 
@@ -684,6 +723,17 @@ impl<S, T: Conv<S>> Cast<T> for S {
 }
 
 /// Like [`Into`], but for [`ConvFloat`]
+///
+/// Two sets of methods are provided:
+///
+/// -   `cast_*` methods are for "success expected" conversions. In debug builds
+///     and when using the `always_assert` or the `assert_float` feature flag,
+///     out-of-range conversions will panic. In other cases, conversions may
+///     produce incorrect values (according to the behaviour of as, which is
+///     saturating cast since Rust 1.45.0 and undefined for older compilers).
+///     Non-finite source values (`inf` and `NaN`) are considered out-of-range.
+/// -   `try_cast_*` methods are for fallible conversions and always produce an
+///     error if the conversion would be out of range.
 #[cfg(any(feature = "std", feature = "libm"))]
 #[cfg_attr(doc_cfg, doc(cfg(any(feature = "std", feature = "libm"))))]
 pub trait CastFloat<T> {
