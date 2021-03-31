@@ -161,7 +161,7 @@ macro_rules! impl_via_as_neg_check {
         impl Conv<$x> for $y {
             #[inline]
             fn conv(x: $x) -> $y {
-                #[cfg(any(debug_assertions, feature = "assert_non_neg"))]
+                #[cfg(any(debug_assertions, feature = "assert_int"))]
                 assert!(x >= 0);
                 x as $y
             }
@@ -193,7 +193,7 @@ macro_rules! impl_via_as_max_check {
         impl Conv<$x> for $y {
             #[inline]
             fn conv(x: $x) -> $y {
-                #[cfg(any(debug_assertions, feature = "assert_range"))]
+                #[cfg(any(debug_assertions, feature = "assert_int"))]
                 assert!(x <= core::$y::MAX as $x);
                 x as $y
             }
@@ -226,7 +226,7 @@ macro_rules! impl_via_as_range_check {
         impl Conv<$x> for $y {
             #[inline]
             fn conv(x: $x) -> $y {
-                #[cfg(any(debug_assertions, feature = "assert_range"))]
+                #[cfg(any(debug_assertions, feature = "assert_int"))]
                 assert!(core::$y::MIN as $x <= x && x <= core::$y::MAX as $x);
                 x as $y
             }
@@ -257,10 +257,10 @@ macro_rules! impl_int_signed_dest {
             #[inline]
             fn conv(x: $x) -> $y {
                 if size_of::<$x>() == size_of::<$y>() {
-                    #[cfg(any(debug_assertions, feature = "assert_range"))]
+                    #[cfg(any(debug_assertions, feature = "assert_int"))]
                     assert!(x <= core::$y::MAX as $x);
                 } else if size_of::<$x>() > size_of::<$y>() {
-                    #[cfg(any(debug_assertions, feature = "assert_range"))]
+                    #[cfg(any(debug_assertions, feature = "assert_int"))]
                     assert!(core::$y::MIN as $x <= x && x <= core::$y::MAX as $x);
                 }
                 x as $y
@@ -306,11 +306,12 @@ macro_rules! impl_int_signed_to_unsigned {
         impl Conv<$x> for $y {
             #[inline]
             fn conv(x: $x) -> $y {
-                #[cfg(any(debug_assertions, feature = "assert_non_neg"))]
-                assert!(x >= 0);
                 if size_of::<$x>() > size_of::<$y>() {
-                    #[cfg(any(debug_assertions, feature = "assert_range"))]
-                    assert!(x <= core::$y::MAX as $x);
+                    #[cfg(any(debug_assertions, feature = "assert_int"))]
+                    assert!(x >= 0 && x <= core::$y::MAX as $x);
+                } else {
+                    #[cfg(any(debug_assertions, feature = "assert_int"))]
+                    assert!(x >= 0);
                 }
                 x as $y
             }
@@ -346,7 +347,7 @@ macro_rules! impl_int_unsigned_to_unsigned {
             #[inline]
             fn conv(x: $x) -> $y {
                 if size_of::<$x>() > size_of::<$y>() {
-                    #[cfg(any(debug_assertions, feature = "assert_range"))]
+                    #[cfg(any(debug_assertions, feature = "assert_int"))]
                     assert!(x <= core::$y::MAX as $x);
                 }
                 x as $y
