@@ -7,20 +7,16 @@ on:
     branches: [ master ]
 
 jobs:
-  test:
-    name: Test
+  fmt-and-test:
+    name: Test and check formatting
     runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        toolchain: ["beta", "1.36.0"]
     steps:
       - uses: actions/checkout@v2
       - name: Install toolchain
         uses: actions-rs/toolchain@v1
         with:
           profile: minimal
-          toolchain: ${{ matrix.toolchain }}
+          toolchain: beta
           override: true
           components: rustfmt
       - name: Rustfmt check
@@ -28,6 +24,24 @@ jobs:
         with:
           command: fmt
           args: --all -- --check
+      - name: Test
+        run: |
+          cargo test
+          cargo test --all-features
+          cargo test --no-default-features
+          cargo test --no-default-features --features libm
+
+  test:
+    name: Test MSRV
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Install toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: "1.32.0"
+          override: true
       - name: Test
         run: |
           cargo test
