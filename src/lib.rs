@@ -5,19 +5,38 @@
 
 //! Type conversion, success expected
 //!
-//! Use [`Conv`] and [`Cast`] when:
+//! This library is written to make numeric type conversions easy. Such
+//! conversions usually fall into one of the following cases:
 //!
-//! -   [`From`] and [`Into`] are not enough
-//! -   it is expected that the value can be represented exactly by the target type
-//! -   you could use `as`, but want some assurance it's doing the right thing
-//! -   you are converting numbers (future versions *might* consider supporting
-//!     other conversions)
+//! -   the conversion must preserve values exactly (use [`From`] or [`Into`]
+//!     or [`Conv`] or [`Cast`])
+//! -   the conversion is expected to preserve values exactly, though this is
+//!     not ensured by the types in question (use [`Conv`] or [`Cast`])
+//! -   the conversion could fail and must be checked at run-time (use
+//!     [`TryFrom`] or [`TryInto`] or [`Conv::try_conv`] or [`Cast::try_cast`])
+//! -   the conversion is from floating point values to integers and should
+//!     round to the "nearest" integer (use [`ConvFloat`] or [`CastFloat`])
+//! -   the conversion is from `f32` to `f64` or vice-versa; in this case use of
+//!     `as f32` / `as f64` is likely acceptable since `f32` has special
+//!     representations for non-finite values and conversion to `f64` is exact
+//! -   truncating conversion (modular arithmetic) is desired; in this case `as`
+//!     probably does exactly what you want
+//! -   saturating conversion is desired (less common; not supported here)
 //!
-//! Use [`ConvFloat`] and [`CastFloat`] when:
+//! If you are wondering "why not just use `as`", there are a few reasons:
 //!
-//! -   You are converting from `f32` or `f64`
-//! -   You specifically want the nearest or ceiling or floor, but don't need
-//!     detailed control over rounding (e.g. round-to-even)
+//! -   integer conversions may silently truncate
+//! -   integer conversions to/from signed types silently reinterpret
+//! -   prior to Rust 1.45.0 float-to-int conversions were not fully defined;
+//!     since this version they use saturating conversion (NaN converts to 0)
+//! -   you want some assurance (at least in debug builds) that the conversion
+//!     will preserve values correctly without having to proof-read code
+//!
+//! When should you *not* use this library?
+//!
+//! -   Only numeric conversions are supported
+//! -   Conversions from floats do not provide fine control of rounding modes
+//! -   This library has not been thoroughly tested correctness
 //!
 //! ## Assertions
 //!
@@ -28,6 +47,16 @@
 //! If the `always_assert` feature flag is set, assertions will be turned on in
 //! all builds. Some additional feature flags are available for finer-grained
 //! control (see `Cargo.toml`).
+//!
+//! ## no_std support
+//!
+//! When the crate's default features are disabled (and `std` is not enabled)
+//! then the library supports `no_std`. In this case, [`ConvFloat`] and
+//! [`CastFloat`] are only available if the `libm` optional dependency is
+//! enabled.
+//!
+//! [`TryFrom`]: core::convert::TryFrom
+//! [`TryInto`]: core::convert::TryInto
 
 #![deny(missing_docs)]
 #![cfg_attr(not(feature = "std"), no_std)]
@@ -35,33 +64,65 @@
 
 use core::mem::size_of;
 
+/// Error types for conversions
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum Error {
+    /// Source value lies outside of target type's range
+    Range,
+    /// Loss of precision and/or outside of target type's range
+    Inexact,
+}
+
+#[cfg(feature = "std")]
+impl std::fmt::Display for Error {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "cast conversion: {}",
+            match self {
+                Error::Range => "source value not in target range",
+                Error::Inexact => "loss of precision or range error",
+            }
+        )
+    }
+}
+
+#[cfg(feature = "std")]
+impl std::error::Error for Error {}
+
 /// Like [`From`], but supporting potentially-fallible conversions
 ///
 /// This trait is intended to replace *many* uses of the `as` keyword for
-/// conversions, though not all.
-/// Very roughly, it is `T::try_from(x).unwrap()`, restricted to numeric
-/// conversions (or like [`From`] but with more assumptions).
+/// numeric conversions, though not all.
+/// Conversions from floating-point types are excluded since it is very easy to
+/// (accidentally) produce non-integer values; instead use [`ConvFloat`].
 ///
-/// -   Conversions should preserve values precisely
-/// -   Conversions should succeed, but may fail (panic)
-/// -   We assume that `isize` and `usize` are 32 or 64 bits
+/// Two methods are provided:
 ///
-/// Fallible conversions are allowed. In Debug builds failure must always panic
-/// but in Release builds this is not required (similar to overflow checks on
-/// integer arithmetic).
-///
-/// Note that you *may not* want to use this where loss of precision is
-/// acceptable, e.g. if an approximate conversion `x as f64` suffices.
-///
-/// [`From`]: core::convert::From
-pub trait Conv<T> {
-    /// Convert from `T` to `Self` (see trait doc)
+/// -   [`Conv::conv`] is for "success expected" conversions. In debug builds
+///     and when using the `always_assert` feature flag, inexact conversions
+///     will panic. In other cases, conversions may produce incorrect values
+///     (according to the behaviour of `as`). This is similar to the behviour of
+///     Rust's overflow checks on integer arithmetic, and intended for usage
+///     when the user is "reasonably sure" that conversion will succeed.
+/// -   [`Conv::try_conv`] is for fallible conversions, and always produces an
+///     error if the conversion would be inexact.
+pub trait Conv<T>: Sized {
+    /// Convert from `T` to `Self`
     fn conv(v: T) -> Self;
+
+    /// Try converting from `T` to `Self`
+    fn try_conv(v: T) -> Result<Self, Error>;
 }
 
 impl<T> Conv<T> for T {
+    #[inline]
     fn conv(v: T) -> Self {
         v
+    }
+    #[inline]
+    fn try_conv(v: T) -> Result<Self, Error> {
+        Ok(v)
     }
 }
 
@@ -71,6 +132,10 @@ macro_rules! impl_via_from {
             #[inline]
             fn conv(x: $x) -> $y {
                 <$y>::from(x)
+            }
+            #[inline]
+            fn try_conv(x: $x) -> Result<Self, Error> {
+                Ok(<$y>::from(x))
             }
         }
     };
@@ -96,9 +161,17 @@ macro_rules! impl_via_as_neg_check {
         impl Conv<$x> for $y {
             #[inline]
             fn conv(x: $x) -> $y {
-                #[cfg(any(debug_assertions, feature = "assert_non_neg"))]
+                #[cfg(any(debug_assertions, feature = "assert_int"))]
                 assert!(x >= 0);
                 x as $y
+            }
+            #[inline]
+            fn try_conv(x: $x) -> Result<Self, Error> {
+                if x >= 0 {
+                    Ok(x as $y)
+                } else {
+                    Err(Error::Range)
+                }
             }
         }
     };
@@ -120,9 +193,17 @@ macro_rules! impl_via_as_max_check {
         impl Conv<$x> for $y {
             #[inline]
             fn conv(x: $x) -> $y {
-                #[cfg(any(debug_assertions, feature = "assert_range"))]
+                #[cfg(any(debug_assertions, feature = "assert_int"))]
                 assert!(x <= core::$y::MAX as $x);
                 x as $y
+            }
+            #[inline]
+            fn try_conv(x: $x) -> Result<Self, Error> {
+                if x <= core::$y::MAX as $x {
+                    Ok(x as $y)
+                } else {
+                    Err(Error::Range)
+                }
             }
         }
     };
@@ -145,9 +226,17 @@ macro_rules! impl_via_as_range_check {
         impl Conv<$x> for $y {
             #[inline]
             fn conv(x: $x) -> $y {
-                #[cfg(any(debug_assertions, feature = "assert_range"))]
+                #[cfg(any(debug_assertions, feature = "assert_int"))]
                 assert!(core::$y::MIN as $x <= x && x <= core::$y::MAX as $x);
                 x as $y
+            }
+            #[inline]
+            fn try_conv(x: $x) -> Result<Self, Error> {
+                if core::$y::MIN as $x <= x && x <= core::$y::MAX as $x {
+                    Ok(x as $y)
+                } else {
+                    Err(Error::Range)
+                }
             }
         }
     };
@@ -168,13 +257,28 @@ macro_rules! impl_int_signed_dest {
             #[inline]
             fn conv(x: $x) -> $y {
                 if size_of::<$x>() == size_of::<$y>() {
-                    #[cfg(any(debug_assertions, feature = "assert_range"))]
+                    #[cfg(any(debug_assertions, feature = "assert_int"))]
                     assert!(x <= core::$y::MAX as $x);
                 } else if size_of::<$x>() > size_of::<$y>() {
-                    #[cfg(any(debug_assertions, feature = "assert_range"))]
+                    #[cfg(any(debug_assertions, feature = "assert_int"))]
                     assert!(core::$y::MIN as $x <= x && x <= core::$y::MAX as $x);
                 }
                 x as $y
+            }
+            #[inline]
+            fn try_conv(x: $x) -> Result<Self, Error> {
+                if size_of::<$x>() == size_of::<$y>() {
+                    if x <= core::$y::MAX as $x {
+                        return Ok(x as $y);
+                    }
+                } else if size_of::<$x>() > size_of::<$y>() {
+                    if core::$y::MIN as $x <= x && x <= core::$y::MAX as $x {
+                        return Ok(x as $y);
+                    }
+                } else {
+                    return Ok(x as $y);
+                }
+                Err(Error::Range)
             }
         }
     };
@@ -202,13 +306,25 @@ macro_rules! impl_int_signed_to_unsigned {
         impl Conv<$x> for $y {
             #[inline]
             fn conv(x: $x) -> $y {
-                #[cfg(any(debug_assertions, feature = "assert_non_neg"))]
-                assert!(x >= 0);
                 if size_of::<$x>() > size_of::<$y>() {
-                    #[cfg(any(debug_assertions, feature = "assert_range"))]
-                    assert!(x <= core::$y::MAX as $x);
+                    #[cfg(any(debug_assertions, feature = "assert_int"))]
+                    assert!(x >= 0 && x <= core::$y::MAX as $x);
+                } else {
+                    #[cfg(any(debug_assertions, feature = "assert_int"))]
+                    assert!(x >= 0);
                 }
                 x as $y
+            }
+            #[inline]
+            fn try_conv(x: $x) -> Result<Self, Error> {
+                if size_of::<$x>() > size_of::<$y>() {
+                    if x >= 0 && x <= core::$y::MAX as $x {
+                        return Ok(x as $y);
+                    }
+                } else if x >= 0 {
+                    return Ok(x as $y);
+                }
+                Err(Error::Range)
             }
         }
     };
@@ -231,10 +347,21 @@ macro_rules! impl_int_unsigned_to_unsigned {
             #[inline]
             fn conv(x: $x) -> $y {
                 if size_of::<$x>() > size_of::<$y>() {
-                    #[cfg(any(debug_assertions, feature = "assert_range"))]
+                    #[cfg(any(debug_assertions, feature = "assert_int"))]
                     assert!(x <= core::$y::MAX as $x);
                 }
                 x as $y
+            }
+            #[inline]
+            fn try_conv(x: $x) -> Result<Self, Error> {
+                if size_of::<$x>() > size_of::<$y>() {
+                    if x <= core::$y::MAX as $x {
+                        return Ok(x as $y);
+                    }
+                } else {
+                    return Ok(x as $y);
+                }
+                Err(Error::Range)
             }
         }
     };
@@ -251,28 +378,27 @@ impl_int_unsigned_to_unsigned!(u64: usize);
 impl_int_unsigned_to_unsigned!(u128: usize);
 impl_int_unsigned_to_unsigned!(usize: u8, u16, u32, u64, u128);
 
-impl Conv<f64> for f32 {
-    #[inline]
-    fn conv(x: f64) -> f32 {
-        let y = x as f32;
-        #[cfg(any(debug_assertions, feature = "assert_float"))]
-        assert_eq!(x, y as f64);
-        y
-    }
-}
-
 macro_rules! impl_via_digits_check {
     ($x:ty: $y:tt) => {
         impl Conv<$x> for $y {
             #[inline]
-            fn conv(x: $x) -> $y {
+            fn conv(x: $x) -> Self {
                 if cfg!(any(debug_assertions, feature = "assert_digits")) {
-                    let src_ty_bits = u32::conv(size_of::<$x>() * 8);
-                    let src_digits = src_ty_bits - (x.leading_zeros() + x.trailing_zeros());
-                    let dst_digits = core::$y::MANTISSA_DIGITS;
-                    assert!(src_digits <= dst_digits);
+                    Self::try_conv(x).expect("int-to-float conversion: inexact")
+                } else {
+                    x as $y
                 }
-                x as $y
+            }
+            #[inline]
+            fn try_conv(x: $x) -> Result<Self, Error> {
+                let src_ty_bits = u32::conv(size_of::<$x>() * 8);
+                let src_digits = src_ty_bits - (x.leading_zeros() + x.trailing_zeros());
+                let dst_digits = core::$y::MANTISSA_DIGITS;
+                if src_digits <= dst_digits {
+                    Ok(x as $y)
+                } else {
+                    Err(Error::Inexact)
+                }
             }
         }
     };
@@ -325,14 +451,27 @@ impl FloatRound for f64 {
 /// Nearest / floor / ceil conversions from floating point types
 ///
 /// This trait is explicitly for conversions from floating-point values to
-/// integers.
+/// integers, supporting four rounding modes for fallible and for
+/// "success expected" conversions.
 ///
-/// If the source value is out-of-range or not-a-number then the conversion must
-/// fail with a panic.
+/// Two sets of methods are provided:
+///
+/// -   `conv_*` methods are for "success expected" conversions. In debug builds
+///     and when using the `always_assert` or the `assert_float` feature flag,
+///     out-of-range conversions will panic. In other cases, conversions may
+///     produce incorrect values (according to the behaviour of as, which is
+///     saturating cast since Rust 1.45.0 and undefined for older compilers).
+///     Non-finite source values (`inf` and `NaN`) are considered out-of-range.
+/// -   `try_conv_*` methods are for fallible conversions and always produce an
+///     error if the conversion would be out of range.
+///
+/// For `f64` to `f32` where loss-of-precision is allowable, it is probably
+/// acceptable to use `as` (and if need be, check that the result is finite
+/// with `x.is_finite()`). The reverse, `f32` to `f64`, is always exact.
 #[cfg(any(feature = "std", feature = "libm"))]
 #[cfg_attr(doc_cfg, doc(cfg(any(feature = "std", feature = "libm"))))]
-pub trait ConvFloat<T> {
-    /// Convert to integer (truncate)
+pub trait ConvFloat<T>: Sized {
+    /// Convert to integer with truncatation
     ///
     /// Rounds towards zero (same as `as`).
     fn conv_trunc(x: T) -> Self;
@@ -348,6 +487,23 @@ pub trait ConvFloat<T> {
     ///
     /// Returns the smallest integer greater than or equal to `x`.
     fn conv_ceil(x: T) -> Self;
+
+    /// Try converting to integer with truncation
+    ///
+    /// Rounds towards zero (same as `as`).
+    fn try_conv_trunc(x: T) -> Result<Self, Error>;
+    /// Try converting to the nearest integer
+    ///
+    /// Half-way cases are rounded away from `0`.
+    fn try_conv_nearest(x: T) -> Result<Self, Error>;
+    /// Try converting the floor to an integer
+    ///
+    /// Returns the largest integer less than or equal to `x`.
+    fn try_conv_floor(x: T) -> Result<Self, Error>;
+    /// Try convert the ceiling to an integer
+    ///
+    /// Returns the smallest integer greater than or equal to `x`.
+    fn try_conv_ceil(x: T) -> Result<Self, Error>;
 }
 
 #[cfg(any(feature = "std", feature = "libm"))]
@@ -358,43 +514,82 @@ macro_rules! impl_float {
             #[inline]
             fn conv_trunc(x: $x) -> $y {
                 if cfg!(any(debug_assertions, feature = "assert_float")) {
-                    // Tested: these limits work for $x=f32 and all $y except u128
-                    const LBOUND: $x = core::$y::MIN as $x - 1.0;
-                    const UBOUND: $x = core::$y::MAX as $x + 1.0;
-                    assert!(x > LBOUND && x < UBOUND);
+                    Self::try_conv_trunc(x).expect("float-to-int conversion: range error")
+                } else {
+                    x as $y
                 }
-                x as $y
             }
             #[inline]
             fn conv_nearest(x: $x) -> $y {
-                let x = x.round();
                 if cfg!(any(debug_assertions, feature = "assert_float")) {
-                    // Tested: these limits work for $x=f32 and all $y except u128
-                    const LBOUND: $x = core::$y::MIN as $x;
-                    const UBOUND: $x = core::$y::MAX as $x + 1.0;
-                    assert!(x >= LBOUND && x < UBOUND);
+                    Self::try_conv_nearest(x).expect("float-to-int conversion: range error")
+                } else {
+                    x.round() as $y
                 }
-                x as $y
             }
             #[inline]
             fn conv_floor(x: $x) -> $y {
-                let x = x.floor();
                 if cfg!(any(debug_assertions, feature = "assert_float")) {
-                    const LBOUND: $x = core::$y::MIN as $x;
-                    const UBOUND: $x = core::$y::MAX as $x + 1.0;
-                    assert!(x >= LBOUND && x < UBOUND);
+                    Self::try_conv_floor(x).expect("float-to-int conversion: range error")
+                } else {
+                    x.floor() as $y
                 }
-                x as $y
             }
             #[inline]
             fn conv_ceil(x: $x) -> $y {
-                let x = x.ceil();
                 if cfg!(any(debug_assertions, feature = "assert_float")) {
-                    const LBOUND: $x = core::$y::MIN as $x;
-                    const UBOUND: $x = core::$y::MAX as $x + 1.0;
-                    assert!(x >= LBOUND && x < UBOUND);
+                    Self::try_conv_ceil(x).expect("float-to-int conversion: range error")
+                } else {
+                    x.ceil() as $y
                 }
-                x as $y
+            }
+
+            #[inline]
+            fn try_conv_trunc(x: $x) -> Result<Self, Error> {
+                // Tested: these limits work for $x=f32 and all $y except u128
+                const LBOUND: $x = core::$y::MIN as $x - 1.0;
+                const UBOUND: $x = core::$y::MAX as $x + 1.0;
+                if x > LBOUND && x < UBOUND {
+                    Ok(x as $y)
+                } else {
+                    Err(Error::Range)
+                }
+            }
+            #[inline]
+            fn try_conv_nearest(x: $x) -> Result<Self, Error> {
+                // Tested: these limits work for $x=f32 and all $y except u128
+                const LBOUND: $x = core::$y::MIN as $x;
+                const UBOUND: $x = core::$y::MAX as $x + 1.0;
+                let x = x.round();
+                if x >= LBOUND && x < UBOUND {
+                    Ok(x as $y)
+                } else {
+                    Err(Error::Range)
+                }
+            }
+            #[inline]
+            fn try_conv_floor(x: $x) -> Result<Self, Error> {
+                // Tested: these limits work for $x=f32 and all $y except u128
+                const LBOUND: $x = core::$y::MIN as $x;
+                const UBOUND: $x = core::$y::MAX as $x + 1.0;
+                let x = x.floor();
+                if x >= LBOUND && x < UBOUND {
+                    Ok(x as $y)
+                } else {
+                    Err(Error::Range)
+                }
+            }
+            #[inline]
+            fn try_conv_ceil(x: $x) -> Result<Self, Error> {
+                // Tested: these limits work for $x=f32 and all $y except u128
+                const LBOUND: $x = core::$y::MIN as $x;
+                const UBOUND: $x = core::$y::MAX as $x + 1.0;
+                let x = x.ceil();
+                if x >= LBOUND && x < UBOUND {
+                    Ok(x as $y)
+                } else {
+                    Err(Error::Range)
+                }
             }
         }
     };
@@ -418,17 +613,19 @@ impl_float!(f64: u8, u16, u32, u64, u128, usize);
 impl ConvFloat<f32> for u128 {
     #[inline]
     fn conv_trunc(x: f32) -> u128 {
-        #[cfg(any(debug_assertions, feature = "assert_float"))]
-        assert!(x >= 0.0 && x.is_finite());
-        x as u128
+        if cfg!(any(debug_assertions, feature = "assert_float")) {
+            Self::try_conv_trunc(x).expect("float-to-int conversion: range error")
+        } else {
+            x as u128
+        }
     }
     #[inline]
     fn conv_nearest(x: f32) -> u128 {
-        let x = x.round();
-        // Note: f32::MAX < u128::MAX
-        #[cfg(any(debug_assertions, feature = "assert_float"))]
-        assert!(x >= 0.0 && x.is_finite());
-        x as u128
+        if cfg!(any(debug_assertions, feature = "assert_float")) {
+            Self::try_conv_nearest(x).expect("float-to-int conversion: range error")
+        } else {
+            x.round() as u128
+        }
     }
     #[inline]
     fn conv_floor(x: f32) -> u128 {
@@ -436,26 +633,89 @@ impl ConvFloat<f32> for u128 {
     }
     #[inline]
     fn conv_ceil(x: f32) -> u128 {
+        if cfg!(any(debug_assertions, feature = "assert_float")) {
+            Self::try_conv_ceil(x).expect("float-to-int conversion: range error")
+        } else {
+            x.ceil() as u128
+        }
+    }
+
+    #[inline]
+    fn try_conv_trunc(x: f32) -> Result<Self, Error> {
+        // Note: f32::MAX < u128::MAX
+        if x >= 0.0 && x.is_finite() {
+            Ok(x as u128)
+        } else {
+            Err(Error::Range)
+        }
+    }
+    #[inline]
+    fn try_conv_nearest(x: f32) -> Result<Self, Error> {
+        let x = x.round();
+        if x >= 0.0 && x.is_finite() {
+            Ok(x as u128)
+        } else {
+            Err(Error::Range)
+        }
+    }
+    #[inline]
+    fn try_conv_floor(x: f32) -> Result<Self, Error> {
+        Self::try_conv_trunc(x)
+    }
+    #[inline]
+    fn try_conv_ceil(x: f32) -> Result<Self, Error> {
         let x = x.ceil();
-        #[cfg(any(debug_assertions, feature = "assert_float"))]
-        assert!(x >= 0.0 && x.is_finite());
-        x as u128
+        if x >= 0.0 && x.is_finite() {
+            Ok(x as u128)
+        } else {
+            Err(Error::Range)
+        }
     }
 }
 
 /// Like [`Into`], but for [`Conv`]
+///
+/// Two methods are provided:
+///
+/// -   [`Cast::cast`] is for "success expected" conversions. In debug builds
+///     and when using the `always_assert` feature flag, inexact conversions
+///     will panic. In other cases, conversions may produce incorrect values
+///     (according to the behaviour of `as`). This is similar to the behviour of
+///     Rust's overflow checks on integer arithmetic, and intended for usage
+///     when the user is "reasonably sure" that conversion will succeed.
+/// -   [`Cast::try_cast`] is for fallible conversions, and always produces an
+///     error if the conversion would be inexact.
 pub trait Cast<T> {
-    /// Cast from `Self` to `T` (see trait doc)
+    /// Cast from `Self` to `T`
     fn cast(self) -> T;
+
+    /// Try converting from `Self` to `T`
+    fn try_cast(self) -> Result<T, Error>;
 }
 
 impl<S, T: Conv<S>> Cast<T> for S {
+    #[inline]
     fn cast(self) -> T {
         T::conv(self)
+    }
+    #[inline]
+    fn try_cast(self) -> Result<T, Error> {
+        T::try_conv(self)
     }
 }
 
 /// Like [`Into`], but for [`ConvFloat`]
+///
+/// Two sets of methods are provided:
+///
+/// -   `cast_*` methods are for "success expected" conversions. In debug builds
+///     and when using the `always_assert` or the `assert_float` feature flag,
+///     out-of-range conversions will panic. In other cases, conversions may
+///     produce incorrect values (according to the behaviour of as, which is
+///     saturating cast since Rust 1.45.0 and undefined for older compilers).
+///     Non-finite source values (`inf` and `NaN`) are considered out-of-range.
+/// -   `try_cast_*` methods are for fallible conversions and always produce an
+///     error if the conversion would be out of range.
 #[cfg(any(feature = "std", feature = "libm"))]
 #[cfg_attr(doc_cfg, doc(cfg(any(feature = "std", feature = "libm"))))]
 pub trait CastFloat<T> {
@@ -475,20 +735,58 @@ pub trait CastFloat<T> {
     ///
     /// Returns the smallest integer greater than or equal to `self`.
     fn cast_ceil(self) -> T;
+
+    /// Try converting to integer with truncation
+    ///
+    /// Rounds towards zero (same as `as`).
+    fn try_cast_trunc(self) -> Result<T, Error>;
+    /// Try converting to the nearest integer
+    ///
+    /// Half-way cases are rounded away from `0`.
+    fn try_cast_nearest(self) -> Result<T, Error>;
+    /// Try converting the floor to an integer
+    ///
+    /// Returns the largest integer less than or equal to `x`.
+    fn try_cast_floor(self) -> Result<T, Error>;
+    /// Try convert the ceiling to an integer
+    ///
+    /// Returns the smallest integer greater than or equal to `x`.
+    fn try_cast_ceil(self) -> Result<T, Error>;
 }
 
 #[cfg(any(feature = "std", feature = "libm"))]
 impl<S, T: ConvFloat<S>> CastFloat<T> for S {
+    #[inline]
     fn cast_trunc(self) -> T {
         T::conv_trunc(self)
     }
+    #[inline]
     fn cast_nearest(self) -> T {
         T::conv_nearest(self)
     }
+    #[inline]
     fn cast_floor(self) -> T {
         T::conv_floor(self)
     }
+    #[inline]
     fn cast_ceil(self) -> T {
         T::conv_ceil(self)
+    }
+
+    #[inline]
+    fn try_cast_trunc(self) -> Result<T, Error> {
+        T::try_conv_trunc(self)
+    }
+    #[inline]
+    fn try_cast_nearest(self) -> Result<T, Error> {
+        T::try_conv_nearest(self)
+    }
+    #[inline]
+    fn try_cast_floor(self) -> Result<T, Error> {
+        T::try_conv_floor(self)
+    }
+    #[inline]
+    fn try_cast_ceil(self) -> Result<T, Error> {
+        T::try_conv_ceil(self)
     }
 }

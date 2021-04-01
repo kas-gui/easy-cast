@@ -32,6 +32,7 @@ fn float_trunc() {
 
 #[test]
 #[should_panic]
+#[cfg(any(feature = "std", feature = "libm"))]
 fn float_trunc_fail1() {
     i16::conv_trunc(32768.0f32);
 }
