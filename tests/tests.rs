@@ -10,6 +10,18 @@ fn int_casts() {
 }
 
 #[test]
+fn int_to_float() {
+    f32::conv(0);
+    f32::conv(0x00FF_FFFF);
+}
+
+#[test]
+#[should_panic]
+fn int_to_float_inexact() {
+    f32::conv(0x01FF_FFFF);
+}
+
+#[test]
 #[cfg(any(feature = "std", feature = "libm"))]
 fn float_casts() {
     assert_eq!(u64::conv_nearest(13.2f32), 13);

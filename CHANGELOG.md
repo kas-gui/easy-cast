@@ -1,6 +1,10 @@
 Changelog
 =========
 
+## [0.4.1] — 2021-04-01
+
+-   Fix `conv(0)` from int to float
+
 ## [0.4.0] — 2021-04-01
 
 -   Add `try_conv` and `try_cast` methods (#12)

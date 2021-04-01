@@ -391,8 +391,8 @@ macro_rules! impl_via_digits_check {
             }
             #[inline]
             fn try_conv(x: $x) -> Result<Self, Error> {
-                let src_ty_bits = u32::conv(size_of::<$x>() * 8);
-                let src_digits = src_ty_bits - (x.leading_zeros() + x.trailing_zeros());
+                let src_ty_bits = (size_of::<$x>() * 8) as u32;
+                let src_digits = src_ty_bits.saturating_sub(x.leading_zeros() + x.trailing_zeros());
                 let dst_digits = core::$y::MANTISSA_DIGITS;
                 if src_digits <= dst_digits {
                     Ok(x as $y)
