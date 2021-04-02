@@ -10,6 +10,32 @@ fn int_casts() {
 }
 
 #[test]
+fn signed_to_unsigned() {
+    u32::conv(0i32);
+    u32::conv(1i32);
+    u32::conv(core::i32::MAX);
+}
+
+#[test]
+#[should_panic]
+fn signed_to_unsigned_n1() {
+    u32::conv(-1i32);
+}
+
+#[test]
+fn unsigned_to_signed() {
+    i32::conv(0u32);
+    i32::conv(1u32);
+    i16::conv(1usize);
+}
+
+#[test]
+#[should_panic]
+fn unsigned_to_signed_large() {
+    i32::conv(0x8000_0000u32);
+}
+
+#[test]
 fn int_to_float() {
     f32::conv(0);
     f32::conv(0x00FF_FFFF);
