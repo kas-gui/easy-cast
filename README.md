@@ -6,19 +6,49 @@ Easy-cast
 
 Type conversion, success expected
 
-Use the `Conv` and `Cast` traits when:
+This library is written to make numeric type conversions easy. Such
+conversions usually fall into one of the following cases:
 
--   `From` and `Into` are not enough
--   it is expected that the value can be represented exactly by the target type
--   you could use `as`, but want some assurance it's doing the right thing
--   you are converting numbers (future versions *might* consider supporting
-    other conversions)
+-   the conversion must preserve values exactly (use [`From`] or [`Into`]
+    or [`Conv`] or [`Cast`])
+-   the conversion is expected to preserve values exactly, though this is
+    not ensured by the types in question (use [`Conv`] or [`Cast`])
+-   the conversion could fail and must be checked at run-time (use
+    [`TryFrom`] or [`TryInto`] or [`Conv::try_conv`] or [`Cast::try_cast`])
+-   the conversion is from floating point values to integers and should
+    round to the "nearest" integer (use [`ConvFloat`] or [`CastFloat`])
+-   the conversion is from `f32` to `f64` or vice-versa; in this case use of
+    `as f32` / `as f64` is likely acceptable since `f32` has special
+    representations for non-finite values and conversion to `f64` is exact
+-   truncating conversion (modular arithmetic) is desired; in this case `as`
+    probably does exactly what you want
+-   saturating conversion is desired (less common; not supported here)
 
-Use the `ConvFloat` and `CastFloat` traits when:
+If you are wondering "why not just use `as`", there are a few reasons:
 
--   You are converting from `f32` or `f64`
--   You specifically want the nearest or ceiling or floor, but don't need
-    detailed control over rounding (e.g. round-to-even)
+-   integer conversions may silently truncate
+-   integer conversions to/from signed types silently reinterpret
+-   prior to Rust 1.45.0 float-to-int conversions were not fully defined;
+    since this version they use saturating conversion (NaN converts to 0)
+-   you want some assurance (at least in debug builds) that the conversion
+    will preserve values correctly without having to proof-read code
+
+When should you *not* use this library?
+
+-   Only numeric conversions are supported
+-   Conversions from floats do not provide fine control of rounding modes
+-   This library has not been thoroughly tested correctness
+
+[`From`]: https://doc.rust-lang.org/stable/std/convert/trait.From.html
+[`Into`]: https://doc.rust-lang.org/stable/std/convert/trait.Into.html
+[`TryFrom`]: https://doc.rust-lang.org/stable/std/convert/trait.TryFrom.html
+[`TryInto`]: https://doc.rust-lang.org/stable/std/convert/trait.TryInto.html
+[`Conv`]: https://docs.rs/easy-cast/latest/easy_cast/trait.Conv.html
+[`Cast`]: https://docs.rs/easy-cast/latest/easy_cast/trait.Cast.html
+[`Conv::try_conv`]: https://docs.rs/easy-cast/latest/easy_cast/trait.Conv.html#tymethod.try_conv
+[`Conv::try_cast`]: https://docs.rs/easy-cast/latest/easy_cast/trait.Conv.html#tymethod.try_cast
+[`ConvFloat`]: https://docs.rs/easy-cast/latest/easy_cast/trait.ConvFloat.html
+[`CastFloat`]: https://docs.rs/easy-cast/latest/easy_cast/trait.CastFloat.html
 
 ## Assertions
 

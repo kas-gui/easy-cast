@@ -1,9 +1,14 @@
 Changelog
 =========
 
+## [0.4.2] — 2021-04-03
+
+-   Fix `i16::conv(1usize)` (#15)
+-   Update README (#15)
+
 ## [0.4.1] — 2021-04-01
 
--   Fix `conv(0)` from int to float
+-   Fix `conv(0)` from int to float (#14)
 
 ## [0.4.0] — 2021-04-01
 
