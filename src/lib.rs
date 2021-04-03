@@ -256,13 +256,14 @@ macro_rules! impl_int_signed_dest {
         impl Conv<$x> for $y {
             #[inline]
             fn conv(x: $x) -> $y {
-                #[cfg(any(debug_assertions, feature = "assert_int"))]
                 if size_of::<$x>() < size_of::<$y>() {
                     // nothing to check
                 } else if size_of::<$x>() == size_of::<$y>() || core::$x::MIN == 0 {
+                    #[cfg(any(debug_assertions, feature = "assert_int"))]
                     assert!(x <= core::$y::MAX as $x);
                 } else {
                     assert!(size_of::<$x>() > size_of::<$y>() && core::$x::MIN != 0);
+                    #[cfg(any(debug_assertions, feature = "assert_int"))]
                     assert!(core::$y::MIN as $x <= x && x <= core::$y::MAX as $x);
                 }
                 x as $y
