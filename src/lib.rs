@@ -251,36 +251,67 @@ impl_via_as_range_check!(i32: i8, i16, u8, u16);
 impl_via_as_range_check!(i64: i8, i16, i32, u8, u16, u32);
 impl_via_as_range_check!(i128: i8, i16, i32, i64, u8, u16, u32, u64);
 
-macro_rules! impl_int_signed_dest {
+macro_rules! impl_int_generic {
     ($x:tt: $y:tt) => {
         impl Conv<$x> for $y {
             #[inline]
             fn conv(x: $x) -> $y {
+                let src_is_signed = core::$x::MIN != 0;
+                let dst_is_signed = core::$y::MIN != 0;
                 if size_of::<$x>() < size_of::<$y>() {
-                    // nothing to check
-                } else if size_of::<$x>() == size_of::<$y>() || core::$x::MIN == 0 {
                     #[cfg(any(debug_assertions, feature = "assert_int"))]
-                    assert!(x <= core::$y::MAX as $x);
+                    assert!(dst_is_signed || x >= 0);
+                } else if size_of::<$x>() == size_of::<$y>() {
+                    if dst_is_signed {
+                        #[cfg(any(debug_assertions, feature = "assert_int"))]
+                        assert!(x <= core::$y::MAX as $x);
+                    } else if src_is_signed {
+                        #[cfg(any(debug_assertions, feature = "assert_int"))]
+                        assert!(x >= 0);
+                    }
                 } else {
-                    assert!(size_of::<$x>() > size_of::<$y>() && core::$x::MIN != 0);
-                    #[cfg(any(debug_assertions, feature = "assert_int"))]
-                    assert!(core::$y::MIN as $x <= x && x <= core::$y::MAX as $x);
+                    // src size > dst size
+                    if src_is_signed {
+                        #[cfg(any(debug_assertions, feature = "assert_int"))]
+                        assert!(core::$y::MIN as $x <= x && x <= core::$y::MAX as $x);
+                    } else {
+                        #[cfg(any(debug_assertions, feature = "assert_int"))]
+                        assert!(x <= core::$y::MAX as $x);
+                    }
                 }
                 x as $y
             }
             #[inline]
             fn try_conv(x: $x) -> Result<Self, Error> {
+                let src_is_signed = core::$x::MIN != 0;
+                let dst_is_signed = core::$y::MIN != 0;
                 if size_of::<$x>() < size_of::<$y>() {
-                    // nothing to check
-                    return Ok(x as $y);
-                } else if size_of::<$x>() == size_of::<$y>() || core::$x::MIN == 0 {
-                    if x <= core::$y::MAX as $x {
+                    if dst_is_signed || x >= 0 {
+                        return Ok(x as $y);
+                    }
+                } else if size_of::<$x>() == size_of::<$y>() {
+                    if dst_is_signed {
+                        if x <= core::$y::MAX as $x {
+                            return Ok(x as $y);
+                        }
+                    } else if src_is_signed {
+                        if x >= 0 {
+                            return Ok(x as $y);
+                        }
+                    } else {
+                        // types are identical (e.g. usize == u64)
                         return Ok(x as $y);
                     }
                 } else {
-                    assert!(size_of::<$x>() > size_of::<$y>() && core::$x::MIN != 0);
-                    if core::$y::MIN as $x <= x && x <= core::$y::MAX as $x {
-                        return Ok(x as $y);
+                    // src size > dst size
+                    if src_is_signed {
+                        if core::$y::MIN as $x <= x && x <= core::$y::MAX as $x {
+                            return Ok(x as $y);
+                        }
+                    } else {
+                        if x <= core::$y::MAX as $x {
+                            return Ok(x as $y);
+                        }
                     }
                 }
                 Err(Error::Range)
@@ -288,100 +319,25 @@ macro_rules! impl_int_signed_dest {
         }
     };
     ($x:tt: $y:tt, $($yy:tt),+) => {
-        impl_int_signed_dest!($x: $y);
-        impl_int_signed_dest!($x: $($yy),+);
+        impl_int_generic!($x: $y);
+        impl_int_generic!($x: $($yy),+);
     };
 }
 
-impl_int_signed_dest!(i8: isize);
-impl_int_signed_dest!(i16: isize);
-impl_int_signed_dest!(i32: isize);
-impl_int_signed_dest!(i64: isize);
-impl_int_signed_dest!(i128: isize);
-impl_int_signed_dest!(u8: isize);
-impl_int_signed_dest!(u16: isize);
-impl_int_signed_dest!(u32: isize);
-impl_int_signed_dest!(u64: isize);
-impl_int_signed_dest!(u128: isize);
-impl_int_signed_dest!(isize: i8, i16, i32, i64, i128);
-impl_int_signed_dest!(usize: i8, i16, i32, i64, i128, isize);
-
-macro_rules! impl_int_signed_to_unsigned {
-    ($x:ty: $y:tt) => {
-        impl Conv<$x> for $y {
-            #[inline]
-            fn conv(x: $x) -> $y {
-                if size_of::<$x>() > size_of::<$y>() {
-                    #[cfg(any(debug_assertions, feature = "assert_int"))]
-                    assert!(x >= 0 && x <= core::$y::MAX as $x);
-                } else {
-                    #[cfg(any(debug_assertions, feature = "assert_int"))]
-                    assert!(x >= 0);
-                }
-                x as $y
-            }
-            #[inline]
-            fn try_conv(x: $x) -> Result<Self, Error> {
-                if size_of::<$x>() > size_of::<$y>() {
-                    if x >= 0 && x <= core::$y::MAX as $x {
-                        return Ok(x as $y);
-                    }
-                } else if x >= 0 {
-                    return Ok(x as $y);
-                }
-                Err(Error::Range)
-            }
-        }
-    };
-    ($x:ty: $y:tt, $($yy:tt),+) => {
-        impl_int_signed_to_unsigned!($x: $y);
-        impl_int_signed_to_unsigned!($x: $($yy),+);
-    };
-}
-
-impl_int_signed_to_unsigned!(i8: usize);
-impl_int_signed_to_unsigned!(i16: usize);
-impl_int_signed_to_unsigned!(i32: usize);
-impl_int_signed_to_unsigned!(i64: usize);
-impl_int_signed_to_unsigned!(i128: usize);
-impl_int_signed_to_unsigned!(isize: u8, u16, u32, u64, u128, usize);
-
-macro_rules! impl_int_unsigned_to_unsigned {
-    ($x:ty: $y:tt) => {
-        impl Conv<$x> for $y {
-            #[inline]
-            fn conv(x: $x) -> $y {
-                if size_of::<$x>() > size_of::<$y>() {
-                    #[cfg(any(debug_assertions, feature = "assert_int"))]
-                    assert!(x <= core::$y::MAX as $x);
-                }
-                x as $y
-            }
-            #[inline]
-            fn try_conv(x: $x) -> Result<Self, Error> {
-                if size_of::<$x>() > size_of::<$y>() {
-                    if x <= core::$y::MAX as $x {
-                        return Ok(x as $y);
-                    }
-                } else {
-                    return Ok(x as $y);
-                }
-                Err(Error::Range)
-            }
-        }
-    };
-    ($x:ty: $y:tt, $($yy:tt),+) => {
-        impl_int_unsigned_to_unsigned!($x: $y);
-        impl_int_unsigned_to_unsigned!($x: $($yy),+);
-    };
-}
-
-impl_int_unsigned_to_unsigned!(u8: usize);
-impl_int_unsigned_to_unsigned!(u16: usize);
-impl_int_unsigned_to_unsigned!(u32: usize);
-impl_int_unsigned_to_unsigned!(u64: usize);
-impl_int_unsigned_to_unsigned!(u128: usize);
-impl_int_unsigned_to_unsigned!(usize: u8, u16, u32, u64, u128);
+impl_int_generic!(i8: isize, usize);
+impl_int_generic!(i16: isize, usize);
+impl_int_generic!(i32: isize, usize);
+impl_int_generic!(i64: isize, usize);
+impl_int_generic!(i128: isize, usize);
+impl_int_generic!(u8: isize, usize);
+impl_int_generic!(u16: isize, usize);
+impl_int_generic!(u32: isize, usize);
+impl_int_generic!(u64: isize, usize);
+impl_int_generic!(u128: isize, usize);
+impl_int_generic!(isize: i8, i16, i32, i64, i128);
+impl_int_generic!(usize: i8, i16, i32, i64, i128, isize);
+impl_int_generic!(isize: u8, u16, u32, u64, u128, usize);
+impl_int_generic!(usize: u8, u16, u32, u64, u128);
 
 macro_rules! impl_via_digits_check {
     ($x:ty: $y:tt) => {
