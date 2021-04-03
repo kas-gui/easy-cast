@@ -254,6 +254,7 @@ impl_via_as_range_check!(i128: i8, i16, i32, i64, u8, u16, u32, u64);
 macro_rules! impl_int_generic {
     ($x:tt: $y:tt) => {
         impl Conv<$x> for $y {
+            #[allow(unused_comparisons)]
             #[inline]
             fn conv(x: $x) -> $y {
                 let src_is_signed = core::$x::MIN != 0;
@@ -281,6 +282,7 @@ macro_rules! impl_int_generic {
                 }
                 x as $y
             }
+            #[allow(unused_comparisons)]
             #[inline]
             fn try_conv(x: $x) -> Result<Self, Error> {
                 let src_is_signed = core::$x::MIN != 0;
