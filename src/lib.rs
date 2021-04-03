@@ -252,37 +252,41 @@ impl_via_as_range_check!(i64: i8, i16, i32, u8, u16, u32);
 impl_via_as_range_check!(i128: i8, i16, i32, i64, u8, u16, u32, u64);
 
 macro_rules! impl_int_signed_dest {
-    ($x:ty: $y:tt) => {
+    ($x:tt: $y:tt) => {
         impl Conv<$x> for $y {
             #[inline]
             fn conv(x: $x) -> $y {
-                if size_of::<$x>() == size_of::<$y>() {
-                    #[cfg(any(debug_assertions, feature = "assert_int"))]
+                #[cfg(any(debug_assertions, feature = "assert_int"))]
+                if size_of::<$x>() < size_of::<$y>() {
+                    // nothing to check
+                } else if size_of::<$x>() == size_of::<$y>() || core::$x::MIN == 0 {
                     assert!(x <= core::$y::MAX as $x);
-                } else if size_of::<$x>() > size_of::<$y>() {
-                    #[cfg(any(debug_assertions, feature = "assert_int"))]
+                } else {
+                    assert!(size_of::<$x>() > size_of::<$y>() && core::$x::MIN != 0);
                     assert!(core::$y::MIN as $x <= x && x <= core::$y::MAX as $x);
                 }
                 x as $y
             }
             #[inline]
             fn try_conv(x: $x) -> Result<Self, Error> {
-                if size_of::<$x>() == size_of::<$y>() {
+                if size_of::<$x>() < size_of::<$y>() {
+                    // nothing to check
+                    return Ok(x as $y);
+                } else if size_of::<$x>() == size_of::<$y>() || core::$x::MIN == 0 {
                     if x <= core::$y::MAX as $x {
                         return Ok(x as $y);
                     }
-                } else if size_of::<$x>() > size_of::<$y>() {
+                } else {
+                    assert!(size_of::<$x>() > size_of::<$y>() && core::$x::MIN != 0);
                     if core::$y::MIN as $x <= x && x <= core::$y::MAX as $x {
                         return Ok(x as $y);
                     }
-                } else {
-                    return Ok(x as $y);
                 }
                 Err(Error::Range)
             }
         }
     };
-    ($x:ty: $y:tt, $($yy:tt),+) => {
+    ($x:tt: $y:tt, $($yy:tt),+) => {
         impl_int_signed_dest!($x: $y);
         impl_int_signed_dest!($x: $($yy),+);
     };
