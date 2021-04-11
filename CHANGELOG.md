@@ -1,6 +1,11 @@
 Changelog
 =========
 
+## [0.4.3] — 2021-04-12
+
+-   Unify some macros via `impl_int_generic` (#16)
+-   Improve error messages in asserts (#17)
+
 ## [0.4.2] — 2021-04-03
 
 -   Fix `i16::conv(1usize)` (#15)
