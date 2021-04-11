@@ -164,7 +164,7 @@ macro_rules! impl_via_as_neg_check {
                 #[cfg(any(debug_assertions, feature = "assert_int"))]
                 assert!(
                     x >= 0,
-                    "cast x: {} to {}: expected x > 0, found x = {}",
+                    "cast x: {} to {}: expected x >= 0, found x = {}",
                     stringify!($x), stringify!($y), x
                 );
                 x as $y
@@ -276,7 +276,7 @@ macro_rules! impl_int_generic {
                         #[cfg(any(debug_assertions, feature = "assert_int"))]
                         assert!(
                             x >= 0,
-                            "cast x: {} to {}: expected x > 0, found x = {}",
+                            "cast x: {} to {}: expected x >= 0, found x = {}",
                             stringify!($x), stringify!($y), x
                         );
                     }
@@ -292,7 +292,7 @@ macro_rules! impl_int_generic {
                         #[cfg(any(debug_assertions, feature = "assert_int"))]
                         assert!(
                             x >= 0,
-                            "cast x: {} to {}: expected x > 0, found x = {}",
+                            "cast x: {} to {}: expected x >= 0, found x = {}",
                             stringify!($x), stringify!($y), x
                         );
                     }
