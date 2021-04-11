@@ -162,7 +162,11 @@ macro_rules! impl_via_as_neg_check {
             #[inline]
             fn conv(x: $x) -> $y {
                 #[cfg(any(debug_assertions, feature = "assert_int"))]
-                assert!(x >= 0);
+                assert!(
+                    x >= 0,
+                    "cast x: {} to {}: expected x > 0, found x = {}",
+                    stringify!($x), stringify!($y), x
+                );
                 x as $y
             }
             #[inline]
@@ -194,7 +198,11 @@ macro_rules! impl_via_as_max_check {
             #[inline]
             fn conv(x: $x) -> $y {
                 #[cfg(any(debug_assertions, feature = "assert_int"))]
-                assert!(x <= core::$y::MAX as $x);
+                assert!(
+                    x <= core::$y::MAX as $x,
+                    "cast x: {} to {}: expected x <= {}, found x = {}",
+                    stringify!($x), stringify!($y), core::$y::MAX, x
+                );
                 x as $y
             }
             #[inline]
@@ -227,7 +235,11 @@ macro_rules! impl_via_as_range_check {
             #[inline]
             fn conv(x: $x) -> $y {
                 #[cfg(any(debug_assertions, feature = "assert_int"))]
-                assert!(core::$y::MIN as $x <= x && x <= core::$y::MAX as $x);
+                assert!(
+                    core::$y::MIN as $x <= x && x <= core::$y::MAX as $x,
+                    "cast x: {} to {}: expected {} <= x <= {}, found x = {}",
+                    stringify!($x), stringify!($y), core::$y::MIN, core::$y::MAX, x
+                );
                 x as $y
             }
             #[inline]
@@ -260,24 +272,46 @@ macro_rules! impl_int_generic {
                 let src_is_signed = core::$x::MIN != 0;
                 let dst_is_signed = core::$y::MIN != 0;
                 if size_of::<$x>() < size_of::<$y>() {
-                    #[cfg(any(debug_assertions, feature = "assert_int"))]
-                    assert!(dst_is_signed || x >= 0);
+                    if !dst_is_signed {
+                        #[cfg(any(debug_assertions, feature = "assert_int"))]
+                        assert!(
+                            x >= 0,
+                            "cast x: {} to {}: expected x > 0, found x = {}",
+                            stringify!($x), stringify!($y), x
+                        );
+                    }
                 } else if size_of::<$x>() == size_of::<$y>() {
                     if dst_is_signed {
                         #[cfg(any(debug_assertions, feature = "assert_int"))]
-                        assert!(x <= core::$y::MAX as $x);
+                        assert!(
+                            x <= core::$y::MAX as $x,
+                            "cast x: {} to {}: expected x <= {}, found x = {}",
+                            stringify!($x), stringify!($y), core::$y::MAX, x
+                        );
                     } else if src_is_signed {
                         #[cfg(any(debug_assertions, feature = "assert_int"))]
-                        assert!(x >= 0);
+                        assert!(
+                            x >= 0,
+                            "cast x: {} to {}: expected x > 0, found x = {}",
+                            stringify!($x), stringify!($y), x
+                        );
                     }
                 } else {
                     // src size > dst size
                     if src_is_signed {
                         #[cfg(any(debug_assertions, feature = "assert_int"))]
-                        assert!(core::$y::MIN as $x <= x && x <= core::$y::MAX as $x);
+                        assert!(
+                            core::$y::MIN as $x <= x && x <= core::$y::MAX as $x,
+                            "cast x: {} to {}: expected {} <= x <= {}, found x = {}",
+                            stringify!($x), stringify!($y), core::$y::MIN, core::$y::MAX, x
+                        );
                     } else {
                         #[cfg(any(debug_assertions, feature = "assert_int"))]
-                        assert!(x <= core::$y::MAX as $x);
+                        assert!(
+                            x <= core::$y::MAX as $x,
+                            "cast x: {} to {}: expected x <= {}, found x = {}",
+                            stringify!($x), stringify!($y), core::$y::MAX, x
+                        );
                     }
                 }
                 x as $y
@@ -347,7 +381,12 @@ macro_rules! impl_via_digits_check {
             #[inline]
             fn conv(x: $x) -> Self {
                 if cfg!(any(debug_assertions, feature = "assert_digits")) {
-                    Self::try_conv(x).expect("int-to-float conversion: inexact")
+                    Self::try_conv(x).unwrap_or_else(|_| {
+                        panic!(
+                            "cast x: {} to {}: inexact for x = {}",
+                            stringify!($x), stringify!($y), x
+                        )
+                    })
                 } else {
                     x as $y
                 }
@@ -477,7 +516,12 @@ macro_rules! impl_float {
             #[inline]
             fn conv_trunc(x: $x) -> $y {
                 if cfg!(any(debug_assertions, feature = "assert_float")) {
-                    Self::try_conv_trunc(x).expect("float-to-int conversion: range error")
+                    Self::try_conv_trunc(x).unwrap_or_else(|_| {
+                        panic!(
+                            "cast x: {} to {} (trunc): range error for x = {}",
+                            stringify!($x), stringify!($y), x
+                        )
+                    })
                 } else {
                     x as $y
                 }
@@ -485,7 +529,12 @@ macro_rules! impl_float {
             #[inline]
             fn conv_nearest(x: $x) -> $y {
                 if cfg!(any(debug_assertions, feature = "assert_float")) {
-                    Self::try_conv_nearest(x).expect("float-to-int conversion: range error")
+                    Self::try_conv_nearest(x).unwrap_or_else(|_| {
+                        panic!(
+                            "cast x: {} to {} (nearest): range error for x = {}",
+                            stringify!($x), stringify!($y), x
+                        )
+                    })
                 } else {
                     x.round() as $y
                 }
@@ -493,7 +542,12 @@ macro_rules! impl_float {
             #[inline]
             fn conv_floor(x: $x) -> $y {
                 if cfg!(any(debug_assertions, feature = "assert_float")) {
-                    Self::try_conv_floor(x).expect("float-to-int conversion: range error")
+                    Self::try_conv_floor(x).unwrap_or_else(|_| {
+                        panic!(
+                            "cast x: {} to {} (floor): range error for x = {}",
+                            stringify!($x), stringify!($y), x
+                        )
+                    })
                 } else {
                     x.floor() as $y
                 }
@@ -501,7 +555,12 @@ macro_rules! impl_float {
             #[inline]
             fn conv_ceil(x: $x) -> $y {
                 if cfg!(any(debug_assertions, feature = "assert_float")) {
-                    Self::try_conv_ceil(x).expect("float-to-int conversion: range error")
+                    Self::try_conv_ceil(x).unwrap_or_else(|_| {
+                        panic!(
+                            "cast x: {} to {} (ceil): range error for x = {}",
+                            stringify!($x), stringify!($y), x
+                        )
+                    })
                 } else {
                     x.ceil() as $y
                 }
@@ -577,7 +636,12 @@ impl ConvFloat<f32> for u128 {
     #[inline]
     fn conv_trunc(x: f32) -> u128 {
         if cfg!(any(debug_assertions, feature = "assert_float")) {
-            Self::try_conv_trunc(x).expect("float-to-int conversion: range error")
+            Self::try_conv_trunc(x).unwrap_or_else(|_| {
+                panic!(
+                    "cast x: f32 to u128 (trunc/floor): range error for x = {}",
+                    x
+                )
+            })
         } else {
             x as u128
         }
@@ -585,7 +649,9 @@ impl ConvFloat<f32> for u128 {
     #[inline]
     fn conv_nearest(x: f32) -> u128 {
         if cfg!(any(debug_assertions, feature = "assert_float")) {
-            Self::try_conv_nearest(x).expect("float-to-int conversion: range error")
+            Self::try_conv_nearest(x).unwrap_or_else(|_| {
+                panic!("cast x: f32 to u128 (nearest): range error for x = {}", x)
+            })
         } else {
             x.round() as u128
         }
@@ -597,7 +663,8 @@ impl ConvFloat<f32> for u128 {
     #[inline]
     fn conv_ceil(x: f32) -> u128 {
         if cfg!(any(debug_assertions, feature = "assert_float")) {
-            Self::try_conv_ceil(x).expect("float-to-int conversion: range error")
+            Self::try_conv_ceil(x)
+                .unwrap_or_else(|_| panic!("cast x: f32 to u128 (ceil): range error for x = {}", x))
         } else {
             x.ceil() as u128
         }
