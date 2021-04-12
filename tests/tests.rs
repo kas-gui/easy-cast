@@ -39,6 +39,7 @@ fn unsigned_to_signed_large() {
 fn int_to_float() {
     f32::conv(0);
     f32::conv(0x00FF_FFFF);
+    f32::conv(-64i32);
 }
 
 #[test]

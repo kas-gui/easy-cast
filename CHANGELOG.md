@@ -1,6 +1,10 @@
 Changelog
 =========
 
+## [0.4.4] — 2021-04-12
+
+-   Fix negative int to float digits check (#18)
+
 ## [0.4.3] — 2021-04-12
 
 -   Unify some macros via `impl_int_generic` (#16)

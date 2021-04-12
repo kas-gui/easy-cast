@@ -410,14 +410,52 @@ macro_rules! impl_via_digits_check {
     };
 }
 
-impl_via_digits_check!(i32: f32);
+macro_rules! impl_via_digits_check_signed {
+    ($x:ty: $y:tt) => {
+        impl Conv<$x> for $y {
+            #[inline]
+            fn conv(x: $x) -> Self {
+                if cfg!(any(debug_assertions, feature = "assert_digits")) {
+                    Self::try_conv(x).unwrap_or_else(|_| {
+                        panic!(
+                            "cast x: {} to {}: inexact for x = {}",
+                            stringify!($x), stringify!($y), x
+                        )
+                    })
+                } else {
+                    x as $y
+                }
+            }
+            #[inline]
+            fn try_conv(x: $x) -> Result<Self, Error> {
+                let src_ty_bits = (size_of::<$x>() * 8) as u32;
+                let src_digits = x.checked_abs()
+                    .map(|y| src_ty_bits.saturating_sub(y.leading_zeros() + y.trailing_zeros()))
+                    .unwrap_or(1 /*MIN has one binary digit in float repr*/);
+                let dst_digits = core::$y::MANTISSA_DIGITS;
+                if src_digits <= dst_digits {
+                    Ok(x as $y)
+                } else {
+                    Err(Error::Inexact)
+                }
+            }
+        }
+    };
+    ($x:ty: $y:tt, $($yy:tt),+) => {
+        impl_via_digits_check_signed!($x: $y);
+        impl_via_digits_check_signed!($x: $($yy),+);
+    };
+}
+
 impl_via_digits_check!(u32: f32);
-impl_via_digits_check!(i64: f32, f64);
 impl_via_digits_check!(u64: f32, f64);
-impl_via_digits_check!(i128: f32, f64);
 impl_via_digits_check!(u128: f32, f64);
-impl_via_digits_check!(isize: f32, f64);
 impl_via_digits_check!(usize: f32, f64);
+
+impl_via_digits_check_signed!(i32: f32);
+impl_via_digits_check_signed!(i64: f32, f64);
+impl_via_digits_check_signed!(i128: f32, f64);
+impl_via_digits_check_signed!(isize: f32, f64);
 
 #[cfg(all(not(feature = "std"), feature = "libm"))]
 trait FloatRound {
