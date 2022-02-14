@@ -164,14 +164,88 @@ impl<S, T: Conv<S>> Cast<T> for S {
 }
 
 /// Like [`From`], but for approximate numerical conversions
+///
+/// This trait is implemented for all conversions supported by [`ConvFloat`].
+/// Prefer to use [`ConvFloat`] or [`CastFloat`] where precise control over
+/// rounding is required.
+///
+/// The sister-trait [`CastApprox`] may be easier to use (as with [`Into`]).
 pub trait ConvApprox<T>: Sized {
     /// Try converting from `T` to `Self`, allowing approximation of value
+    ///
+    /// This method should allow approximate conversion, but fail on input not
+    /// (approximately) in the target's range.
     fn try_conv_approx(x: T) -> Result<Self, Error>;
 
     /// Converting from `T` to `Self`, allowing approximation of value
+    ///
+    /// This method must return the same result as [`Self::try_conv_approx`]
+    /// where that method succeeds, but differs in the handling of errors:
+    ///
+    /// -   In debug builds the method panics on error
+    /// -   Otherwise, the method may panic or may return a different value,
+    ///     but like with the `as` keyword all results must be well-defined and
+    ///     *safe*.
+    ///
+    /// Default implementations use [`Self::try_conv_approx`] and panic on error.
+    /// Implementations provided by this library will panic in debug builds
+    /// or if the `always_assert` feature flag is used, and otherwise will
+    /// behave identically to the `as` keyword.
+    ///
+    /// This mirrors the behaviour of Rust's overflow checks on integer
+    /// arithmetic in that it is a tool for diagnosing logic errors where
+    /// success is expected.
+    #[inline]
     fn conv_approx(x: T) -> Self {
         Self::try_conv_approx(x)
             .unwrap_or_else(|e| panic!("ConvApprox::conv_approx(_) failed: {}", e))
+    }
+}
+
+// TODO(specialization): implement also where T: Conv<S>
+impl<S, T: ConvFloat<S>> ConvApprox<S> for T {
+    #[inline]
+    fn try_conv_approx(x: S) -> Result<Self, Error> {
+        T::try_conv_trunc(x)
+    }
+    #[inline]
+    fn conv_approx(x: S) -> Self {
+        T::conv_trunc(x)
+    }
+}
+
+/// Like [`Into`], but for [`ConvApprox`]
+///
+/// This trait is automatically implemented for every implementation of
+/// [`ConvApprox`].
+pub trait CastApprox<T> {
+    /// Try approximate conversion from `Self` to `T`
+    ///
+    /// Use this method to explicitly handle errors.
+    fn try_cast_approx(self) -> Result<T, Error>;
+
+    /// Cast approximately from `Self` to `T`
+    ///
+    /// Use this method *only* where success is expected: implementations are
+    /// permitted to panic or silently return a different (safe, defined) value
+    /// on error.
+    ///
+    /// In debug builds, implementations must panic.
+    ///
+    /// Implementations by this library will panic in debug builds or if the
+    /// `always_assert` feature flag is used, otherwise conversions have the
+    /// same behaviour as the `as` keyword.
+    fn cast_approx(self) -> T;
+}
+
+impl<S, T: ConvApprox<S>> CastApprox<T> for S {
+    #[inline]
+    fn try_cast_approx(self) -> Result<T, Error> {
+        T::try_conv_approx(self)
+    }
+    #[inline]
+    fn cast_approx(self) -> T {
+        T::conv_approx(self)
     }
 }
 
