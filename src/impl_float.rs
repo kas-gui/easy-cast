@@ -182,6 +182,17 @@ macro_rules! impl_float {
                 }
             }
         }
+
+        impl ConvApprox<$x> for $y {
+            #[inline]
+            fn try_conv_approx(x: $x) -> Result<Self, Error> {
+                ConvFloat::<$x>::try_conv_trunc(x)
+            }
+            #[inline]
+            fn conv_approx(x: $x) -> Self {
+                ConvFloat::<$x>::conv_trunc(x)
+            }
+        }
     };
     ($x:ty: $y:tt, $($yy:tt),+) => {
         impl_float!($x: $y);
@@ -268,5 +279,16 @@ impl ConvFloat<f32> for u128 {
         } else {
             Err(Error::Range)
         }
+    }
+}
+
+impl ConvApprox<f32> for u128 {
+    #[inline]
+    fn try_conv_approx(x: f32) -> Result<Self, Error> {
+        ConvFloat::<f32>::try_conv_trunc(x)
+    }
+    #[inline]
+    fn conv_approx(x: f32) -> Self {
+        ConvFloat::<f32>::conv_trunc(x)
     }
 }

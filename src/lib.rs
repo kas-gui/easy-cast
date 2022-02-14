@@ -164,7 +164,8 @@ impl<S, T: Conv<S>> Cast<T> for S {
 
 /// Like [`From`], but for approximate numerical conversions
 ///
-/// This trait is implemented for all conversions supported by [`ConvFloat`].
+/// This trait is implemented for all conversions supported by [`Conv`] and
+/// [`ConvFloat`] (but the latter impls only as provided by this library).
 /// Prefer to use [`ConvFloat`] or [`CastFloat`] where precise control over
 /// rounding is required.
 ///
@@ -201,15 +202,15 @@ pub trait ConvApprox<T>: Sized {
     }
 }
 
-// TODO(specialization): implement also where T: Conv<S>
-impl<S, T: ConvFloat<S>> ConvApprox<S> for T {
+// TODO(specialization): implement also where T: ConvFloat<S>
+impl<S, T: Conv<S>> ConvApprox<S> for T {
     #[inline]
     fn try_conv_approx(x: S) -> Result<Self, Error> {
-        T::try_conv_trunc(x)
+        T::try_conv(x)
     }
     #[inline]
     fn conv_approx(x: S) -> Self {
-        T::conv_trunc(x)
+        T::conv(x)
     }
 }
 
