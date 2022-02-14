@@ -163,46 +163,28 @@ impl<S, T: Conv<S>> Cast<T> for S {
     }
 }
 
-/// Nearest / floor / ceil conversions from floating point types
+/// Nearest / floor / ceiling conversions from floating point types
 ///
 /// This trait is explicitly for conversions from floating-point values to
-/// integers, supporting four rounding modes for fallible and for
-/// "success expected" conversions.
+/// integers, supporting four rounding modes.
 ///
-/// Two sets of methods are provided:
+/// As with [`Conv`], the `try_conv_*` methods must be implemented and must fail
+/// if conversion to the expected value is not possible. If the source is non-
+/// finite (`inf` or `NaN`), then `Error::Range` should be returned.
 ///
-/// -   `conv_*` methods are for "success expected" conversions. In debug builds
-///     and when using the `always_assert` or the `assert_float` feature flag,
-///     out-of-range conversions will panic. In other cases, conversions may
-///     produce incorrect values (according to the behaviour of as, which is
-///     saturating cast since Rust 1.45.0 and undefined for older compilers).
-///     Non-finite source values (`inf` and `NaN`) are considered out-of-range.
-/// -   `try_conv_*` methods are for fallible conversions and always produce an
-///     error if the conversion would be out of range.
+/// The `conv_*` methods each have a default implementation over the `try_..`
+/// variant which panics on failure. Implementations handle errors as follows:
 ///
-/// For `f64` to `f32` where loss-of-precision is allowable, it is probably
-/// acceptable to use `as` (and if need be, check that the result is finite
-/// with `x.is_finite()`). The reverse, `f32` to `f64`, is always exact.
+/// -   In debug builds, the methods must panic
+/// -   Otherwise, the method may panic or may return a different value; all
+///     results must be well-defined and *safe*.
+/// -   Implementations provided by this library will also panic if the
+///     `always_assert` or `assert_float` feature flag is used.
+///
+/// The sister-trait [`CastFloat`] may be easier to use (as with [`Into`]).
 #[cfg(any(feature = "std", feature = "libm"))]
 #[cfg_attr(doc_cfg, doc(cfg(any(feature = "std", feature = "libm"))))]
 pub trait ConvFloat<T>: Sized {
-    /// Convert to integer with truncatation
-    ///
-    /// Rounds towards zero (same as `as`).
-    fn conv_trunc(x: T) -> Self;
-    /// Convert to the nearest integer
-    ///
-    /// Half-way cases are rounded away from `0`.
-    fn conv_nearest(x: T) -> Self;
-    /// Convert the floor to an integer
-    ///
-    /// Returns the largest integer less than or equal to `x`.
-    fn conv_floor(x: T) -> Self;
-    /// Convert the ceiling to an integer
-    ///
-    /// Returns the smallest integer greater than or equal to `x`.
-    fn conv_ceil(x: T) -> Self;
-
     /// Try converting to integer with truncation
     ///
     /// Rounds towards zero (same as `as`).
@@ -219,20 +201,51 @@ pub trait ConvFloat<T>: Sized {
     ///
     /// Returns the smallest integer greater than or equal to `x`.
     fn try_conv_ceil(x: T) -> Result<Self, Error>;
+
+    /// Convert to integer with truncatation
+    ///
+    /// Rounds towards zero (same as `as`).
+    fn conv_trunc(x: T) -> Self {
+        Self::try_conv_trunc(x).unwrap_or_else(|e| panic!("ConvFloat::conv_trunc(_) failed: {}", e))
+    }
+    /// Convert to the nearest integer
+    ///
+    /// Half-way cases are rounded away from `0`.
+    fn conv_nearest(x: T) -> Self {
+        Self::try_conv_nearest(x)
+            .unwrap_or_else(|e| panic!("ConvFloat::conv_nearest(_) failed: {}", e))
+    }
+    /// Convert the floor to an integer
+    ///
+    /// Returns the largest integer less than or equal to `x`.
+    fn conv_floor(x: T) -> Self {
+        Self::try_conv_floor(x).unwrap_or_else(|e| panic!("ConvFloat::conv_floor(_) failed: {}", e))
+    }
+    /// Convert the ceiling to an integer
+    ///
+    /// Returns the smallest integer greater than or equal to `x`.
+    fn conv_ceil(x: T) -> Self {
+        Self::try_conv_ceil(x).unwrap_or_else(|e| panic!("ConvFloat::conv_ceil(_) failed: {}", e))
+    }
 }
 
 /// Like [`Into`], but for [`ConvFloat`]
 ///
-/// Two sets of methods are provided:
+/// Use:
 ///
-/// -   `cast_*` methods are for "success expected" conversions. In debug builds
-///     and when using the `always_assert` or the `assert_float` feature flag,
-///     out-of-range conversions will panic. In other cases, conversions may
-///     produce incorrect values (according to the behaviour of as, which is
-///     saturating cast since Rust 1.45.0 and undefined for older compilers).
-///     Non-finite source values (`inf` and `NaN`) are considered out-of-range.
-/// -   `try_cast_*` methods are for fallible conversions and always produce an
-///     error if the conversion would be out of range.
+/// -   `try_cast_*` methods to explicitly handle errors
+/// -   `cast_*` methods *only* where success is expected. Implementations are
+///     permitted to panic or silently return a different (safe, defined) value
+///     on error.
+///
+///     In debug builds, implementations must panic.
+///
+///     Implementations by this library will panic in debug builds or if the
+///     `always_assert` or `assert_float` feature flag is used, otherwise
+///     conversions have similar behaviour to the `as` keyword.
+///
+/// This trait is automatically implemented for every implementation of
+/// [`ConvFloat`].
 #[cfg(any(feature = "std", feature = "libm"))]
 #[cfg_attr(doc_cfg, doc(cfg(any(feature = "std", feature = "libm"))))]
 pub trait CastFloat<T> {
