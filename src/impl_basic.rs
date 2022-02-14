@@ -36,3 +36,15 @@ impl_via_from!(u8: u16, u32, u64, u128);
 impl_via_from!(u16: f32, f64, i32, i64, i128, u32, u64, u128);
 impl_via_from!(u32: f64, i64, i128, u64, u128);
 impl_via_from!(u64: i128, u128);
+
+// TODO: remove T: Copy + Default bound
+impl<S, T: Conv<S> + Copy + Default, const N: usize> Conv<[S; N]> for [T; N] {
+    #[inline]
+    fn try_conv(ss: [S; N]) -> Result<Self, Error> {
+        let mut tt = [T::default(); N];
+        for (s, t) in IntoIterator::into_iter(ss).zip(tt.iter_mut()) {
+            *t = T::try_conv(s)?;
+        }
+        Ok(tt)
+    }
+}

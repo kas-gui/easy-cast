@@ -62,7 +62,7 @@ control (see [Cargo.toml](Cargo.toml)).
 
 ## MSRV and no_std
 
-The Minumum Supported Rust Version is 1.32.0 (first release of Edition 2018).
+The Minumum Supported Rust Version is 1.53.0 (`IntoIterator for [T; N]`).
 
 By default, `std` support is required. With default features disabled `no_std`
 is supported, but the `ConvFloat` and `CastFloat` traits are unavailable.
