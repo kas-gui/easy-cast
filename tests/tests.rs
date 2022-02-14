@@ -17,7 +17,7 @@ fn signed_to_unsigned() {
 }
 
 #[test]
-#[should_panic]
+#[should_panic(expected = "cast x: i32 to u32: expected x >= 0, found x = -1")]
 fn signed_to_unsigned_n1() {
     u32::conv(-1i32);
 }
@@ -30,7 +30,7 @@ fn unsigned_to_signed() {
 }
 
 #[test]
-#[should_panic]
+#[should_panic(expected = "cast x: u32 to i32: expected x <= 2147483647, found x = 2147483648")]
 fn unsigned_to_signed_large() {
     i32::conv(0x8000_0000u32);
 }
@@ -43,7 +43,7 @@ fn int_to_float() {
 }
 
 #[test]
-#[should_panic]
+#[should_panic(expected = "cast x: i32 to f32: inexact for x = 33554431")]
 fn int_to_float_inexact() {
     f32::conv(0x01FF_FFFF);
 }
@@ -108,14 +108,14 @@ fn float_trunc() {
 }
 
 #[test]
-#[should_panic]
+#[should_panic(expected = "cast x: f32 to i16 (trunc): range error for x = 32768")]
 #[cfg(any(feature = "std", feature = "libm"))]
 fn float_trunc_fail1() {
     i16::conv_trunc(32768.0f32);
 }
 
 #[test]
-#[should_panic]
+#[should_panic(expected = "cast x: u32 to f32: inexact for x = 4294967295")]
 fn u32_max_f32() {
     f32::conv(core::u32::MAX);
 }
