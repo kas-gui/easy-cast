@@ -7,6 +7,44 @@
 
 use super::*;
 
+impl ConvApprox<f64> for f32 {
+    fn try_conv_approx(x: f64) -> Result<f32, Error> {
+        use core::num::FpCategory;
+
+        let sign = f32::from_bits((x.to_bits() >> 32) as u32 | 0f32.to_bits());
+
+        match x.classify() {
+            FpCategory::Nan => Err(Error::Range),
+            FpCategory::Infinite => Ok(f32::INFINITY.copysign(sign)),
+            FpCategory::Zero | FpCategory::Subnormal => Ok(0f32.copysign(sign)),
+            FpCategory::Normal => {
+                // f32 exponent range: -126 to 127
+                // f64, f32 bias: 1023, 127 represents 0
+                let exp = (x.to_bits() & 0x7FF0_0000_0000_0000) >> 52;
+                if exp >= 1023 - 126 && exp <= 1023 + 127 {
+                    let exp = ((exp + 127) - 1023) as u32;
+                    let frac = ((x.to_bits() & 0x000F_FFFF_FFFF_FFFF) >> (52 - 23)) as u32;
+                    let sign = sign.to_bits() & 0x8000_0000;
+                    let bits = sign | (exp << 23) | frac;
+                    Ok(f32::from_bits(bits))
+                } else {
+                    Err(Error::Range)
+                }
+            }
+        }
+    }
+
+    fn conv_approx(x: f64) -> f32 {
+        if cfg!(any(debug_assertions, feature = "assert_float")) {
+            Self::try_conv_approx(x).unwrap_or_else(|_| {
+                panic!("cast x: f64 to f32 (approx): range error for x = {}", x)
+            })
+        } else {
+            x as f32
+        }
+    }
+}
+
 #[cfg(all(not(feature = "std"), feature = "libm"))]
 trait FloatRound {
     fn round(self) -> Self;

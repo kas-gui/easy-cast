@@ -49,6 +49,44 @@ fn int_to_float_inexact() {
 }
 
 #[test]
+fn approx() {
+    assert_eq!(f32::conv_approx(0f64), 0f32);
+    assert_eq!(f32::conv_approx(0f64).is_sign_positive(), true);
+    assert_eq!(f32::conv_approx(-0f64).is_sign_negative(), true);
+
+    assert_eq!(f32::conv_approx(1f64), 1f32);
+    assert_eq!(
+        f32::conv_approx(1f64 + f32::EPSILON as f64),
+        1f32 + f32::EPSILON
+    );
+    assert_eq!(f32::conv_approx(1f64 + (f32::EPSILON as f64) / 2.0), 1f32);
+
+    assert_eq!(f32::conv_approx(-10f64), -10f32);
+    assert!((f32::conv_approx(1f64 / 3.0) - 1f32 / 3.0).abs() <= f32::EPSILON);
+
+    const MAX: f64 = f32::MAX as f64;
+    assert_eq!(f32::conv_approx(MAX), f32::MAX);
+    assert!(MAX + 2f64.powi(103) != MAX);
+    assert_eq!(f32::conv_approx(MAX + 2f64.powi(103)), f32::MAX);
+    assert_eq!(
+        f32::try_conv_approx(f32::MAX as f64 * 2.0),
+        Err(Error::Range)
+    );
+
+    assert_eq!(
+        f32::conv_approx(f64::INFINITY).to_bits(),
+        f32::INFINITY.to_bits()
+    );
+    assert_eq!(f32::try_conv_approx(f64::NAN), Err(Error::Range));
+}
+
+#[test]
+#[should_panic(expected = "cast x: f64 to f32 (approx): range error for x = NaN")]
+fn approx_nan() {
+    f32::conv_approx(f64::NAN);
+}
+
+#[test]
 #[cfg(any(feature = "std", feature = "libm"))]
 fn float_casts() {
     assert_eq!(u64::conv_nearest(13.2f32), 13);

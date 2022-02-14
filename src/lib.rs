@@ -163,6 +163,18 @@ impl<S, T: Conv<S>> Cast<T> for S {
     }
 }
 
+/// Like [`From`], but for approximate numerical conversions
+pub trait ConvApprox<T>: Sized {
+    /// Try converting from `T` to `Self`, allowing approximation of value
+    fn try_conv_approx(x: T) -> Result<Self, Error>;
+
+    /// Converting from `T` to `Self`, allowing approximation of value
+    fn conv_approx(x: T) -> Self {
+        Self::try_conv_approx(x)
+            .unwrap_or_else(|e| panic!("ConvApprox::conv_approx(_) failed: {}", e))
+    }
+}
+
 /// Nearest / floor / ceiling conversions from floating point types
 ///
 /// This trait is explicitly for conversions from floating-point values to
