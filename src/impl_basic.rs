@@ -7,17 +7,6 @@
 
 use super::*;
 
-impl<T> Conv<T> for T {
-    #[inline]
-    fn conv(v: T) -> Self {
-        v
-    }
-    #[inline]
-    fn try_conv(v: T) -> Result<Self, Error> {
-        Ok(v)
-    }
-}
-
 macro_rules! impl_via_from {
     ($x:ty: $y:ty) => {
         impl Conv<$x> for $y {
