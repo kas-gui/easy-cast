@@ -48,3 +48,77 @@ impl<S, T: Conv<S> + Copy + Default, const N: usize> Conv<[S; N]> for [T; N] {
         Ok(tt)
     }
 }
+
+impl Conv<()> for () {
+    #[inline]
+    fn try_conv(_: ()) -> Result<Self, Error> {
+        Ok(())
+    }
+}
+impl<S0, T0: Conv<S0>> Conv<(S0,)> for (T0,) {
+    #[inline]
+    fn try_conv(ss: (S0,)) -> Result<Self, Error> {
+        Ok((ss.0.try_cast()?,))
+    }
+}
+impl<S0, S1, T0: Conv<S0>, T1: Conv<S1>> Conv<(S0, S1)> for (T0, T1) {
+    #[inline]
+    fn try_conv(ss: (S0, S1)) -> Result<Self, Error> {
+        Ok((ss.0.try_cast()?, ss.1.try_cast()?))
+    }
+}
+impl<S0, S1, S2, T0: Conv<S0>, T1: Conv<S1>, T2: Conv<S2>> Conv<(S0, S1, S2)> for (T0, T1, T2) {
+    #[inline]
+    fn try_conv(ss: (S0, S1, S2)) -> Result<Self, Error> {
+        Ok((ss.0.try_cast()?, ss.1.try_cast()?, ss.2.try_cast()?))
+    }
+}
+impl<S0, S1, S2, S3, T0: Conv<S0>, T1: Conv<S1>, T2: Conv<S2>, T3: Conv<S3>> Conv<(S0, S1, S2, S3)>
+    for (T0, T1, T2, T3)
+{
+    #[inline]
+    fn try_conv(ss: (S0, S1, S2, S3)) -> Result<Self, Error> {
+        Ok((
+            ss.0.try_cast()?,
+            ss.1.try_cast()?,
+            ss.2.try_cast()?,
+            ss.3.try_cast()?,
+        ))
+    }
+}
+impl<S0, S1, S2, S3, S4, T0: Conv<S0>, T1: Conv<S1>, T2: Conv<S2>, T3: Conv<S3>, T4: Conv<S4>>
+    Conv<(S0, S1, S2, S3, S4)> for (T0, T1, T2, T3, T4)
+{
+    #[inline]
+    fn try_conv(ss: (S0, S1, S2, S3, S4)) -> Result<Self, Error> {
+        Ok((
+            ss.0.try_cast()?,
+            ss.1.try_cast()?,
+            ss.2.try_cast()?,
+            ss.3.try_cast()?,
+            ss.4.try_cast()?,
+        ))
+    }
+}
+impl<S0, S1, S2, S3, S4, S5, T0, T1, T2, T3, T4, T5> Conv<(S0, S1, S2, S3, S4, S5)>
+    for (T0, T1, T2, T3, T4, T5)
+where
+    T0: Conv<S0>,
+    T1: Conv<S1>,
+    T2: Conv<S2>,
+    T3: Conv<S3>,
+    T4: Conv<S4>,
+    T5: Conv<S5>,
+{
+    #[inline]
+    fn try_conv(ss: (S0, S1, S2, S3, S4, S5)) -> Result<Self, Error> {
+        Ok((
+            ss.0.try_cast()?,
+            ss.1.try_cast()?,
+            ss.2.try_cast()?,
+            ss.3.try_cast()?,
+            ss.4.try_cast()?,
+            ss.5.try_cast()?,
+        ))
+    }
+}
