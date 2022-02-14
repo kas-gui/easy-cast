@@ -76,9 +76,8 @@ pub enum Error {
     Inexact,
 }
 
-#[cfg(feature = "std")]
-impl std::fmt::Display for Error {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+impl core::fmt::Display for Error {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         match self {
             Error::Range => write!(f, "source value not in target range"),
             Error::Inexact => write!(f, "loss of precision or range error"),
@@ -123,7 +122,9 @@ pub trait Conv<T>: Sized {
     /// arithmetic in that it is a tool for diagnosing logic errors where
     /// success is expected.
     fn conv(v: T) -> Self {
-        Self::try_conv(v).unwrap_or_else(|e| panic!("Conv::conv(_) failed: {}", e))
+        Self::try_conv(v).unwrap_or_else(|e| {
+            panic!("Conv::conv(_) failed: {}", e);
+        })
     }
 }
 
@@ -197,8 +198,9 @@ pub trait ConvApprox<T>: Sized {
     /// success is expected.
     #[inline]
     fn conv_approx(x: T) -> Self {
-        Self::try_conv_approx(x)
-            .unwrap_or_else(|e| panic!("ConvApprox::conv_approx(_) failed: {}", e))
+        Self::try_conv_approx(x).unwrap_or_else(|e| {
+            panic!("ConvApprox::conv_approx(_) failed: {}", e);
+        })
     }
 }
 

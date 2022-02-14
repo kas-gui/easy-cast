@@ -11,12 +11,16 @@ impl ConvApprox<f64> for f32 {
     fn try_conv_approx(x: f64) -> Result<f32, Error> {
         use core::num::FpCategory;
 
-        let sign = f32::from_bits((x.to_bits() >> 32) as u32 | 0f32.to_bits());
+        let sign_bits = (x.to_bits() >> 32) as u32 & 0x8000_0000;
+        let with_sign = |x: f32| -> f32 {
+            // assumption: x is not negative
+            f32::from_bits(sign_bits | x.to_bits())
+        };
 
         match x.classify() {
             FpCategory::Nan => Err(Error::Range),
-            FpCategory::Infinite => Ok(f32::INFINITY.copysign(sign)),
-            FpCategory::Zero | FpCategory::Subnormal => Ok(0f32.copysign(sign)),
+            FpCategory::Infinite => Ok(with_sign(f32::INFINITY)),
+            FpCategory::Zero | FpCategory::Subnormal => Ok(with_sign(0f32)),
             FpCategory::Normal => {
                 // f32 exponent range: -126 to 127
                 // f64, f32 bias: 1023, 127 represents 0
@@ -24,8 +28,7 @@ impl ConvApprox<f64> for f32 {
                 if exp >= 1023 - 126 && exp <= 1023 + 127 {
                     let exp = ((exp + 127) - 1023) as u32;
                     let frac = ((x.to_bits() & 0x000F_FFFF_FFFF_FFFF) >> (52 - 23)) as u32;
-                    let sign = sign.to_bits() & 0x8000_0000;
-                    let bits = sign | (exp << 23) | frac;
+                    let bits = sign_bits | (exp << 23) | frac;
                     Ok(f32::from_bits(bits))
                 } else {
                     Err(Error::Range)
@@ -282,6 +285,7 @@ impl ConvFloat<f32> for u128 {
     }
 }
 
+#[cfg(any(feature = "std", feature = "libm"))]
 impl ConvApprox<f32> for u128 {
     #[inline]
     fn try_conv_approx(x: f32) -> Result<Self, Error> {
