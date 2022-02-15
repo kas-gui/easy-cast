@@ -48,6 +48,16 @@ If the `always_assert` feature flag is set, assertions will be turned on in
 all builds. Some additional feature flags are available for finer-grained
 control (see `Cargo.toml`).
 
+### Performance
+
+Performance is "good enough that it hasn't been a concern".
+
+In debug builds and when `always_assert` is enabled, the priority is testing
+but overhead should be small.
+
+In release builds without `always_assert`, `conv*` methods should reduce to
+`x as T` (with necessary additions for rounding).
+
 ### no_std support
 
 When the crate's default features are disabled (and `std` is not enabled)
