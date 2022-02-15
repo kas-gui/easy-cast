@@ -15,7 +15,7 @@ macro_rules! impl_via_from {
                 <$y>::from(x)
             }
             #[inline]
-            fn try_conv(x: $x) -> Result<Self, Error> {
+            fn try_conv(x: $x) -> Result<Self> {
                 Ok(<$y>::from(x))
             }
         }
@@ -41,7 +41,7 @@ impl_via_from!(u64: i128, u128);
 // TODO(specialization): implement ConvApprox for arrays and tuples
 impl<S, T: Conv<S> + Copy + Default, const N: usize> Conv<[S; N]> for [T; N] {
     #[inline]
-    fn try_conv(ss: [S; N]) -> Result<Self, Error> {
+    fn try_conv(ss: [S; N]) -> Result<Self> {
         let mut tt = [T::default(); N];
         for (s, t) in IntoIterator::into_iter(ss).zip(tt.iter_mut()) {
             *t = T::try_conv(s)?;
@@ -61,7 +61,7 @@ impl<S, T: Conv<S> + Copy + Default, const N: usize> Conv<[S; N]> for [T; N] {
 #[cfg(any(feature = "std", feature = "libm"))]
 impl<S, T: ConvFloat<S> + Copy + Default, const N: usize> ConvFloat<[S; N]> for [T; N] {
     #[inline]
-    fn try_conv_trunc(ss: [S; N]) -> Result<Self, Error> {
+    fn try_conv_trunc(ss: [S; N]) -> Result<Self> {
         let mut tt = [T::default(); N];
         for (s, t) in IntoIterator::into_iter(ss).zip(tt.iter_mut()) {
             *t = T::try_conv_trunc(s)?;
@@ -69,7 +69,7 @@ impl<S, T: ConvFloat<S> + Copy + Default, const N: usize> ConvFloat<[S; N]> for 
         Ok(tt)
     }
     #[inline]
-    fn try_conv_nearest(ss: [S; N]) -> Result<Self, Error> {
+    fn try_conv_nearest(ss: [S; N]) -> Result<Self> {
         let mut tt = [T::default(); N];
         for (s, t) in IntoIterator::into_iter(ss).zip(tt.iter_mut()) {
             *t = T::try_conv_nearest(s)?;
@@ -77,7 +77,7 @@ impl<S, T: ConvFloat<S> + Copy + Default, const N: usize> ConvFloat<[S; N]> for 
         Ok(tt)
     }
     #[inline]
-    fn try_conv_floor(ss: [S; N]) -> Result<Self, Error> {
+    fn try_conv_floor(ss: [S; N]) -> Result<Self> {
         let mut tt = [T::default(); N];
         for (s, t) in IntoIterator::into_iter(ss).zip(tt.iter_mut()) {
             *t = T::try_conv_floor(s)?;
@@ -85,7 +85,7 @@ impl<S, T: ConvFloat<S> + Copy + Default, const N: usize> ConvFloat<[S; N]> for 
         Ok(tt)
     }
     #[inline]
-    fn try_conv_ceil(ss: [S; N]) -> Result<Self, Error> {
+    fn try_conv_ceil(ss: [S; N]) -> Result<Self> {
         let mut tt = [T::default(); N];
         for (s, t) in IntoIterator::into_iter(ss).zip(tt.iter_mut()) {
             *t = T::try_conv_ceil(s)?;
@@ -129,7 +129,7 @@ impl<S, T: ConvFloat<S> + Copy + Default, const N: usize> ConvFloat<[S; N]> for 
 
 impl Conv<()> for () {
     #[inline]
-    fn try_conv(_: ()) -> Result<Self, Error> {
+    fn try_conv(_: ()) -> Result<Self> {
         Ok(())
     }
     #[inline]
@@ -139,7 +139,7 @@ impl Conv<()> for () {
 }
 impl<S0, T0: Conv<S0>> Conv<(S0,)> for (T0,) {
     #[inline]
-    fn try_conv(ss: (S0,)) -> Result<Self, Error> {
+    fn try_conv(ss: (S0,)) -> Result<Self> {
         Ok((ss.0.try_cast()?,))
     }
     #[inline]
@@ -149,7 +149,7 @@ impl<S0, T0: Conv<S0>> Conv<(S0,)> for (T0,) {
 }
 impl<S0, S1, T0: Conv<S0>, T1: Conv<S1>> Conv<(S0, S1)> for (T0, T1) {
     #[inline]
-    fn try_conv(ss: (S0, S1)) -> Result<Self, Error> {
+    fn try_conv(ss: (S0, S1)) -> Result<Self> {
         Ok((ss.0.try_cast()?, ss.1.try_cast()?))
     }
     #[inline]
@@ -159,7 +159,7 @@ impl<S0, S1, T0: Conv<S0>, T1: Conv<S1>> Conv<(S0, S1)> for (T0, T1) {
 }
 impl<S0, S1, S2, T0: Conv<S0>, T1: Conv<S1>, T2: Conv<S2>> Conv<(S0, S1, S2)> for (T0, T1, T2) {
     #[inline]
-    fn try_conv(ss: (S0, S1, S2)) -> Result<Self, Error> {
+    fn try_conv(ss: (S0, S1, S2)) -> Result<Self> {
         Ok((ss.0.try_cast()?, ss.1.try_cast()?, ss.2.try_cast()?))
     }
     #[inline]
@@ -171,7 +171,7 @@ impl<S0, S1, S2, S3, T0: Conv<S0>, T1: Conv<S1>, T2: Conv<S2>, T3: Conv<S3>> Con
     for (T0, T1, T2, T3)
 {
     #[inline]
-    fn try_conv(ss: (S0, S1, S2, S3)) -> Result<Self, Error> {
+    fn try_conv(ss: (S0, S1, S2, S3)) -> Result<Self> {
         Ok((
             ss.0.try_cast()?,
             ss.1.try_cast()?,
@@ -188,7 +188,7 @@ impl<S0, S1, S2, S3, S4, T0: Conv<S0>, T1: Conv<S1>, T2: Conv<S2>, T3: Conv<S3>,
     Conv<(S0, S1, S2, S3, S4)> for (T0, T1, T2, T3, T4)
 {
     #[inline]
-    fn try_conv(ss: (S0, S1, S2, S3, S4)) -> Result<Self, Error> {
+    fn try_conv(ss: (S0, S1, S2, S3, S4)) -> Result<Self> {
         Ok((
             ss.0.try_cast()?,
             ss.1.try_cast()?,
@@ -219,7 +219,7 @@ where
     T5: Conv<S5>,
 {
     #[inline]
-    fn try_conv(ss: (S0, S1, S2, S3, S4, S5)) -> Result<Self, Error> {
+    fn try_conv(ss: (S0, S1, S2, S3, S4, S5)) -> Result<Self> {
         Ok((
             ss.0.try_cast()?,
             ss.1.try_cast()?,
@@ -245,19 +245,19 @@ where
 #[cfg(any(feature = "std", feature = "libm"))]
 impl<S0, S1, T0: ConvFloat<S0>, T1: ConvFloat<S1>> ConvFloat<(S0, S1)> for (T0, T1) {
     #[inline]
-    fn try_conv_trunc(ss: (S0, S1)) -> Result<Self, Error> {
+    fn try_conv_trunc(ss: (S0, S1)) -> Result<Self> {
         Ok((T0::try_conv_trunc(ss.0)?, T1::try_conv_trunc(ss.1)?))
     }
     #[inline]
-    fn try_conv_nearest(ss: (S0, S1)) -> Result<Self, Error> {
+    fn try_conv_nearest(ss: (S0, S1)) -> Result<Self> {
         Ok((T0::try_conv_nearest(ss.0)?, T1::try_conv_nearest(ss.1)?))
     }
     #[inline]
-    fn try_conv_floor(ss: (S0, S1)) -> Result<Self, Error> {
+    fn try_conv_floor(ss: (S0, S1)) -> Result<Self> {
         Ok((T0::try_conv_floor(ss.0)?, T1::try_conv_floor(ss.1)?))
     }
     #[inline]
-    fn try_conv_ceil(ss: (S0, S1)) -> Result<Self, Error> {
+    fn try_conv_ceil(ss: (S0, S1)) -> Result<Self> {
         Ok((T0::try_conv_ceil(ss.0)?, T1::try_conv_ceil(ss.1)?))
     }
 

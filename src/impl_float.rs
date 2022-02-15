@@ -8,7 +8,7 @@
 use super::*;
 
 impl ConvApprox<f64> for f32 {
-    fn try_conv_approx(x: f64) -> Result<f32, Error> {
+    fn try_conv_approx(x: f64) -> Result<f32> {
         use core::num::FpCategory;
 
         let sign_bits = (x.to_bits() >> 32) as u32 & 0x8000_0000;
@@ -138,7 +138,7 @@ macro_rules! impl_float {
             }
 
             #[inline]
-            fn try_conv_trunc(x: $x) -> Result<Self, Error> {
+            fn try_conv_trunc(x: $x) -> Result<Self> {
                 // Tested: these limits work for $x=f32 and all $y except u128
                 const LBOUND: $x = core::$y::MIN as $x - 1.0;
                 const UBOUND: $x = core::$y::MAX as $x + 1.0;
@@ -149,7 +149,7 @@ macro_rules! impl_float {
                 }
             }
             #[inline]
-            fn try_conv_nearest(x: $x) -> Result<Self, Error> {
+            fn try_conv_nearest(x: $x) -> Result<Self> {
                 // Tested: these limits work for $x=f32 and all $y except u128
                 const LBOUND: $x = core::$y::MIN as $x;
                 const UBOUND: $x = core::$y::MAX as $x + 1.0;
@@ -161,7 +161,7 @@ macro_rules! impl_float {
                 }
             }
             #[inline]
-            fn try_conv_floor(x: $x) -> Result<Self, Error> {
+            fn try_conv_floor(x: $x) -> Result<Self> {
                 // Tested: these limits work for $x=f32 and all $y except u128
                 const LBOUND: $x = core::$y::MIN as $x;
                 const UBOUND: $x = core::$y::MAX as $x + 1.0;
@@ -173,7 +173,7 @@ macro_rules! impl_float {
                 }
             }
             #[inline]
-            fn try_conv_ceil(x: $x) -> Result<Self, Error> {
+            fn try_conv_ceil(x: $x) -> Result<Self> {
                 // Tested: these limits work for $x=f32 and all $y except u128
                 const LBOUND: $x = core::$y::MIN as $x;
                 const UBOUND: $x = core::$y::MAX as $x + 1.0;
@@ -188,7 +188,7 @@ macro_rules! impl_float {
 
         impl ConvApprox<$x> for $y {
             #[inline]
-            fn try_conv_approx(x: $x) -> Result<Self, Error> {
+            fn try_conv_approx(x: $x) -> Result<Self> {
                 ConvFloat::<$x>::try_conv_trunc(x)
             }
             #[inline]
@@ -253,7 +253,7 @@ impl ConvFloat<f32> for u128 {
     }
 
     #[inline]
-    fn try_conv_trunc(x: f32) -> Result<Self, Error> {
+    fn try_conv_trunc(x: f32) -> Result<Self> {
         // Note: f32::MAX < u128::MAX
         if x >= 0.0 && x.is_finite() {
             Ok(x as u128)
@@ -262,7 +262,7 @@ impl ConvFloat<f32> for u128 {
         }
     }
     #[inline]
-    fn try_conv_nearest(x: f32) -> Result<Self, Error> {
+    fn try_conv_nearest(x: f32) -> Result<Self> {
         let x = x.round();
         if x >= 0.0 && x.is_finite() {
             Ok(x as u128)
@@ -271,11 +271,11 @@ impl ConvFloat<f32> for u128 {
         }
     }
     #[inline]
-    fn try_conv_floor(x: f32) -> Result<Self, Error> {
+    fn try_conv_floor(x: f32) -> Result<Self> {
         Self::try_conv_trunc(x)
     }
     #[inline]
-    fn try_conv_ceil(x: f32) -> Result<Self, Error> {
+    fn try_conv_ceil(x: f32) -> Result<Self> {
         let x = x.ceil();
         if x >= 0.0 && x.is_finite() {
             Ok(x as u128)
@@ -288,7 +288,7 @@ impl ConvFloat<f32> for u128 {
 #[cfg(any(feature = "std", feature = "libm"))]
 impl ConvApprox<f32> for u128 {
     #[inline]
-    fn try_conv_approx(x: f32) -> Result<Self, Error> {
+    fn try_conv_approx(x: f32) -> Result<Self> {
         ConvFloat::<f32>::try_conv_trunc(x)
     }
     #[inline]
