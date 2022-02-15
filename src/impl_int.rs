@@ -23,7 +23,7 @@ macro_rules! impl_via_as_neg_check {
                 x as $y
             }
             #[inline]
-            fn try_conv(x: $x) -> Result<Self, Error> {
+            fn try_conv(x: $x) -> Result<Self> {
                 if x >= 0 {
                     Ok(x as $y)
                 } else {
@@ -59,7 +59,7 @@ macro_rules! impl_via_as_max_check {
                 x as $y
             }
             #[inline]
-            fn try_conv(x: $x) -> Result<Self, Error> {
+            fn try_conv(x: $x) -> Result<Self> {
                 if x <= core::$y::MAX as $x {
                     Ok(x as $y)
                 } else {
@@ -96,7 +96,7 @@ macro_rules! impl_via_as_range_check {
                 x as $y
             }
             #[inline]
-            fn try_conv(x: $x) -> Result<Self, Error> {
+            fn try_conv(x: $x) -> Result<Self> {
                 if core::$y::MIN as $x <= x && x <= core::$y::MAX as $x {
                     Ok(x as $y)
                 } else {
@@ -171,7 +171,7 @@ macro_rules! impl_int_generic {
             }
             #[allow(unused_comparisons)]
             #[inline]
-            fn try_conv(x: $x) -> Result<Self, Error> {
+            fn try_conv(x: $x) -> Result<Self> {
                 let src_is_signed = core::$x::MIN != 0;
                 let dst_is_signed = core::$y::MIN != 0;
                 if size_of::<$x>() < size_of::<$y>() {
@@ -245,7 +245,7 @@ macro_rules! impl_via_digits_check {
                 }
             }
             #[inline]
-            fn try_conv(x: $x) -> Result<Self, Error> {
+            fn try_conv(x: $x) -> Result<Self> {
                 let src_ty_bits = (size_of::<$x>() * 8) as u32;
                 let src_digits = src_ty_bits.saturating_sub(x.leading_zeros() + x.trailing_zeros());
                 let dst_digits = core::$y::MANTISSA_DIGITS;
@@ -280,7 +280,7 @@ macro_rules! impl_via_digits_check_signed {
                 }
             }
             #[inline]
-            fn try_conv(x: $x) -> Result<Self, Error> {
+            fn try_conv(x: $x) -> Result<Self> {
                 let src_ty_bits = (size_of::<$x>() * 8) as u32;
                 let src_digits = x.checked_abs()
                     .map(|y| src_ty_bits.saturating_sub(y.leading_zeros() + y.trailing_zeros()))

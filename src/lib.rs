@@ -88,6 +88,9 @@ impl core::fmt::Display for Error {
 #[cfg(feature = "std")]
 impl std::error::Error for Error {}
 
+/// Result enum with bound [`Error`] type
+pub type Result<T> = core::result::Result<T, Error>;
+
 /// Like [`From`], but supports fallible conversions
 ///
 /// This trait is intented to be an extension over [`From`], also supporting
@@ -101,7 +104,7 @@ pub trait Conv<T>: Sized {
     /// Try converting from `T` to `Self`
     ///
     /// This method must fail on inexact conversions.
-    fn try_conv(v: T) -> Result<Self, Error>;
+    fn try_conv(v: T) -> Result<Self>;
 
     /// Convert from `T` to `Self`
     ///
@@ -136,7 +139,7 @@ pub trait Cast<T> {
     /// Try converting from `Self` to `T`
     ///
     /// Use this method to explicitly handle errors.
-    fn try_cast(self) -> Result<T, Error>;
+    fn try_cast(self) -> Result<T>;
 
     /// Cast from `Self` to `T`
     ///
@@ -158,7 +161,7 @@ impl<S, T: Conv<S>> Cast<T> for S {
         T::conv(self)
     }
     #[inline]
-    fn try_cast(self) -> Result<T, Error> {
+    fn try_cast(self) -> Result<T> {
         T::try_conv(self)
     }
 }
@@ -184,7 +187,7 @@ pub trait ConvApprox<T>: Sized {
     ///
     /// This method should allow approximate conversion, but fail on input not
     /// (approximately) in the target's range.
-    fn try_conv_approx(x: T) -> Result<Self, Error>;
+    fn try_conv_approx(x: T) -> Result<Self>;
 
     /// Converting from `T` to `Self`, allowing approximation of value
     ///
@@ -215,7 +218,7 @@ pub trait ConvApprox<T>: Sized {
 // TODO(specialization): implement also where T: ConvFloat<S>
 impl<S, T: Conv<S>> ConvApprox<S> for T {
     #[inline]
-    fn try_conv_approx(x: S) -> Result<Self, Error> {
+    fn try_conv_approx(x: S) -> Result<Self> {
         T::try_conv(x)
     }
     #[inline]
@@ -240,7 +243,7 @@ pub trait CastApprox<T> {
     /// Try approximate conversion from `Self` to `T`
     ///
     /// Use this method to explicitly handle errors.
-    fn try_cast_approx(self) -> Result<T, Error>;
+    fn try_cast_approx(self) -> Result<T>;
 
     /// Cast approximately from `Self` to `T`
     ///
@@ -258,7 +261,7 @@ pub trait CastApprox<T> {
 
 impl<S, T: ConvApprox<S>> CastApprox<T> for S {
     #[inline]
-    fn try_cast_approx(self) -> Result<T, Error> {
+    fn try_cast_approx(self) -> Result<T> {
         T::try_conv_approx(self)
     }
     #[inline]
@@ -292,19 +295,19 @@ pub trait ConvFloat<T>: Sized {
     /// Try converting to integer with truncation
     ///
     /// Rounds towards zero (same as `as`).
-    fn try_conv_trunc(x: T) -> Result<Self, Error>;
+    fn try_conv_trunc(x: T) -> Result<Self>;
     /// Try converting to the nearest integer
     ///
     /// Half-way cases are rounded away from `0`.
-    fn try_conv_nearest(x: T) -> Result<Self, Error>;
+    fn try_conv_nearest(x: T) -> Result<Self>;
     /// Try converting the floor to an integer
     ///
     /// Returns the largest integer less than or equal to `x`.
-    fn try_conv_floor(x: T) -> Result<Self, Error>;
+    fn try_conv_floor(x: T) -> Result<Self>;
     /// Try convert the ceiling to an integer
     ///
     /// Returns the smallest integer greater than or equal to `x`.
-    fn try_conv_ceil(x: T) -> Result<Self, Error>;
+    fn try_conv_ceil(x: T) -> Result<Self>;
 
     /// Convert to integer with truncatation
     ///
@@ -373,19 +376,19 @@ pub trait CastFloat<T> {
     /// Try converting to integer with truncation
     ///
     /// Rounds towards zero (same as `as`).
-    fn try_cast_trunc(self) -> Result<T, Error>;
+    fn try_cast_trunc(self) -> Result<T>;
     /// Try converting to the nearest integer
     ///
     /// Half-way cases are rounded away from `0`.
-    fn try_cast_nearest(self) -> Result<T, Error>;
+    fn try_cast_nearest(self) -> Result<T>;
     /// Try converting the floor to an integer
     ///
     /// Returns the largest integer less than or equal to `x`.
-    fn try_cast_floor(self) -> Result<T, Error>;
+    fn try_cast_floor(self) -> Result<T>;
     /// Try convert the ceiling to an integer
     ///
     /// Returns the smallest integer greater than or equal to `x`.
-    fn try_cast_ceil(self) -> Result<T, Error>;
+    fn try_cast_ceil(self) -> Result<T>;
 }
 
 #[cfg(any(feature = "std", feature = "libm"))]
@@ -408,19 +411,19 @@ impl<S, T: ConvFloat<S>> CastFloat<T> for S {
     }
 
     #[inline]
-    fn try_cast_trunc(self) -> Result<T, Error> {
+    fn try_cast_trunc(self) -> Result<T> {
         T::try_conv_trunc(self)
     }
     #[inline]
-    fn try_cast_nearest(self) -> Result<T, Error> {
+    fn try_cast_nearest(self) -> Result<T> {
         T::try_conv_nearest(self)
     }
     #[inline]
-    fn try_cast_floor(self) -> Result<T, Error> {
+    fn try_cast_floor(self) -> Result<T> {
         T::try_conv_floor(self)
     }
     #[inline]
-    fn try_cast_ceil(self) -> Result<T, Error> {
+    fn try_cast_ceil(self) -> Result<T> {
         T::try_conv_ceil(self)
     }
 }
