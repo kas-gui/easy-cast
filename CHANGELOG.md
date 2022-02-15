@@ -1,6 +1,12 @@
 Changelog
 =========
 
+## [0.5.0] — unreleased
+
+-   Add `ConvApprox` and `CastApprox`
+-   Support `Conv` and `ConvFloat` for arrays and tuples
+-   Remove `impl<T> Conv<T> for T`
+
 ## [0.4.4] — 2021-04-12
 
 -   Fix negative int to float digits check (#18)
