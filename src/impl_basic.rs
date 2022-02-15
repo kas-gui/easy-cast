@@ -37,7 +37,8 @@ impl_via_from!(u16: f32, f64, i32, i64, i128, u32, u64, u128);
 impl_via_from!(u32: f64, i64, i128, u64, u128);
 impl_via_from!(u64: i128, u128);
 
-// TODO: remove T: Copy + Default bound
+// TODO(unsize): remove T: Copy + Default bound
+// TODO(specialization): implement ConvApprox for arrays and tuples
 impl<S, T: Conv<S> + Copy + Default, const N: usize> Conv<[S; N]> for [T; N] {
     #[inline]
     fn try_conv(ss: [S; N]) -> Result<Self, Error> {
@@ -52,6 +53,74 @@ impl<S, T: Conv<S> + Copy + Default, const N: usize> Conv<[S; N]> for [T; N] {
         let mut tt = [T::default(); N];
         for (s, t) in IntoIterator::into_iter(ss).zip(tt.iter_mut()) {
             *t = T::conv(s);
+        }
+        tt
+    }
+}
+
+impl<S, T: ConvFloat<S> + Copy + Default, const N: usize> ConvFloat<[S; N]> for [T; N] {
+    #[inline]
+    fn try_conv_trunc(ss: [S; N]) -> Result<Self, Error> {
+        let mut tt = [T::default(); N];
+        for (s, t) in IntoIterator::into_iter(ss).zip(tt.iter_mut()) {
+            *t = T::try_conv_trunc(s)?;
+        }
+        Ok(tt)
+    }
+    #[inline]
+    fn try_conv_nearest(ss: [S; N]) -> Result<Self, Error> {
+        let mut tt = [T::default(); N];
+        for (s, t) in IntoIterator::into_iter(ss).zip(tt.iter_mut()) {
+            *t = T::try_conv_nearest(s)?;
+        }
+        Ok(tt)
+    }
+    #[inline]
+    fn try_conv_floor(ss: [S; N]) -> Result<Self, Error> {
+        let mut tt = [T::default(); N];
+        for (s, t) in IntoIterator::into_iter(ss).zip(tt.iter_mut()) {
+            *t = T::try_conv_floor(s)?;
+        }
+        Ok(tt)
+    }
+    #[inline]
+    fn try_conv_ceil(ss: [S; N]) -> Result<Self, Error> {
+        let mut tt = [T::default(); N];
+        for (s, t) in IntoIterator::into_iter(ss).zip(tt.iter_mut()) {
+            *t = T::try_conv_ceil(s)?;
+        }
+        Ok(tt)
+    }
+
+    #[inline]
+    fn conv_trunc(ss: [S; N]) -> Self {
+        let mut tt = [T::default(); N];
+        for (s, t) in IntoIterator::into_iter(ss).zip(tt.iter_mut()) {
+            *t = T::conv_trunc(s);
+        }
+        tt
+    }
+    #[inline]
+    fn conv_nearest(ss: [S; N]) -> Self {
+        let mut tt = [T::default(); N];
+        for (s, t) in IntoIterator::into_iter(ss).zip(tt.iter_mut()) {
+            *t = T::conv_nearest(s);
+        }
+        tt
+    }
+    #[inline]
+    fn conv_floor(ss: [S; N]) -> Self {
+        let mut tt = [T::default(); N];
+        for (s, t) in IntoIterator::into_iter(ss).zip(tt.iter_mut()) {
+            *t = T::conv_floor(s);
+        }
+        tt
+    }
+    #[inline]
+    fn conv_ceil(ss: [S; N]) -> Self {
+        let mut tt = [T::default(); N];
+        for (s, t) in IntoIterator::into_iter(ss).zip(tt.iter_mut()) {
+            *t = T::conv_ceil(s);
         }
         tt
     }
@@ -169,5 +238,41 @@ where
             ss.4.cast(),
             ss.5.cast(),
         )
+    }
+}
+
+impl<S0, S1, T0: ConvFloat<S0>, T1: ConvFloat<S1>> ConvFloat<(S0, S1)> for (T0, T1) {
+    #[inline]
+    fn try_conv_trunc(ss: (S0, S1)) -> Result<Self, Error> {
+        Ok((T0::try_conv_trunc(ss.0)?, T1::try_conv_trunc(ss.1)?))
+    }
+    #[inline]
+    fn try_conv_nearest(ss: (S0, S1)) -> Result<Self, Error> {
+        Ok((T0::try_conv_nearest(ss.0)?, T1::try_conv_nearest(ss.1)?))
+    }
+    #[inline]
+    fn try_conv_floor(ss: (S0, S1)) -> Result<Self, Error> {
+        Ok((T0::try_conv_floor(ss.0)?, T1::try_conv_floor(ss.1)?))
+    }
+    #[inline]
+    fn try_conv_ceil(ss: (S0, S1)) -> Result<Self, Error> {
+        Ok((T0::try_conv_ceil(ss.0)?, T1::try_conv_ceil(ss.1)?))
+    }
+
+    #[inline]
+    fn conv_trunc(ss: (S0, S1)) -> Self {
+        (T0::conv_trunc(ss.0), T1::conv_trunc(ss.1))
+    }
+    #[inline]
+    fn conv_nearest(ss: (S0, S1)) -> Self {
+        (T0::conv_nearest(ss.0), T1::conv_nearest(ss.1))
+    }
+    #[inline]
+    fn conv_floor(ss: (S0, S1)) -> Self {
+        (T0::conv_floor(ss.0), T1::conv_floor(ss.1))
+    }
+    #[inline]
+    fn conv_ceil(ss: (S0, S1)) -> Self {
+        (T0::conv_ceil(ss.0), T1::conv_ceil(ss.1))
     }
 }
