@@ -49,17 +49,28 @@ fn int_to_float_inexact() {
 }
 
 #[test]
-fn approx() {
+fn approx_float_to_int() {
+    assert_eq!(i32::conv_approx(1.99f32), 1);
+    assert_eq!(i32::conv_approx(-1.99f32), -1);
+    assert_eq!(i32::conv_approx(9.1f64), 9);
+
+    const MAX: f64 = i32::MAX as f64;
+    assert_eq!(i32::conv_approx(MAX), i32::MAX);
+    assert_eq!(i32::conv_approx(MAX + 0.9), i32::MAX);
+    assert_eq!(i32::try_conv_approx(MAX + 1.0), Err(Error::Range));
+}
+
+#[test]
+fn approx_f64_f32() {
     assert_eq!(f32::conv_approx(0f64), 0f32);
     assert_eq!(f32::conv_approx(0f64).is_sign_positive(), true);
     assert_eq!(f32::conv_approx(-0f64).is_sign_negative(), true);
 
+    const E32: f64 = f32::EPSILON as f64;
     assert_eq!(f32::conv_approx(1f64), 1f32);
-    assert_eq!(
-        f32::conv_approx(1f64 + f32::EPSILON as f64),
-        1f32 + f32::EPSILON
-    );
-    assert_eq!(f32::conv_approx(1f64 + (f32::EPSILON as f64) / 2.0), 1f32);
+    assert_eq!(f32::conv_approx(1f64 + E32), 1f32 + f32::EPSILON);
+    assert_eq!(f32::conv_approx(1f64 + E32 / 2.0), 1f32);
+    assert_eq!(f32::conv_approx(1f64 + E32 - f64::EPSILON), 1f32);
 
     assert_eq!(f32::conv_approx(-10f64), -10f32);
     assert!((f32::conv_approx(1f64 / 3.0) - 1f32 / 3.0).abs() <= f32::EPSILON);
@@ -68,10 +79,7 @@ fn approx() {
     assert_eq!(f32::conv_approx(MAX), f32::MAX);
     assert!(MAX + 2f64.powi(103) != MAX);
     assert_eq!(f32::conv_approx(MAX + 2f64.powi(103)), f32::MAX);
-    assert_eq!(
-        f32::try_conv_approx(f32::MAX as f64 * 2.0),
-        Err(Error::Range)
-    );
+    assert_eq!(f32::try_conv_approx(MAX * 2.0), Err(Error::Range));
 
     assert_eq!(
         f32::conv_approx(f64::INFINITY).to_bits(),

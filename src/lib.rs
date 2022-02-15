@@ -96,7 +96,7 @@ impl std::error::Error for Error {}
 /// implementations (specialization or otherwise), only conversions between
 /// the most important numeric types are supported for now.
 ///
-/// The sister-trait [`Cast`] may be easier to use (as with [`Into`]).
+/// The sister-trait [`Cast`] supports "into" style usage.
 pub trait Conv<T>: Sized {
     /// Try converting from `T` to `Self`
     ///
@@ -165,14 +165,22 @@ impl<S, T: Conv<S>> Cast<T> for S {
 
 /// Like [`From`], but for approximate numerical conversions
 ///
-/// This trait is implemented for all conversions supported by [`Conv`] and
-/// [`ConvFloat`] (but the latter impls only as provided by this library).
-/// Prefer to use [`ConvFloat`] or [`CastFloat`] where precise control over
-/// rounding is required.
+/// On success, the result must be approximately the same as the input value:
+/// the difference must be smaller than the precision of the target type.
+/// For example, one may have `i32::conv_approx(1.9f32) = 1` or
+/// `f32::conv_approx(1f64 + (f32::EPSILON as f64) / 2.0) = 1.0`.
 ///
-/// The sister-trait [`CastApprox`] may be easier to use (as with [`Into`]).
+/// Precise rounding mode should usually be truncation (round towards zero),
+/// but this is not required. Use [`ConvFloat`] where a specific rounding mode
+/// is required.
+///
+/// The sister-trait [`CastApprox`] supports "into" style usage.
 pub trait ConvApprox<T>: Sized {
     /// Try converting from `T` to `Self`, allowing approximation of value
+    ///
+    /// This conversion may truncate excess precision not supported by the
+    /// target type, so long as the *value* is approximately equal, from the
+    /// point of view of precision of the target type.
     ///
     /// This method should allow approximate conversion, but fail on input not
     /// (approximately) in the target's range.
@@ -217,6 +225,14 @@ impl<S, T: Conv<S>> ConvApprox<S> for T {
 }
 
 /// Like [`Into`], but for [`ConvApprox`]
+///
+/// On success, the result must be approximately the same as the input value:
+/// the difference must be smaller than the precision of the target type.
+/// For example, one may have `1.9f32.cast_approx() = 1`.
+///
+/// Precise rounding mode should usually be truncation (round towards zero),
+/// but this is not required. Use [`CastFloat`] where a specific rounding mode
+/// is required.
 ///
 /// This trait is automatically implemented for every implementation of
 /// [`ConvApprox`].
@@ -269,7 +285,7 @@ impl<S, T: ConvApprox<S>> CastApprox<T> for S {
 /// -   Implementations provided by this library will also panic if the
 ///     `always_assert` or `assert_float` feature flag is used.
 ///
-/// The sister-trait [`CastFloat`] may be easier to use (as with [`Into`]).
+/// The sister-trait [`CastFloat`] supports "into" style usage.
 #[cfg(any(feature = "std", feature = "libm"))]
 #[cfg_attr(doc_cfg, doc(cfg(any(feature = "std", feature = "libm"))))]
 pub trait ConvFloat<T>: Sized {
