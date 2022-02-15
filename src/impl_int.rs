@@ -8,6 +8,7 @@
 //! See also `impl_basic` which inherits integer impls from From.
 
 use super::*;
+use core::mem::size_of;
 
 macro_rules! impl_via_as_neg_check {
     ($x:ty: $y:ty) => {
