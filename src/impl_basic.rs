@@ -58,6 +58,7 @@ impl<S, T: Conv<S> + Copy + Default, const N: usize> Conv<[S; N]> for [T; N] {
     }
 }
 
+#[cfg(any(feature = "std", feature = "libm"))]
 impl<S, T: ConvFloat<S> + Copy + Default, const N: usize> ConvFloat<[S; N]> for [T; N] {
     #[inline]
     fn try_conv_trunc(ss: [S; N]) -> Result<Self, Error> {
@@ -241,6 +242,7 @@ where
     }
 }
 
+#[cfg(any(feature = "std", feature = "libm"))]
 impl<S0, S1, T0: ConvFloat<S0>, T1: ConvFloat<S1>> ConvFloat<(S0, S1)> for (T0, T1) {
     #[inline]
     fn try_conv_trunc(ss: (S0, S1)) -> Result<Self, Error> {

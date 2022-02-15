@@ -49,6 +49,7 @@ fn int_to_float_inexact() {
 }
 
 #[test]
+#[cfg(any(feature = "std", feature = "libm"))]
 fn approx_float_to_int() {
     assert_eq!(i32::conv_approx(1.99f32), 1);
     assert_eq!(i32::conv_approx(-1.99f32), -1);
