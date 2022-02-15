@@ -47,6 +47,14 @@ impl<S, T: Conv<S> + Copy + Default, const N: usize> Conv<[S; N]> for [T; N] {
         }
         Ok(tt)
     }
+    #[inline]
+    fn conv(ss: [S; N]) -> Self {
+        let mut tt = [T::default(); N];
+        for (s, t) in IntoIterator::into_iter(ss).zip(tt.iter_mut()) {
+            *t = T::conv(s);
+        }
+        tt
+    }
 }
 
 impl Conv<()> for () {
@@ -54,11 +62,19 @@ impl Conv<()> for () {
     fn try_conv(_: ()) -> Result<Self, Error> {
         Ok(())
     }
+    #[inline]
+    fn conv(_: ()) -> Self {
+        ()
+    }
 }
 impl<S0, T0: Conv<S0>> Conv<(S0,)> for (T0,) {
     #[inline]
     fn try_conv(ss: (S0,)) -> Result<Self, Error> {
         Ok((ss.0.try_cast()?,))
+    }
+    #[inline]
+    fn conv(ss: (S0,)) -> Self {
+        (ss.0.cast(),)
     }
 }
 impl<S0, S1, T0: Conv<S0>, T1: Conv<S1>> Conv<(S0, S1)> for (T0, T1) {
@@ -66,11 +82,19 @@ impl<S0, S1, T0: Conv<S0>, T1: Conv<S1>> Conv<(S0, S1)> for (T0, T1) {
     fn try_conv(ss: (S0, S1)) -> Result<Self, Error> {
         Ok((ss.0.try_cast()?, ss.1.try_cast()?))
     }
+    #[inline]
+    fn conv(ss: (S0, S1)) -> Self {
+        (ss.0.cast(), ss.1.cast())
+    }
 }
 impl<S0, S1, S2, T0: Conv<S0>, T1: Conv<S1>, T2: Conv<S2>> Conv<(S0, S1, S2)> for (T0, T1, T2) {
     #[inline]
     fn try_conv(ss: (S0, S1, S2)) -> Result<Self, Error> {
         Ok((ss.0.try_cast()?, ss.1.try_cast()?, ss.2.try_cast()?))
+    }
+    #[inline]
+    fn conv(ss: (S0, S1, S2)) -> Self {
+        (ss.0.cast(), ss.1.cast(), ss.2.cast())
     }
 }
 impl<S0, S1, S2, S3, T0: Conv<S0>, T1: Conv<S1>, T2: Conv<S2>, T3: Conv<S3>> Conv<(S0, S1, S2, S3)>
@@ -85,6 +109,10 @@ impl<S0, S1, S2, S3, T0: Conv<S0>, T1: Conv<S1>, T2: Conv<S2>, T3: Conv<S3>> Con
             ss.3.try_cast()?,
         ))
     }
+    #[inline]
+    fn conv(ss: (S0, S1, S2, S3)) -> Self {
+        (ss.0.cast(), ss.1.cast(), ss.2.cast(), ss.3.cast())
+    }
 }
 impl<S0, S1, S2, S3, S4, T0: Conv<S0>, T1: Conv<S1>, T2: Conv<S2>, T3: Conv<S3>, T4: Conv<S4>>
     Conv<(S0, S1, S2, S3, S4)> for (T0, T1, T2, T3, T4)
@@ -98,6 +126,16 @@ impl<S0, S1, S2, S3, S4, T0: Conv<S0>, T1: Conv<S1>, T2: Conv<S2>, T3: Conv<S3>,
             ss.3.try_cast()?,
             ss.4.try_cast()?,
         ))
+    }
+    #[inline]
+    fn conv(ss: (S0, S1, S2, S3, S4)) -> Self {
+        (
+            ss.0.cast(),
+            ss.1.cast(),
+            ss.2.cast(),
+            ss.3.cast(),
+            ss.4.cast(),
+        )
     }
 }
 impl<S0, S1, S2, S3, S4, S5, T0, T1, T2, T3, T4, T5> Conv<(S0, S1, S2, S3, S4, S5)>
@@ -120,5 +158,16 @@ where
             ss.4.try_cast()?,
             ss.5.try_cast()?,
         ))
+    }
+    #[inline]
+    fn conv(ss: (S0, S1, S2, S3, S4, S5)) -> Self {
+        (
+            ss.0.cast(),
+            ss.1.cast(),
+            ss.2.cast(),
+            ss.3.cast(),
+            ss.4.cast(),
+            ss.5.cast(),
+        )
     }
 }
