@@ -1,12 +1,19 @@
 Changelog
 =========
 
-## [0.5.0] — unreleased
+## [0.5.0] — 2022-08-19
 
--   Add `ConvApprox` and `CastApprox` (#21)
--   Add `Result` type (#22)
+-   Reorganise code (#20)
+-   Bump MSRV to 1.53.0 (#21)
+-   Add default implementations of `conv` methods over equivalent `try_conv`
+    variant to facilitate custom implementations (#21)
+-   Add `ConvApprox` and `CastApprox`, supporting approximate conversions
+    with unspecified rounding, implemented for `f64 → f32` and all type
+    conversions supported by `Conv` (#21)
 -   Support `Conv` and `ConvFloat` for arrays and tuples (#21)
 -   Remove `impl<T> Conv<T> for T` (#21)
+-   Add `easy_cast::Result` type alias (#22)
+-   Move traits into new `easy_cast::traits` public module (#23)
 
 ## [0.4.4] — 2021-04-12
 
