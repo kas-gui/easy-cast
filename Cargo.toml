@@ -1,6 +1,6 @@
 [package]
 name = "easy-cast"
-version = "0.5.0"
+version = "0.5.1"
 authors = ["Diggory Hardy <git@dhardy.name>"]
 edition = "2018"
 license = "Apache-2.0"
@@ -19,13 +19,16 @@ std = []
 # Note: assertions are always used in debug builds; these only affect release builds:
 
 # Always use all assertions
-always_assert = ["assert_float", "assert_int"]
+always_assert = ["assert_float", "assert_int", "assert_digits"]
 
-# Always assert when converting from floating-point types
+# Assert float -> any conversions do not exceed range of target type
 assert_float = []
 
-# Always assert when converting from integer types
+# Always int -> int conversions do not exceed range of target type
 assert_int = []
+
+# Assert int -> float conversion does not lose accuracy
+assert_digits = []
 
 [dependencies.libm]
 # libm may be used instead of std to provide float conversions

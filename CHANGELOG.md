@@ -1,6 +1,10 @@
 Changelog
 =========
 
+## [0.5.1] — 2022-10-14
+
+-   Document feature assert_digits and imply by always_assert (#26)
+
 ## [0.5.0] — 2022-08-19
 
 -   Reorganise code (#20)
