@@ -48,6 +48,7 @@ fn int_to_float_inexact() {
     f32::conv(0x01FF_FFFF);
 }
 
+#[cfg(any(feature = "std", feature = "libm"))]
 #[test]
 fn f32_max_to_u128() {
     let v = 0xFFFFFF00_00000000_00000000_00000000u128;
