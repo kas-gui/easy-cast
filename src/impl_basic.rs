@@ -278,3 +278,29 @@ impl<S0, S1, T0: ConvFloat<S0>, T1: ConvFloat<S1>> ConvFloat<(S0, S1)> for (T0, 
         (T0::conv_ceil(ss.0), T1::conv_ceil(ss.1))
     }
 }
+
+macro_rules! impl_via_trivial {
+    ($x:ty) => {
+        impl Conv<$x> for $x {
+            #[inline]
+            fn conv(x: $x) -> Self {
+                x
+            }
+            #[inline]
+            fn try_conv(x: $x) -> Result<Self> {
+                Ok(x)
+            }
+        }
+    };
+    ($x:ty $(, $xx:tt)* $(,)?) => {
+        impl_via_trivial!($x);
+        impl_via_trivial!($($xx),*);
+    };
+}
+
+#[rustfmt::skip]
+impl_via_trivial!(
+    u8, u16, u32, u64, u128, usize,
+    i8, i16, i32, i64, i128, isize,
+    f32, f64,
+);
