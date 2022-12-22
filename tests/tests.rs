@@ -148,3 +148,16 @@ fn float_trunc_fail1() {
 fn u32_max_f32() {
     f32::conv(core::u32::MAX);
 }
+
+#[test]
+fn self_cast() {
+    fn generic<T, U: Conv<T>>(x: T) -> U {
+        x.cast()
+    }
+
+    let y: u8 = generic(0u8);
+    assert_eq!(0, y);
+
+    let y: f32 = generic(0.0f32);
+    assert_eq!(0.0, y);
+}
