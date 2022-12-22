@@ -1,6 +1,10 @@
 Changelog
 =========
 
+## [0.5.2] — 2022-12-22
+
+-   Support cast to self, useful in generics (#28)
+
 ## [0.5.1] — 2022-10-14
 
 -   Document feature assert_digits and imply by always_assert (#26)
