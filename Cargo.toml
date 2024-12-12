@@ -17,6 +17,9 @@ default = ["std"]
 # Without std, float conversions are disabled (unless libm is used)
 std = []
 
+# libm may be used instead of std to provide float conversions
+libm = ["dep:libm"]
+
 # Note: assertions are always used in debug builds; these only affect release builds:
 
 # Always use all assertions
@@ -32,6 +35,5 @@ assert_int = []
 assert_digits = []
 
 [dependencies.libm]
-# libm may be used instead of std to provide float conversions
 version = "0.2.1"
 optional = true
