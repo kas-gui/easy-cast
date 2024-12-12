@@ -53,15 +53,15 @@ macro_rules! impl_via_as_max_check {
             fn conv(x: $x) -> $y {
                 #[cfg(any(debug_assertions, feature = "assert_int"))]
                 assert!(
-                    x <= core::$y::MAX as $x,
+                    x <= $y::MAX as $x,
                     "cast x: {} to {}: expected x <= {}, found x = {}",
-                    stringify!($x), stringify!($y), core::$y::MAX, x
+                    stringify!($x), stringify!($y), $y::MAX, x
                 );
                 x as $y
             }
             #[inline]
             fn try_conv(x: $x) -> Result<Self> {
-                if x <= core::$y::MAX as $x {
+                if x <= $y::MAX as $x {
                     Ok(x as $y)
                 } else {
                     Err(Error::Range)
@@ -90,15 +90,15 @@ macro_rules! impl_via_as_range_check {
             fn conv(x: $x) -> $y {
                 #[cfg(any(debug_assertions, feature = "assert_int"))]
                 assert!(
-                    core::$y::MIN as $x <= x && x <= core::$y::MAX as $x,
+                    $y::MIN as $x <= x && x <= $y::MAX as $x,
                     "cast x: {} to {}: expected {} <= x <= {}, found x = {}",
-                    stringify!($x), stringify!($y), core::$y::MIN, core::$y::MAX, x
+                    stringify!($x), stringify!($y), $y::MIN, $y::MAX, x
                 );
                 x as $y
             }
             #[inline]
             fn try_conv(x: $x) -> Result<Self> {
-                if core::$y::MIN as $x <= x && x <= core::$y::MAX as $x {
+                if $y::MIN as $x <= x && x <= $y::MAX as $x {
                     Ok(x as $y)
                 } else {
                     Err(Error::Range)
@@ -123,8 +123,8 @@ macro_rules! impl_int_generic {
             #[allow(unused_comparisons)]
             #[inline]
             fn conv(x: $x) -> $y {
-                let src_is_signed = core::$x::MIN != 0;
-                let dst_is_signed = core::$y::MIN != 0;
+                let src_is_signed = $x::MIN != 0;
+                let dst_is_signed = $y::MIN != 0;
                 if size_of::<$x>() < size_of::<$y>() {
                     if !dst_is_signed {
                         #[cfg(any(debug_assertions, feature = "assert_int"))]
@@ -138,9 +138,9 @@ macro_rules! impl_int_generic {
                     if dst_is_signed {
                         #[cfg(any(debug_assertions, feature = "assert_int"))]
                         assert!(
-                            x <= core::$y::MAX as $x,
+                            x <= $y::MAX as $x,
                             "cast x: {} to {}: expected x <= {}, found x = {}",
-                            stringify!($x), stringify!($y), core::$y::MAX, x
+                            stringify!($x), stringify!($y), $y::MAX, x
                         );
                     } else if src_is_signed {
                         #[cfg(any(debug_assertions, feature = "assert_int"))]
@@ -155,16 +155,16 @@ macro_rules! impl_int_generic {
                     if src_is_signed {
                         #[cfg(any(debug_assertions, feature = "assert_int"))]
                         assert!(
-                            core::$y::MIN as $x <= x && x <= core::$y::MAX as $x,
+                            $y::MIN as $x <= x && x <= $y::MAX as $x,
                             "cast x: {} to {}: expected {} <= x <= {}, found x = {}",
-                            stringify!($x), stringify!($y), core::$y::MIN, core::$y::MAX, x
+                            stringify!($x), stringify!($y), $y::MIN, $y::MAX, x
                         );
                     } else {
                         #[cfg(any(debug_assertions, feature = "assert_int"))]
                         assert!(
-                            x <= core::$y::MAX as $x,
+                            x <= $y::MAX as $x,
                             "cast x: {} to {}: expected x <= {}, found x = {}",
-                            stringify!($x), stringify!($y), core::$y::MAX, x
+                            stringify!($x), stringify!($y), $y::MAX, x
                         );
                     }
                 }
@@ -173,15 +173,15 @@ macro_rules! impl_int_generic {
             #[allow(unused_comparisons)]
             #[inline]
             fn try_conv(x: $x) -> Result<Self> {
-                let src_is_signed = core::$x::MIN != 0;
-                let dst_is_signed = core::$y::MIN != 0;
+                let src_is_signed = $x::MIN != 0;
+                let dst_is_signed = $y::MIN != 0;
                 if size_of::<$x>() < size_of::<$y>() {
                     if dst_is_signed || x >= 0 {
                         return Ok(x as $y);
                     }
                 } else if size_of::<$x>() == size_of::<$y>() {
                     if dst_is_signed {
-                        if x <= core::$y::MAX as $x {
+                        if x <= $y::MAX as $x {
                             return Ok(x as $y);
                         }
                     } else if src_is_signed {
@@ -195,11 +195,11 @@ macro_rules! impl_int_generic {
                 } else {
                     // src size > dst size
                     if src_is_signed {
-                        if core::$y::MIN as $x <= x && x <= core::$y::MAX as $x {
+                        if $y::MIN as $x <= x && x <= $y::MAX as $x {
                             return Ok(x as $y);
                         }
                     } else {
-                        if x <= core::$y::MAX as $x {
+                        if x <= $y::MAX as $x {
                             return Ok(x as $y);
                         }
                     }
@@ -249,7 +249,7 @@ macro_rules! impl_via_digits_check {
             fn try_conv(x: $x) -> Result<Self> {
                 let src_ty_bits = (size_of::<$x>() * 8) as u32;
                 let src_digits = src_ty_bits.saturating_sub(x.leading_zeros() + x.trailing_zeros());
-                let dst_digits = core::$y::MANTISSA_DIGITS;
+                let dst_digits = $y::MANTISSA_DIGITS;
                 if src_digits <= dst_digits {
                     Ok(x as $y)
                 } else {
@@ -286,7 +286,7 @@ macro_rules! impl_via_digits_check_signed {
                 let src_digits = x.checked_abs()
                     .map(|y| src_ty_bits.saturating_sub(y.leading_zeros() + y.trailing_zeros()))
                     .unwrap_or(1 /*MIN has one binary digit in float repr*/);
-                let dst_digits = core::$y::MANTISSA_DIGITS;
+                let dst_digits = $y::MANTISSA_DIGITS;
                 if src_digits <= dst_digits {
                     Ok(x as $y)
                 } else {
