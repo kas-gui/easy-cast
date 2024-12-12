@@ -40,8 +40,10 @@ jobs:
         uses: actions-rs/toolchain@v1
         with:
           profile: minimal
-          toolchain: "1.53.0"
+          toolchain: "1.60.0"
           override: true
+      - name: Use Cargo.lock.msrv
+        run: cp Cargo.lock.msrv Cargo.lock
       - name: Test
         run: |
           cargo test

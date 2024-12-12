@@ -133,9 +133,7 @@ impl Conv<()> for () {
         Ok(())
     }
     #[inline]
-    fn conv(_: ()) -> Self {
-        ()
-    }
+    fn conv(_: ()) -> Self {}
 }
 impl<S0, T0: Conv<S0>> Conv<(S0,)> for (T0,) {
     #[inline]

@@ -1,6 +1,10 @@
 Changelog
 =========
 
+## [0.5.3] — 2024-12-12
+
+-   Bump MSRV to 1.60.0 and use Edition 2021 (#30)
+
 ## [0.5.2] — 2022-12-22
 
 -   Support cast to self, useful in generics (#28)

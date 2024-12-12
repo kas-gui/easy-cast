@@ -7,6 +7,7 @@
 
 use super::*;
 
+#[allow(clippy::manual_range_contains)]
 impl ConvApprox<f64> for f32 {
     fn try_conv_approx(x: f64) -> Result<f32> {
         use core::num::FpCategory;
@@ -80,7 +81,6 @@ impl FloatRound for f64 {
 }
 
 #[cfg(any(feature = "std", feature = "libm"))]
-#[cfg_attr(doc_cfg, doc(cfg(any(feature = "std", feature = "libm"))))]
 macro_rules! impl_float {
     ($x:ty: $y:tt) => {
         impl ConvFloat<$x> for $y {
@@ -140,8 +140,8 @@ macro_rules! impl_float {
             #[inline]
             fn try_conv_trunc(x: $x) -> Result<Self> {
                 // Tested: these limits work for $x=f32 and all $y except u128
-                const LBOUND: $x = core::$y::MIN as $x - 1.0;
-                const UBOUND: $x = core::$y::MAX as $x + 1.0;
+                const LBOUND: $x = $y::MIN as $x - 1.0;
+                const UBOUND: $x = $y::MAX as $x + 1.0;
                 if x > LBOUND && x < UBOUND {
                     Ok(x as $y)
                 } else {
@@ -151,10 +151,10 @@ macro_rules! impl_float {
             #[inline]
             fn try_conv_nearest(x: $x) -> Result<Self> {
                 // Tested: these limits work for $x=f32 and all $y except u128
-                const LBOUND: $x = core::$y::MIN as $x;
-                const UBOUND: $x = core::$y::MAX as $x + 1.0;
+                const LBOUND: $x = $y::MIN as $x;
+                const UBOUND: $x = $y::MAX as $x + 1.0;
                 let x = x.round();
-                if x >= LBOUND && x < UBOUND {
+                if (LBOUND..UBOUND).contains(&x) {
                     Ok(x as $y)
                 } else {
                     Err(Error::Range)
@@ -163,10 +163,10 @@ macro_rules! impl_float {
             #[inline]
             fn try_conv_floor(x: $x) -> Result<Self> {
                 // Tested: these limits work for $x=f32 and all $y except u128
-                const LBOUND: $x = core::$y::MIN as $x;
-                const UBOUND: $x = core::$y::MAX as $x + 1.0;
+                const LBOUND: $x = $y::MIN as $x;
+                const UBOUND: $x = $y::MAX as $x + 1.0;
                 let x = x.floor();
-                if x >= LBOUND && x < UBOUND {
+                if (LBOUND..UBOUND).contains(&x) {
                     Ok(x as $y)
                 } else {
                     Err(Error::Range)
@@ -175,10 +175,10 @@ macro_rules! impl_float {
             #[inline]
             fn try_conv_ceil(x: $x) -> Result<Self> {
                 // Tested: these limits work for $x=f32 and all $y except u128
-                const LBOUND: $x = core::$y::MIN as $x;
-                const UBOUND: $x = core::$y::MAX as $x + 1.0;
+                const LBOUND: $x = $y::MIN as $x;
+                const UBOUND: $x = $y::MAX as $x + 1.0;
                 let x = x.ceil();
-                if x >= LBOUND && x < UBOUND {
+                if (LBOUND..UBOUND).contains(&x) {
                     Ok(x as $y)
                 } else {
                     Err(Error::Range)
