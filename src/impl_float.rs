@@ -80,7 +80,6 @@ impl FloatRound for f64 {
 }
 
 #[cfg(any(feature = "std", feature = "libm"))]
-#[cfg_attr(doc_cfg, doc(cfg(any(feature = "std", feature = "libm"))))]
 macro_rules! impl_float {
     ($x:ty: $y:tt) => {
         impl ConvFloat<$x> for $y {

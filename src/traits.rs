@@ -216,7 +216,6 @@ impl<S, T: ConvApprox<S>> CastApprox<T> for S {
 ///
 /// The sister-trait [`CastFloat`] supports "into" style usage.
 #[cfg(any(feature = "std", feature = "libm"))]
-#[cfg_attr(doc_cfg, doc(cfg(any(feature = "std", feature = "libm"))))]
 pub trait ConvFloat<T>: Sized {
     /// Try converting to integer with truncation
     ///
@@ -280,7 +279,6 @@ pub trait ConvFloat<T>: Sized {
 /// This trait is automatically implemented for every implementation of
 /// [`ConvFloat`].
 #[cfg(any(feature = "std", feature = "libm"))]
-#[cfg_attr(doc_cfg, doc(cfg(any(feature = "std", feature = "libm"))))]
 pub trait CastFloat<T> {
     /// Cast to integer, truncating
     ///

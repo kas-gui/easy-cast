@@ -11,6 +11,11 @@ keywords = ["cast", "into", "from", "conversion"]
 repository = "https://github.com/kas-gui/easy-cast"
 rust-version = "1.60.0"
 
+[package.metadata.docs.rs]
+features = []
+# To build locally:
+# RUSTDOCFLAGS="--cfg docsrs" cargo +nightly doc --open
+
 [features]
 default = ["std"]
 
