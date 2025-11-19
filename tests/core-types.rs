@@ -1,5 +1,5 @@
 use core::num::{Saturating, Wrapping};
-use core::ops::Range;
+use core::ops::{Range, RangeFrom, RangeInclusive, RangeTo, RangeToInclusive};
 use easy_cast::traits::*;
 
 #[test]
@@ -25,4 +25,35 @@ fn range_cast() {
     let a: Range<usize> = 10..20;
     let b: Range<u8> = a.cast();
     assert_eq!(b, 10..20);
+}
+
+#[test]
+fn range_inclusive_cast() {
+    let a: RangeInclusive<usize> = 0..=255;
+    let b: RangeInclusive<u8> = a.cast();
+    assert_eq!(b, 0..=255);
+
+    let c: RangeInclusive<usize> = 0..=256;
+    assert!(RangeInclusive::<u8>::try_conv(c).is_err());
+}
+
+#[test]
+fn range_from_cast() {
+    let a: RangeFrom<i32> = -12..;
+    let b: RangeFrom<i8> = a.cast();
+    assert_eq!(b, -12..);
+}
+
+#[test]
+fn range_to_cast() {
+    let a: RangeTo<i32> = ..-12;
+    let b: RangeTo<i8> = a.cast();
+    assert_eq!(b, ..-12);
+}
+
+#[test]
+fn range_to_inclusive_cast() {
+    let a: RangeToInclusive<i8> = ..=127;
+    let b: RangeToInclusive<i16> = a.cast();
+    assert_eq!(b, ..=127);
 }
