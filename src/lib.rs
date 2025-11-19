@@ -59,6 +59,7 @@
 
 #![deny(missing_docs)]
 #![cfg_attr(not(feature = "std"), no_std)]
+#![feature(nonzero_internals)]
 
 mod impl_basic;
 mod impl_float;
