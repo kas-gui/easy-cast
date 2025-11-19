@@ -59,7 +59,6 @@
 
 #![deny(missing_docs)]
 #![cfg_attr(not(feature = "std"), no_std)]
-#![cfg_attr(docsrs, feature(doc_auto_cfg))]
 
 mod impl_basic;
 mod impl_float;
