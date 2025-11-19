@@ -1,6 +1,15 @@
-use core::num::{Saturating, Wrapping};
+use core::num::*;
 use core::ops::{Range, RangeFrom, RangeInclusive, RangeTo, RangeToInclusive};
 use easy_cast::traits::*;
+
+#[test]
+fn nonzero_casts() {
+    let a = NonZeroI32::new(213).unwrap();
+    let b: NonZero<u128> = a.cast();
+    let c = NonZeroU8::conv(b);
+    let d = c.cast();
+    assert_eq!(a, d);
+}
 
 #[test]
 fn saturating_casts() {
