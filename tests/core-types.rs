@@ -1,4 +1,5 @@
 use core::num::{Saturating, Wrapping};
+use core::ops::Range;
 use easy_cast::traits::*;
 
 #[test]
@@ -17,4 +18,11 @@ fn wrapping_casts() {
     let c = Wrapping::<u8>::conv(b);
     let d = c.cast();
     assert_eq!(a, d);
+}
+
+#[test]
+fn range_cast() {
+    let a: Range<usize> = 10..20;
+    let b: Range<u8> = a.cast();
+    assert_eq!(b, 10..20);
 }
