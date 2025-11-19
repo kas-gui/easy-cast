@@ -11,13 +11,11 @@ jobs:
     name: Test and check formatting
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Install toolchain
-        uses: actions-rs/toolchain@v1
+        uses: dtolnay/rust-toolchain@master
         with:
-          profile: minimal
           toolchain: beta
-          override: true
           components: rustfmt
       - name: Rustfmt check
         uses: actions-rs/cargo@v1
@@ -36,12 +34,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Install toolchain
-        uses: actions-rs/toolchain@v1
+        uses: dtolnay/rust-toolchain@master
         with:
-          profile: minimal
           toolchain: "1.60.0"
-          override: true
       - name: Use Cargo.lock.msrv
         run: cp Cargo.lock.msrv Cargo.lock
       - name: Test
