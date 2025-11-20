@@ -36,7 +36,7 @@ impl<F: ZeroablePrimitive, T: Conv<F> + ZeroablePrimitive> Conv<NonZero<F>> for 
     #[inline]
     fn try_conv(n: NonZero<F>) -> Result<NonZero<T>> {
         let m: T = n.get().try_cast()?;
-        Ok(if cfg!(debug_assertions) {
+        Ok(if cfg!(any(debug_assertions, feature = "assert_nonzero")) {
             NonZero::new(m).expect("should be non-zero")
         } else {
             // SAFETY: since cast() does not change the numeric value, m cannot be zero
@@ -47,7 +47,7 @@ impl<F: ZeroablePrimitive, T: Conv<F> + ZeroablePrimitive> Conv<NonZero<F>> for 
     #[inline]
     fn conv(n: NonZero<F>) -> NonZero<T> {
         let m: T = n.get().cast();
-        if cfg!(debug_assertions) {
+        if cfg!(any(debug_assertions, feature = "assert_nonzero")) {
             NonZero::new(m).expect("should be non-zero")
         } else {
             // SAFETY: since cast() does not change the numeric value, m cannot be zero

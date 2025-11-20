@@ -28,7 +28,7 @@ libm = ["dep:libm"]
 # Note: assertions are always used in debug builds; these only affect release builds:
 
 # Always use all assertions
-always_assert = ["assert_float", "assert_int", "assert_digits"]
+always_assert = ["assert_float", "assert_int", "assert_digits", "assert_nonzero"]
 
 # Assert float -> any conversions do not exceed range of target type
 assert_float = []
@@ -38,6 +38,9 @@ assert_int = []
 
 # Assert int -> float conversion does not lose accuracy
 assert_digits = []
+
+# Always assert NonZero constructions are non-zero
+assert_nonzero = []
 
 [dependencies.libm]
 version = "0.2.1"
