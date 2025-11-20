@@ -58,6 +58,8 @@ but overhead should be small.
 In release builds without `always_assert`, `conv*` methods should reduce to
 `x as T` (with necessary additions for rounding).
 
+## Features
+
 ### no_std support
 
 When the crate's default features are disabled (and `std` is not enabled)
@@ -75,10 +77,12 @@ enabled.
 [`Conv::try_cast`]: https://docs.rs/easy-cast/latest/easy_cast/trait.Conv.html#tymethod.try_cast
 [`ConvFloat`]: https://docs.rs/easy-cast/latest/easy_cast/trait.ConvFloat.html
 [`CastFloat`]: https://docs.rs/easy-cast/latest/easy_cast/trait.CastFloat.html
+[`ConvApprox`]: https://docs.rs/easy-cast/latest/easy_cast/trait.ConvApprox.html
+[`CastApprox`]: https://docs.rs/easy-cast/latest/easy_cast/trait.CastApprox.html
 
 ## MSRV and no_std
 
-The Minumum Supported Rust Version is 1.53.0 (`IntoIterator for [T; N]`).
+The Minumum Supported Rust Version is 1.79.0 (`IntoIterator for [T; N]`).
 
 By default, `std` support is required. With default features disabled `no_std`
 is supported, but the `ConvFloat` and `CastFloat` traits are unavailable.

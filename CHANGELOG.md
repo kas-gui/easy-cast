@@ -1,6 +1,13 @@
 Changelog
 =========
 
+## [0.5.4] — 2025-11-20
+
+-   Bump MSRV to 1.79.0
+-   Support `Conv`, `Cast` for `core::ops::Range` and other range types (#38)
+-   Support `Conv`, `Cast` for `core::num::{Saturating, Wrapping}` (#38)
+-   Support `Conv`, `Cast` for `core::num::NonZero` (#39)
+
 ## [0.5.3] — 2024-12-12
 
 -   Bump MSRV to 1.60.0 and use Edition 2021 (#30)
