@@ -63,6 +63,8 @@
 mod impl_basic;
 mod impl_float;
 mod impl_int;
+mod impl_num;
+mod impl_ops;
 
 pub mod traits;
 
