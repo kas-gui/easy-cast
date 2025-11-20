@@ -75,6 +75,8 @@ enabled.
 [`Conv::try_cast`]: https://docs.rs/easy-cast/latest/easy_cast/trait.Conv.html#tymethod.try_cast
 [`ConvFloat`]: https://docs.rs/easy-cast/latest/easy_cast/trait.ConvFloat.html
 [`CastFloat`]: https://docs.rs/easy-cast/latest/easy_cast/trait.CastFloat.html
+[`ConvApprox`]: https://docs.rs/easy-cast/latest/easy_cast/trait.ConvApprox.html
+[`CastApprox`]: https://docs.rs/easy-cast/latest/easy_cast/trait.CastApprox.html
 
 ## MSRV and no_std
 
