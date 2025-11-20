@@ -9,7 +9,7 @@ readme = "README.md"
 documentation = "https://docs.rs/easy-cast/"
 keywords = ["cast", "into", "from", "conversion"]
 repository = "https://github.com/kas-gui/easy-cast"
-rust-version = "1.60.0"
+rust-version = "1.74.0"
 
 [package.metadata.docs.rs]
 features = []
