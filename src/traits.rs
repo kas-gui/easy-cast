@@ -19,7 +19,7 @@ use super::Result;
 
 /// Like [`From`], but supports fallible conversions
 ///
-/// This trait is intented to be an extension over [`From`], also supporting
+/// This trait is intended to be an extension over [`From`], also supporting
 /// fallible conversions of numeric types.
 /// Since Rust does not yet have stable support for handling conflicting
 /// implementations (specialization or otherwise), only conversions between

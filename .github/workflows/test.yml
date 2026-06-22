@@ -7,6 +7,12 @@ on:
     branches: [ master ]
 
 jobs:
+  typos:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: crate-ci/typos@v1
+
   doc-and-test:
     name: Test and check formatting
     runs-on: ubuntu-latest
