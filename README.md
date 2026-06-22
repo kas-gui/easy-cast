@@ -82,7 +82,7 @@ enabled.
 
 ## MSRV and no_std
 
-The Minumum Supported Rust Version is 1.79.0 (`IntoIterator for [T; N]`).
+The Minimum Supported Rust Version is 1.79.0 (`IntoIterator for [T; N]`).
 
 By default, `std` support is required. With default features disabled `no_std`
 is supported, but the `ConvFloat` and `CastFloat` traits are unavailable.
