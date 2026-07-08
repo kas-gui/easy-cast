@@ -1,6 +1,8 @@
 Changelog
 =========
 
+-   Bump MSRV to 1.96.0 and use Edition 2024 (#44)
+
 ## [0.5.4] — 2025-11-20
 
 -   Bump MSRV to 1.79.0

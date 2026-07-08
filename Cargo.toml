@@ -2,14 +2,14 @@
 name = "easy-cast"
 version = "0.5.4"
 authors = ["Diggory Hardy <git@dhardy.name>"]
-edition = "2021"
+edition = "2024"
 license = "Apache-2.0"
 description = "Type conversions which are expected to succeed"
 readme = "README.md"
 documentation = "https://docs.rs/easy-cast/"
 keywords = ["cast", "into", "from", "conversion"]
 repository = "https://github.com/kas-gui/easy-cast"
-rust-version = "1.79.0"
+rust-version = "1.96.0"
 
 [package.metadata.docs.rs]
 features = []
