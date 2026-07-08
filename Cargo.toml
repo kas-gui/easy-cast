@@ -1,6 +1,6 @@
 [package]
 name = "easy-cast"
-version = "0.5.4"
+version = "0.5.5"
 authors = ["Diggory Hardy <git@dhardy.name>"]
 edition = "2024"
 license = "Apache-2.0"

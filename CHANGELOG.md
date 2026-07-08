@@ -1,6 +1,8 @@
 Changelog
 =========
 
+## [0.5.5] — 2026-07-08
+
 -   Bump MSRV to 1.96.0 and use Edition 2024 (#44)
 -   Support `std::range` types (#44)
 
