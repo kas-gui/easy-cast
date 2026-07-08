@@ -65,6 +65,7 @@ mod impl_float;
 mod impl_int;
 mod impl_num;
 mod impl_ops;
+mod impl_range;
 
 pub mod traits;
 

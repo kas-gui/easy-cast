@@ -2,6 +2,7 @@ Changelog
 =========
 
 -   Bump MSRV to 1.96.0 and use Edition 2024 (#44)
+-   Support `std::range` types (#44)
 
 ## [0.5.4] — 2025-11-20
 
