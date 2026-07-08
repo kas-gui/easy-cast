@@ -63,7 +63,7 @@ jobs:
       - name: Install toolchain
         uses: dtolnay/rust-toolchain@master
         with:
-          toolchain: "1.79.0"
+          toolchain: "1.96.0"
       - name: Use Cargo.lock.msrv
         run: cp Cargo.lock.msrv Cargo.lock
       - name: Test
