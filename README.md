@@ -80,14 +80,6 @@ enabled.
 [`ConvApprox`]: https://docs.rs/easy-cast/latest/easy_cast/trait.ConvApprox.html
 [`CastApprox`]: https://docs.rs/easy-cast/latest/easy_cast/trait.CastApprox.html
 
-## MSRV and no_std
-
-The Minimum Supported Rust Version is 1.79.0 (`IntoIterator for [T; N]`).
-
-By default, `std` support is required. With default features disabled `no_std`
-is supported, but the `ConvFloat` and `CastFloat` traits are unavailable.
-Enabling the `libm` feature will re-enable these traits.
-
 
 Copyright and Licence
 -------
