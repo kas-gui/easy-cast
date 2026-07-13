@@ -1,5 +1,8 @@
+mod common;
+
 use core::num::*;
 use core::range::{Range, RangeFrom, RangeInclusive, RangeToInclusive};
+use common::{assert_ok_eq, assert_range};
 use easy_cast::traits::*;
 
 #[test]
@@ -58,4 +61,37 @@ fn range_to_inclusive_cast() {
     let a: RangeToInclusive<i8> = (..=127).into();
     let b: RangeToInclusive<i16> = a.cast();
     assert_eq!(b, (..=127).into());
+}
+
+#[test]
+fn nonzero_try_conv_range_errors() {
+    assert_range(NonZeroU8::try_conv(NonZeroI16::new(-1).unwrap()));
+    assert_range(NonZeroI8::try_conv(NonZeroU16::new(128).unwrap()));
+}
+
+#[test]
+fn wrapper_try_conv_range_errors() {
+    assert_range(Saturating::<u8>::try_conv(Saturating(256u16)));
+    assert_range(Wrapping::<i8>::try_conv(Wrapping(128u16)));
+}
+
+#[test]
+fn range_try_conv_boundary_checks() {
+    assert_ok_eq(Range::<u8>::try_conv((0u32..255u32).into()), (0u8..255u8).into());
+    assert_range(Range::<u8>::try_conv((0u32..256u32).into()));
+
+    assert_ok_eq(
+        RangeInclusive::<u8>::try_conv((0u32..=255u32).into()),
+        (0u8..=255u8).into()
+    );
+    assert_range(RangeInclusive::<u8>::try_conv((0u32..=256u32).into()));
+
+    assert_ok_eq(RangeFrom::<u8>::try_conv((10u32..).into()), (10u8..).into());
+    assert_range(RangeFrom::<u8>::try_conv((256u32..).into()));
+
+    assert_ok_eq(
+        RangeToInclusive::<u8>::try_conv((..=255u32).into()),
+        (..=255u8).into()
+    );
+    assert_range(RangeToInclusive::<u8>::try_conv((..=256u32).into()));
 }
