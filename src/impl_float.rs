@@ -26,9 +26,7 @@ impl ConvApprox<f64> for f32 {
                 // f32 exponent range: -126 to 127
                 // f64, f32 bias: 1023, 127 represents 0
                 let exp = (x.to_bits() & 0x7FF0_0000_0000_0000) >> 52;
-                if exp < 1023 - 126 {
-                    Ok(with_sign(0f32))
-                } else if exp <= 1023 + 127 {
+                if exp >= 1023 - 126 && exp <= 1023 + 127 {
                     let exp = ((exp + 127) - 1023) as u32;
                     let frac = ((x.to_bits() & 0x000F_FFFF_FFFF_FFFF) >> (52 - 23)) as u32;
                     let bits = sign_bits | (exp << 23) | frac;
