@@ -1,8 +1,8 @@
 mod common;
 
+use common::{assert_ok_eq, assert_range};
 use core::num::*;
 use core::ops::{Range, RangeFrom, RangeInclusive, RangeTo, RangeToInclusive};
-use common::{assert_ok_eq, assert_range};
 use easy_cast::traits::*;
 
 #[test]

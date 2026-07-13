@@ -1,3 +1,5 @@
+#![allow(dead_code)]
+
 use easy_cast::{Error, Result};
 
 pub fn assert_ok_eq<T: core::fmt::Debug + PartialEq>(result: Result<T>, expected: T) {

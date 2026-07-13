@@ -27,7 +27,10 @@ fn subnormal_and_small_normal_f64_values_map_to_zero() {
 fn float_approx_preserves_sign_for_zero_and_infinity() {
     assert_eq!(f32::conv_approx(0.0f64).to_bits(), 0.0f32.to_bits());
     assert_eq!(f32::conv_approx(-0.0f64).to_bits(), (-0.0f32).to_bits());
-    assert_eq!(f32::conv_approx(f64::INFINITY).to_bits(), f32::INFINITY.to_bits());
+    assert_eq!(
+        f32::conv_approx(f64::INFINITY).to_bits(),
+        f32::INFINITY.to_bits()
+    );
     assert_eq!(
         f32::conv_approx(f64::NEG_INFINITY).to_bits(),
         f32::NEG_INFINITY.to_bits()
@@ -47,6 +50,6 @@ fn float_approx_truncates_low_order_mantissa_bits() {
     assert_ok_eq(f32::try_conv_approx(base + delta), 1.0f32);
     assert_ok_eq(
         f32::try_conv_approx(1.0f64 + f32::EPSILON as f64),
-        1.0f32 + f32::EPSILON
+        1.0f32 + f32::EPSILON,
     );
 }

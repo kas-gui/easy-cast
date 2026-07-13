@@ -1,6 +1,5 @@
 #![cfg(any(feature = "std", feature = "libm"))]
 
-use core::num::NonZeroU8;
 use easy_cast::traits::*;
 
 #[test]
@@ -11,7 +10,11 @@ fn integer_conv_panics_when_assertions_are_enabled() {
 }
 
 #[test]
-#[cfg(all(not(debug_assertions), not(feature = "always_assert"), not(feature = "assert_int")))]
+#[cfg(all(
+    not(debug_assertions),
+    not(feature = "always_assert"),
+    not(feature = "assert_int")
+))]
 fn integer_conv_matches_as_without_assertions() {
     assert_eq!(u32::conv(-1i32), (-1i32) as u32);
 }
@@ -24,7 +27,11 @@ fn digits_check_panics_when_assertions_are_enabled() {
 }
 
 #[test]
-#[cfg(all(not(debug_assertions), not(feature = "always_assert"), not(feature = "assert_digits")))]
+#[cfg(all(
+    not(debug_assertions),
+    not(feature = "always_assert"),
+    not(feature = "assert_digits")
+))]
 fn digits_check_matches_as_without_assertions() {
     assert_eq!(f32::conv(u32::MAX), u32::MAX as f32);
 }
@@ -37,7 +44,11 @@ fn float_conv_panics_when_assertions_are_enabled() {
 }
 
 #[test]
-#[cfg(all(not(debug_assertions), not(feature = "always_assert"), not(feature = "assert_float")))]
+#[cfg(all(
+    not(debug_assertions),
+    not(feature = "always_assert"),
+    not(feature = "assert_float")
+))]
 fn float_conv_matches_as_without_assertions() {
     assert_eq!(i16::conv_trunc(32768.0f32), 32768.0f32 as i16);
 }
@@ -45,6 +56,8 @@ fn float_conv_matches_as_without_assertions() {
 #[cfg(feature = "assert_nonzero")]
 #[test]
 fn nonzero_conversions_still_preserve_nonzero_values() {
+    use core::num::NonZeroU8;
+
     let value = NonZeroU8::new(5).unwrap();
     assert_eq!(NonZeroU8::conv(value).get(), 5);
 }

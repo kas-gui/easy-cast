@@ -13,6 +13,7 @@ fn conv_approx_for_integer_sources_forwards_to_conv() {
 #[test]
 fn cast_approx_mirrors_conv_approx() {
     let ok: u8 = 42u16.cast_approx();
+    let err: easy_cast::Result<u8> = 256u16.try_cast_approx();
     assert_eq!(ok, 42);
-    assert_range(256u16.try_cast_approx::<u8>());
+    assert_range(err);
 }

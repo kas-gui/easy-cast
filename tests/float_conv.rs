@@ -17,7 +17,14 @@ macro_rules! assert_all_modes {
 #[test]
 fn trunc_nearest_floor_and_ceil_on_representative_values() {
     assert_all_modes!(1.9f32, i32, trunc = 1, nearest = 2, floor = 1, ceil = 2);
-    assert_all_modes!(-1.9f32, i32, trunc = -1, nearest = -2, floor = -2, ceil = -1);
+    assert_all_modes!(
+        -1.9f32,
+        i32,
+        trunc = -1,
+        nearest = -2,
+        floor = -2,
+        ceil = -1
+    );
     assert_all_modes!(0.5f64, i8, trunc = 0, nearest = 1, floor = 0, ceil = 1);
     assert_all_modes!(-0.5f64, i8, trunc = 0, nearest = -1, floor = -1, ceil = 0);
     assert_all_modes!(2.5f64, u8, trunc = 2, nearest = 3, floor = 2, ceil = 3);
