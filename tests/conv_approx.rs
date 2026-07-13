@@ -13,7 +13,8 @@ fn conv_approx_for_float_to_int_uses_truncation() {
     assert_eq!(i32::try_conv_approx(1.99f32), Ok(1));
     assert_eq!(i32::try_conv_approx(-1.99f32), Ok(-1));
     assert_eq!(u8::try_conv_approx(9.9f64), Ok(9));
-    assert_eq!(u8::try_conv_approx(-0.1f64), Err(Error::Range));
+    assert_eq!(u8::try_conv_approx(-0.1f64), Ok(0));
+    assert_eq!(u8::try_conv_approx(-1.1f64), Err(Error::Range));
 }
 
 #[test]
