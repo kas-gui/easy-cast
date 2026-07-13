@@ -23,14 +23,22 @@ impl ConvApprox<f64> for f32 {
             FpCategory::Infinite => Ok(with_sign(f32::INFINITY)),
             FpCategory::Zero | FpCategory::Subnormal => Ok(with_sign(0f32)),
             FpCategory::Normal => {
+                let bits = x.to_bits();
                 // f32 exponent range: -126 to 127
                 // f64, f32 bias: 1023, 127 represents 0
-                let exp = (x.to_bits() & 0x7FF0_0000_0000_0000) >> 52;
-                if exp >= 1023 - 126 && exp <= 1023 + 127 {
-                    let exp = ((exp + 127) - 1023) as u32;
-                    let frac = ((x.to_bits() & 0x000F_FFFF_FFFF_FFFF) >> (52 - 23)) as u32;
+                let exp = ((bits & 0x7FF0_0000_0000_0000) >> 52) as i32 - 1023;
+                let frac = bits & 0x000F_FFFF_FFFF_FFFF;
+                if (-126..=127).contains(&exp) {
+                    let exp = (exp + 127) as u32;
+                    let frac = (frac >> (52 - 23)) as u32;
                     let bits = sign_bits | (exp << 23) | frac;
                     Ok(f32::from_bits(bits))
+                } else if (-149..=-127).contains(&exp) {
+                    let significand = (1u64 << 52) | frac;
+                    let frac = (significand >> (-exp - 97)) as u32;
+                    Ok(f32::from_bits(sign_bits | frac))
+                } else if exp < -149 {
+                    Ok(with_sign(0f32))
                 } else {
                     Err(Error::Range)
                 }
