@@ -36,8 +36,9 @@ impl ConvApprox<f64> for f32 {
                 } else if (-149..=-127).contains(&exp) {
                     let significand = (1u64 << 52) | frac;
                     // Scale by 2^149 to form the f32 subnormal significand:
-                    // exp - 52 + 149 = exp + 97, so negative exponents require a right shift.
-                    let frac = (significand >> (-exp - 97)) as u32;
+                    // exp - 52 + 149 = exp + 97. Since exp < 0 here, right-shift by -(exp + 97).
+                    let shift = -exp - 97;
+                    let frac = (significand >> shift) as u32;
                     Ok(f32::from_bits(sign_bits | frac))
                 } else if exp < -149 {
                     Ok(with_sign(0f32))
