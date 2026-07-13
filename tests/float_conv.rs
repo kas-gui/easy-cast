@@ -1,16 +1,13 @@
 #![cfg(any(feature = "std", feature = "libm"))]
 
-mod common;
-
-use common::{assert_ok_eq, assert_range};
 use easy_cast::{Error, traits::*};
 
 macro_rules! assert_all_modes {
     ($value:expr, $dst:ty, trunc = $trunc:expr, nearest = $nearest:expr, floor = $floor:expr, ceil = $ceil:expr) => {
-        assert_ok_eq(<$dst>::try_conv_trunc($value), $trunc as $dst);
-        assert_ok_eq(<$dst>::try_conv_nearest($value), $nearest as $dst);
-        assert_ok_eq(<$dst>::try_conv_floor($value), $floor as $dst);
-        assert_ok_eq(<$dst>::try_conv_ceil($value), $ceil as $dst);
+        assert_eq!(<$dst>::try_conv_trunc($value), Ok($trunc as $dst));
+        assert_eq!(<$dst>::try_conv_nearest($value), Ok($nearest as $dst));
+        assert_eq!(<$dst>::try_conv_floor($value), Ok($floor as $dst));
+        assert_eq!(<$dst>::try_conv_ceil($value), Ok($ceil as $dst));
     };
 }
 
@@ -32,21 +29,21 @@ fn trunc_nearest_floor_and_ceil_on_representative_values() {
 
 #[test]
 fn float_boundaries_for_small_integer_types() {
-    assert_ok_eq(i8::try_conv_trunc(f32::from(i8::MIN)), i8::MIN);
-    assert_ok_eq(i8::try_conv_trunc(f32::from(i8::MAX)), i8::MAX);
-    assert_range(i8::try_conv_trunc(f32::from(i8::MIN) - 1.0));
-    assert_range(i8::try_conv_trunc(f32::from(i8::MAX) + 1.0));
+    assert_eq!(i8::try_conv_trunc(f32::from(i8::MIN)), Ok(i8::MIN));
+    assert_eq!(i8::try_conv_trunc(f32::from(i8::MAX)), Ok(i8::MAX));
+    assert_eq!(i8::try_conv_trunc(f32::from(i8::MIN) - 1.0), Err(Error::Range));
+    assert_eq!(i8::try_conv_trunc(f32::from(i8::MAX) + 1.0), Err(Error::Range));
 
-    assert_ok_eq(u8::try_conv_nearest(255.0f32), u8::MAX);
-    assert_range(u8::try_conv_nearest(256.0f32));
+    assert_eq!(u8::try_conv_nearest(255.0f32), Ok(u8::MAX));
+    assert_eq!(u8::try_conv_nearest(256.0f32), Err(Error::Range));
 
-    assert_ok_eq(i16::try_conv_floor(f64::from(i16::MIN)), i16::MIN);
-    assert_ok_eq(i16::try_conv_ceil(f64::from(i16::MAX)), i16::MAX);
-    assert_range(i16::try_conv_floor(f64::from(i16::MIN) - 1.0));
-    assert_range(i16::try_conv_ceil(f64::from(i16::MAX) + 1.0));
+    assert_eq!(i16::try_conv_floor(f64::from(i16::MIN)), Ok(i16::MIN));
+    assert_eq!(i16::try_conv_ceil(f64::from(i16::MAX)), Ok(i16::MAX));
+    assert_eq!(i16::try_conv_floor(f64::from(i16::MIN) - 1.0), Err(Error::Range));
+    assert_eq!(i16::try_conv_ceil(f64::from(i16::MAX) + 1.0), Err(Error::Range));
 
-    assert_ok_eq(u32::try_conv_trunc(f64::from(u32::MAX)), u32::MAX);
-    assert_range(u32::try_conv_trunc(f64::from(u32::MAX) + 1.0));
+    assert_eq!(u32::try_conv_trunc(f64::from(u32::MAX)), Ok(u32::MAX));
+    assert_eq!(u32::try_conv_trunc(f64::from(u32::MAX) + 1.0), Err(Error::Range));
 }
 
 #[test]
@@ -74,13 +71,13 @@ fn nan_and_infinity_are_range_errors_for_all_modes() {
 #[test]
 fn f32_to_u128_special_case() {
     let max = 0xFFFFFF00_00000000_00000000_00000000u128;
-    assert_ok_eq(u128::try_conv_trunc(f32::MAX), max);
-    assert_ok_eq(u128::try_conv_nearest(f32::MAX), max);
-    assert_ok_eq(u128::try_conv_floor(f32::MAX), max);
-    assert_ok_eq(u128::try_conv_ceil(f32::MAX), max);
-    assert_ok_eq(u128::try_conv_trunc(0.0f32), 0u128);
-    assert_range(u128::try_conv_trunc(-1.0f32));
-    assert_range(u128::try_conv_trunc(f32::INFINITY));
+    assert_eq!(u128::try_conv_trunc(f32::MAX), Ok(max));
+    assert_eq!(u128::try_conv_nearest(f32::MAX), Ok(max));
+    assert_eq!(u128::try_conv_floor(f32::MAX), Ok(max));
+    assert_eq!(u128::try_conv_ceil(f32::MAX), Ok(max));
+    assert_eq!(u128::try_conv_trunc(0.0f32), Ok(0u128));
+    assert_eq!(u128::try_conv_trunc(-1.0f32), Err(Error::Range));
+    assert_eq!(u128::try_conv_trunc(f32::INFINITY), Err(Error::Range));
 }
 
 #[test]

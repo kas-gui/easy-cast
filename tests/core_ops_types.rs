@@ -1,9 +1,6 @@
-mod common;
-
-use common::{assert_ok_eq, assert_range};
 use core::num::*;
 use core::ops::{Range, RangeFrom, RangeInclusive, RangeTo, RangeToInclusive};
-use easy_cast::traits::*;
+use easy_cast::{Error, traits::*};
 
 #[test]
 fn nonzero_casts() {
@@ -72,30 +69,30 @@ fn range_to_inclusive_cast() {
 
 #[test]
 fn nonzero_try_conv_range_errors() {
-    assert_range(NonZeroU8::try_conv(NonZeroI16::new(-1).unwrap()));
-    assert_range(NonZeroI8::try_conv(NonZeroU16::new(128).unwrap()));
+    assert_eq!(NonZeroU8::try_conv(NonZeroI16::new(-1).unwrap()), Err(Error::Range));
+    assert_eq!(NonZeroI8::try_conv(NonZeroU16::new(128).unwrap()), Err(Error::Range));
 }
 
 #[test]
 fn wrapper_try_conv_range_errors() {
-    assert_range(Saturating::<u8>::try_conv(Saturating(256u16)));
-    assert_range(Wrapping::<i8>::try_conv(Wrapping(128u16)));
+    assert_eq!(Saturating::<u8>::try_conv(Saturating(256u16)), Err(Error::Range));
+    assert_eq!(Wrapping::<i8>::try_conv(Wrapping(128u16)), Err(Error::Range));
 }
 
 #[test]
 fn range_try_conv_boundary_checks() {
-    assert_ok_eq(Range::<u8>::try_conv(0u32..255u32), 0u8..255u8);
-    assert_range(Range::<u8>::try_conv(0u32..256u32));
+    assert_eq!(Range::<u8>::try_conv(0u32..255u32), Ok(0u8..255u8));
+    assert_eq!(Range::<u8>::try_conv(0u32..256u32), Err(Error::Range));
 
-    assert_ok_eq(RangeInclusive::<u8>::try_conv(0u32..=255u32), 0u8..=255u8);
-    assert_range(RangeInclusive::<u8>::try_conv(0u32..=256u32));
+    assert_eq!(RangeInclusive::<u8>::try_conv(0u32..=255u32), Ok(0u8..=255u8));
+    assert_eq!(RangeInclusive::<u8>::try_conv(0u32..=256u32), Err(Error::Range));
 
-    assert_ok_eq(RangeFrom::<u8>::try_conv(10u32..), 10u8..);
-    assert_range(RangeFrom::<u8>::try_conv(256u32..));
+    assert_eq!(RangeFrom::<u8>::try_conv(10u32..), Ok(10u8..));
+    assert_eq!(RangeFrom::<u8>::try_conv(256u32..), Err(Error::Range));
 
-    assert_ok_eq(RangeTo::<u8>::try_conv(..255u32), ..255u8);
-    assert_range(RangeTo::<u8>::try_conv(..256u32));
+    assert_eq!(RangeTo::<u8>::try_conv(..255u32), Ok(..255u8));
+    assert_eq!(RangeTo::<u8>::try_conv(..256u32), Err(Error::Range));
 
-    assert_ok_eq(RangeToInclusive::<u8>::try_conv(..=255u32), ..=255u8);
-    assert_range(RangeToInclusive::<u8>::try_conv(..=256u32));
+    assert_eq!(RangeToInclusive::<u8>::try_conv(..=255u32), Ok(..=255u8));
+    assert_eq!(RangeToInclusive::<u8>::try_conv(..=256u32), Err(Error::Range));
 }
