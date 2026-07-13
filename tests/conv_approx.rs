@@ -34,7 +34,10 @@ fn conv_approx_for_f64_to_f32_uses_truncation() {
         f32::conv_approx((f32::from_bits(1) as f64) / 2.0).to_bits(),
         0.0f32.to_bits()
     );
-    assert_eq!(f32::conv_approx(f64::INFINITY).to_bits(), f32::INFINITY.to_bits());
+    assert_eq!(
+        f32::conv_approx(f64::INFINITY).to_bits(),
+        f32::INFINITY.to_bits()
+    );
     assert_eq!(f32::try_conv_approx(f64::MAX), Err(Error::Range));
     assert_eq!(f32::try_conv_approx(f64::NAN), Err(Error::Range));
 }

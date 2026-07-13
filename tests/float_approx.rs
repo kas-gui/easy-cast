@@ -11,8 +11,14 @@ fn subnormal_f64_values_map_to_zero_and_small_normals_can_become_subnormal_f32()
     let positive_tiny = (f32::from_bits(1) as f64) / 2.0;
     let negative_tiny = -positive_tiny;
 
-    assert_eq!(f32::conv_approx(positive_subnormal).to_bits(), 0.0f32.to_bits());
-    assert_eq!(f32::conv_approx(negative_subnormal).to_bits(), (-0.0f32).to_bits());
+    assert_eq!(
+        f32::conv_approx(positive_subnormal).to_bits(),
+        0.0f32.to_bits()
+    );
+    assert_eq!(
+        f32::conv_approx(negative_subnormal).to_bits(),
+        (-0.0f32).to_bits()
+    );
     assert_eq!(
         f32::conv_approx(positive_small_normal).to_bits(),
         f32::from_bits(1 << 22).to_bits()
@@ -22,7 +28,10 @@ fn subnormal_f64_values_map_to_zero_and_small_normals_can_become_subnormal_f32()
         (-f32::from_bits(1 << 22)).to_bits()
     );
     assert_eq!(f32::conv_approx(positive_tiny).to_bits(), 0.0f32.to_bits());
-    assert_eq!(f32::conv_approx(negative_tiny).to_bits(), (-0.0f32).to_bits());
+    assert_eq!(
+        f32::conv_approx(negative_tiny).to_bits(),
+        (-0.0f32).to_bits()
+    );
 }
 
 #[test]
@@ -41,7 +50,10 @@ fn float_approx_preserves_sign_for_zero_and_infinity() {
 
 #[test]
 fn float_approx_rejects_values_above_f32_range() {
-    assert_eq!(f32::try_conv_approx(f64::from_bits(1151u64 << 52)), Err(Error::Range));
+    assert_eq!(
+        f32::try_conv_approx(f64::from_bits(1151u64 << 52)),
+        Err(Error::Range)
+    );
     assert_eq!(f32::try_conv_approx(f64::MAX), Err(Error::Range));
 }
 

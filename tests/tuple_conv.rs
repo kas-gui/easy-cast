@@ -33,25 +33,22 @@ fn tuple_conversions_cover_mixed_types_and_errors() {
 
     assert_eq!(<(u8,)>::try_conv((256u16,)), Err(Error::Range));
     assert_eq!(<(u8, i8)>::try_conv((1u16, 128i16)), Err(Error::Range));
-    assert_eq!(<(u8, i8, u16)>::try_conv((1u16, -1i16, 70_000u32)), Err(Error::Range));
-    assert_eq!(<(u8, i8, u16, i16)>::try_conv((
-        1u16, -1i16, 2u32, 40_000i32,
-    )), Err(Error::Range));
-    assert_eq!(<(u8, i8, u16, i16, u32)>::try_conv((
-        1u16,
-        -1i16,
-        2u32,
-        -2i32,
-        u64::MAX,
-    )), Err(Error::Range));
-    assert_eq!(<(u8, i8, u16, i16, u32, i32)>::try_conv((
-        1u16,
-        -1i16,
-        2u32,
-        -2i32,
-        3u64,
-        i64::MAX,
-    )), Err(Error::Range));
+    assert_eq!(
+        <(u8, i8, u16)>::try_conv((1u16, -1i16, 70_000u32)),
+        Err(Error::Range)
+    );
+    assert_eq!(
+        <(u8, i8, u16, i16)>::try_conv((1u16, -1i16, 2u32, 40_000i32,)),
+        Err(Error::Range)
+    );
+    assert_eq!(
+        <(u8, i8, u16, i16, u32)>::try_conv((1u16, -1i16, 2u32, -2i32, u64::MAX,)),
+        Err(Error::Range)
+    );
+    assert_eq!(
+        <(u8, i8, u16, i16, u32, i32)>::try_conv((1u16, -1i16, 2u32, -2i32, 3u64, i64::MAX,)),
+        Err(Error::Range)
+    );
 }
 
 #[test]

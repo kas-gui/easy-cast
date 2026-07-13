@@ -31,19 +31,34 @@ fn trunc_nearest_floor_and_ceil_on_representative_values() {
 fn float_boundaries_for_small_integer_types() {
     assert_eq!(i8::try_conv_trunc(f32::from(i8::MIN)), Ok(i8::MIN));
     assert_eq!(i8::try_conv_trunc(f32::from(i8::MAX)), Ok(i8::MAX));
-    assert_eq!(i8::try_conv_trunc(f32::from(i8::MIN) - 1.0), Err(Error::Range));
-    assert_eq!(i8::try_conv_trunc(f32::from(i8::MAX) + 1.0), Err(Error::Range));
+    assert_eq!(
+        i8::try_conv_trunc(f32::from(i8::MIN) - 1.0),
+        Err(Error::Range)
+    );
+    assert_eq!(
+        i8::try_conv_trunc(f32::from(i8::MAX) + 1.0),
+        Err(Error::Range)
+    );
 
     assert_eq!(u8::try_conv_nearest(255.0f32), Ok(u8::MAX));
     assert_eq!(u8::try_conv_nearest(256.0f32), Err(Error::Range));
 
     assert_eq!(i16::try_conv_floor(f64::from(i16::MIN)), Ok(i16::MIN));
     assert_eq!(i16::try_conv_ceil(f64::from(i16::MAX)), Ok(i16::MAX));
-    assert_eq!(i16::try_conv_floor(f64::from(i16::MIN) - 1.0), Err(Error::Range));
-    assert_eq!(i16::try_conv_ceil(f64::from(i16::MAX) + 1.0), Err(Error::Range));
+    assert_eq!(
+        i16::try_conv_floor(f64::from(i16::MIN) - 1.0),
+        Err(Error::Range)
+    );
+    assert_eq!(
+        i16::try_conv_ceil(f64::from(i16::MAX) + 1.0),
+        Err(Error::Range)
+    );
 
     assert_eq!(u32::try_conv_trunc(f64::from(u32::MAX)), Ok(u32::MAX));
-    assert_eq!(u32::try_conv_trunc(f64::from(u32::MAX) + 1.0), Err(Error::Range));
+    assert_eq!(
+        u32::try_conv_trunc(f64::from(u32::MAX) + 1.0),
+        Err(Error::Range)
+    );
 }
 
 #[test]

@@ -69,14 +69,26 @@ fn range_to_inclusive_cast() {
 
 #[test]
 fn nonzero_try_conv_range_errors() {
-    assert_eq!(NonZeroU8::try_conv(NonZeroI16::new(-1).unwrap()), Err(Error::Range));
-    assert_eq!(NonZeroI8::try_conv(NonZeroU16::new(128).unwrap()), Err(Error::Range));
+    assert_eq!(
+        NonZeroU8::try_conv(NonZeroI16::new(-1).unwrap()),
+        Err(Error::Range)
+    );
+    assert_eq!(
+        NonZeroI8::try_conv(NonZeroU16::new(128).unwrap()),
+        Err(Error::Range)
+    );
 }
 
 #[test]
 fn wrapper_try_conv_range_errors() {
-    assert_eq!(Saturating::<u8>::try_conv(Saturating(256u16)), Err(Error::Range));
-    assert_eq!(Wrapping::<i8>::try_conv(Wrapping(128u16)), Err(Error::Range));
+    assert_eq!(
+        Saturating::<u8>::try_conv(Saturating(256u16)),
+        Err(Error::Range)
+    );
+    assert_eq!(
+        Wrapping::<i8>::try_conv(Wrapping(128u16)),
+        Err(Error::Range)
+    );
 }
 
 #[test]
@@ -84,8 +96,14 @@ fn range_try_conv_boundary_checks() {
     assert_eq!(Range::<u8>::try_conv(0u32..255u32), Ok(0u8..255u8));
     assert_eq!(Range::<u8>::try_conv(0u32..256u32), Err(Error::Range));
 
-    assert_eq!(RangeInclusive::<u8>::try_conv(0u32..=255u32), Ok(0u8..=255u8));
-    assert_eq!(RangeInclusive::<u8>::try_conv(0u32..=256u32), Err(Error::Range));
+    assert_eq!(
+        RangeInclusive::<u8>::try_conv(0u32..=255u32),
+        Ok(0u8..=255u8)
+    );
+    assert_eq!(
+        RangeInclusive::<u8>::try_conv(0u32..=256u32),
+        Err(Error::Range)
+    );
 
     assert_eq!(RangeFrom::<u8>::try_conv(10u32..), Ok(10u8..));
     assert_eq!(RangeFrom::<u8>::try_conv(256u32..), Err(Error::Range));
@@ -94,5 +112,8 @@ fn range_try_conv_boundary_checks() {
     assert_eq!(RangeTo::<u8>::try_conv(..256u32), Err(Error::Range));
 
     assert_eq!(RangeToInclusive::<u8>::try_conv(..=255u32), Ok(..=255u8));
-    assert_eq!(RangeToInclusive::<u8>::try_conv(..=256u32), Err(Error::Range));
+    assert_eq!(
+        RangeToInclusive::<u8>::try_conv(..=256u32),
+        Err(Error::Range)
+    );
 }

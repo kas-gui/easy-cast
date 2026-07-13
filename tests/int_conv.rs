@@ -16,7 +16,10 @@ macro_rules! assert_unsigned_to_signed {
         assert_eq!(<$dst>::try_conv(0 as $src), Ok(0 as $dst));
         assert_eq!(<$dst>::try_conv(1 as $src), Ok(1 as $dst));
         assert_eq!(<$dst>::try_conv(<$dst>::MAX as $src), Ok(<$dst>::MAX));
-        assert_eq!(<$dst>::try_conv((<$dst>::MAX as $src) + 1), Err(Error::Range));
+        assert_eq!(
+            <$dst>::try_conv((<$dst>::MAX as $src) + 1),
+            Err(Error::Range)
+        );
     };
 }
 
