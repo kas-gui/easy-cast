@@ -7,6 +7,8 @@
 
 use super::*;
 
+const F64_TO_F32_SUBNORMAL_SHIFT_OFFSET: i32 = 97;
+
 #[allow(clippy::manual_range_contains)]
 impl ConvApprox<f64> for f32 {
     fn try_conv_approx(x: f64) -> Result<f32> {
@@ -36,8 +38,8 @@ impl ConvApprox<f64> for f32 {
                 } else if (-149..=-127).contains(&exp) {
                     let significand = (1u64 << 52) | frac;
                     // Scale by 2^149 to form the f32 subnormal significand:
-                    // exp - 52 + 149 = exp + 97. Since exp < 0 here, right-shift by -(exp + 97).
-                    let shift = -exp - 97;
+                    // exp - 52 + 149 = exp + F64_TO_F32_SUBNORMAL_SHIFT_OFFSET.
+                    let shift = -exp - F64_TO_F32_SUBNORMAL_SHIFT_OFFSET;
                     let frac = (significand >> shift) as u32;
                     Ok(f32::from_bits(sign_bits | frac))
                 } else if exp < -149 {
