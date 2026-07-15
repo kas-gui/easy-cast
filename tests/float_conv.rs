@@ -77,7 +77,7 @@ fn float_conv_trunc_panics_with_expected_message() {
 }
 
 #[test]
-#[should_panic(expected = "cast x: f64 to u8 (ceil): range error for x = -1")]
+#[should_panic(expected = "cast x: f64 to u8 (ceil): range error for x = -1.1")]
 fn float_conv_ceil_panics_with_expected_message() {
     u8::conv_ceil(-1.1f64);
 }
