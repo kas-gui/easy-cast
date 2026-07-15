@@ -5,8 +5,8 @@ fn u32_to_f32_exact_and_inexact() {
     assert_eq!(f32::try_conv(0u32), Ok(0.0));
     assert_eq!(f32::try_conv(1u32), Ok(1.0));
     assert_eq!(f32::try_conv(0x00FF_FFFFu32), Ok(16_777_215.0));
-    assert_eq!(f32::try_conv(1u32 << 23), Ok(8_388_608.0));
     assert_eq!(f32::try_conv(0x01FF_FFFFu32), Err(Error::Inexact));
+    assert_eq!(f32::try_conv(0xFFFF_FF00u32), Ok(4_294_967_000.0));
 }
 
 #[test]
