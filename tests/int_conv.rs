@@ -1,13 +1,14 @@
 use easy_cast::{Error, traits::*};
 
 macro_rules! assert_signed_to_unsigned {
+    ($src:ty => $dst:ty) => {
+        assert_eq!(<$dst>::try_conv(0 as $src), Ok(0 as $dst));
+        assert_eq!(<$dst>::try_conv(1 as $src), Ok(1 as $dst));
+        assert_eq!(<$dst>::try_conv(<$src>::MAX), Ok(<$src>::MAX as $dst));
+        assert_eq!(<$dst>::try_conv(-1 as $src), Err(Error::Range));
+    };
     ($src:ty => $($dst:ty),+ $(,)?) => {
-        $(
-            assert_eq!(<$dst>::try_conv(0 as $src), Ok(0 as $dst));
-            assert_eq!(<$dst>::try_conv(1 as $src), Ok(1 as $dst));
-            assert_eq!(<$dst>::try_conv(<$src>::MAX), Ok(<$src>::MAX as $dst));
-            assert_eq!(<$dst>::try_conv(-1 as $src), Err(Error::Range));
-        )+
+        $(assert_signed_to_unsigned!($src => $dst);)+
     };
 }
 
@@ -20,6 +21,9 @@ macro_rules! assert_unsigned_to_signed {
             <$dst>::try_conv((<$dst>::MAX as $src) + 1),
             Err(Error::Range)
         );
+    };
+    ($src:ty => $($dst:ty),+ $(,)?) => {
+        $(assert_unsigned_to_signed!($src => $dst);)+
     };
 }
 
@@ -48,20 +52,10 @@ fn signed_to_unsigned_boundaries() {
 #[test]
 fn unsigned_to_signed_boundaries() {
     assert_unsigned_to_signed!(u8 => i8);
-    assert_unsigned_to_signed!(u16 => i8);
-    assert_unsigned_to_signed!(u16 => i16);
-    assert_unsigned_to_signed!(u32 => i8);
-    assert_unsigned_to_signed!(u32 => i16);
-    assert_unsigned_to_signed!(u32 => i32);
-    assert_unsigned_to_signed!(u64 => i8);
-    assert_unsigned_to_signed!(u64 => i16);
-    assert_unsigned_to_signed!(u64 => i32);
-    assert_unsigned_to_signed!(u64 => i64);
-    assert_unsigned_to_signed!(u128 => i8);
-    assert_unsigned_to_signed!(u128 => i16);
-    assert_unsigned_to_signed!(u128 => i32);
-    assert_unsigned_to_signed!(u128 => i64);
-    assert_unsigned_to_signed!(u128 => i128);
+    assert_unsigned_to_signed!(u16 => i8, i16);
+    assert_unsigned_to_signed!(u32 => i8, i16, i32);
+    assert_unsigned_to_signed!(u64 => i8, i16, i32, i64);
+    assert_unsigned_to_signed!(u128 => i8, i16, i32, i64, i128);
 }
 
 #[test]
