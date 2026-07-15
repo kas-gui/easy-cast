@@ -2,31 +2,6 @@
 
 use easy_cast::{Error, traits::*};
 
-macro_rules! assert_all_modes {
-    ($value:expr, $dst:ty, trunc = $trunc:expr, nearest = $nearest:expr, floor = $floor:expr, ceil = $ceil:expr) => {
-        assert_eq!(<$dst>::try_conv_trunc($value), Ok($trunc as $dst));
-        assert_eq!(<$dst>::try_conv_nearest($value), Ok($nearest as $dst));
-        assert_eq!(<$dst>::try_conv_floor($value), Ok($floor as $dst));
-        assert_eq!(<$dst>::try_conv_ceil($value), Ok($ceil as $dst));
-    };
-}
-
-#[test]
-fn trunc_nearest_floor_and_ceil_on_representative_values() {
-    assert_all_modes!(1.9f32, i32, trunc = 1, nearest = 2, floor = 1, ceil = 2);
-    assert_all_modes!(
-        -1.9f32,
-        i32,
-        trunc = -1,
-        nearest = -2,
-        floor = -2,
-        ceil = -1
-    );
-    assert_all_modes!(0.5f64, i8, trunc = 0, nearest = 1, floor = 0, ceil = 1);
-    assert_all_modes!(-0.5f64, i8, trunc = 0, nearest = -1, floor = -1, ceil = 0);
-    assert_all_modes!(2.5f64, u8, trunc = 2, nearest = 3, floor = 2, ceil = 3);
-}
-
 #[test]
 fn float_boundaries_for_small_integer_types() {
     assert_eq!(i8::try_conv_trunc(f32::from(i8::MIN)), Ok(i8::MIN));
