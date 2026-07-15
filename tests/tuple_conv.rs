@@ -3,7 +3,8 @@
 use easy_cast::{Error, traits::*};
 
 #[test]
-fn tuple_conversions_cover_arities_one_through_six() {
+fn tuple_arities() {
+    assert_eq!(<()>::try_conv(()), Ok(()));
     assert_eq!(<(u8,)>::try_conv((7u16,)), Ok((7u8,)));
     assert_eq!(<(u8, i8)>::try_conv((7u16, -7i16)), Ok((7u8, -7i8)));
     assert_eq!(
