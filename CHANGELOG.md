@@ -1,6 +1,13 @@
 Changelog
 =========
 
+## Unreleased
+
+-   Adjust `ConvApprox<f64> for f32` to behave more like `*_f64 as f32`:
+    too-large values round to infinity (instead of a range error) and rounding
+    uses `roundTiesToEven`. Unlike `as f32`, NAN still yields
+    `Err(Error::Range)`. (#47)
+
 ## [0.5.5] — 2026-07-08
 
 -   Bump MSRV to 1.96.0 and use Edition 2024 (#44)
