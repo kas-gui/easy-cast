@@ -85,7 +85,7 @@ impl core::fmt::Display for Error {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         match self {
             Error::Range => write!(f, "source value not in target range"),
-            Error::Inexact => write!(f, "loss of precision or range error"),
+            Error::Inexact => write!(f, "loss of precision"),
         }
     }
 }
