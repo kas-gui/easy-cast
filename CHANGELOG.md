@@ -8,6 +8,7 @@ Changelog
     uses `roundTiesToEven`. Unlike `as f32`, NAN still yields
     `Err(Error::Range)`. (#47)
 -   Change `Conv<f32> for f64` to trap NAN (#48)
+-   Remove support for `Saturating`, `Wrapping` (#49)
 
 ## [0.5.5] — 2026-07-08
 

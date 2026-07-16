@@ -12,24 +12,6 @@ fn nonzero_casts() {
 }
 
 #[test]
-fn saturating_casts() {
-    let a: Saturating<i32> = Saturating(213);
-    let b: Saturating<u128> = a.cast();
-    let c = Saturating::<u8>::conv(b);
-    let d = c.cast();
-    assert_eq!(a, d);
-}
-
-#[test]
-fn wrapping_casts() {
-    let a: Wrapping<i32> = Wrapping(213);
-    let b: Wrapping<u128> = a.cast();
-    let c = Wrapping::<u8>::conv(b);
-    let d = c.cast();
-    assert_eq!(a, d);
-}
-
-#[test]
 fn range_cast() {
     let a: Range<usize> = 10..20;
     let b: Range<u8> = a.cast();
@@ -75,18 +57,6 @@ fn nonzero_try_conv_range_errors() {
     );
     assert_eq!(
         NonZeroI8::try_conv(NonZeroU16::new(128).unwrap()),
-        Err(Error::Range)
-    );
-}
-
-#[test]
-fn wrapper_try_conv_range_errors() {
-    assert_eq!(
-        Saturating::<u8>::try_conv(Saturating(256u16)),
-        Err(Error::Range)
-    );
-    assert_eq!(
-        Wrapping::<i8>::try_conv(Wrapping(128u16)),
         Err(Error::Range)
     );
 }
