@@ -26,15 +26,14 @@ fn conv_approx_for_f64_to_f32_uses_truncation() {
     assert_eq!(f32::conv_approx(-0.0f64).to_bits(), (-0.0f32).to_bits());
     assert_eq!(f32::conv_approx(1.0f64 + E32 / 2.0), 1.0f32);
     assert_eq!(f32::conv_approx(1.0f64 + E32), 1.0f32 + f32::EPSILON);
-    // FIXME: conversions fail for these tests
-    // assert_eq!(
-    //     f32::conv_approx((f32::MIN_POSITIVE as f64) / 2.0).to_bits(),
-    //     1 << 22
-    // );
-    // assert_eq!(
-    //     f32::conv_approx((f32::from_bits(1) as f64) / 2.0).to_bits(),
-    //     0.0f32.to_bits()
-    // );
+    assert_eq!(
+        f32::conv_approx((f32::MIN_POSITIVE as f64) / 2.0).to_bits(),
+        1 << 22
+    );
+    assert_eq!(
+        f32::conv_approx((f32::from_bits(1) as f64) / 2.0).to_bits(),
+        0.0f32.to_bits()
+    );
     assert_eq!(
         f32::conv_approx(f64::INFINITY).to_bits(),
         f32::INFINITY.to_bits()
