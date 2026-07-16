@@ -6,31 +6,7 @@
 //! `core::num` impls for Conv.
 
 use super::*;
-use core::num::{NonZero, Saturating, Wrapping};
-
-impl<F, T: Conv<F>> Conv<Saturating<F>> for Saturating<T> {
-    #[inline]
-    fn try_conv(n: Saturating<F>) -> Result<Saturating<T>> {
-        n.0.try_cast().map(Saturating)
-    }
-
-    #[inline]
-    fn conv(n: Saturating<F>) -> Saturating<T> {
-        Saturating(n.0.cast())
-    }
-}
-
-impl<F, T: Conv<F>> Conv<Wrapping<F>> for Wrapping<T> {
-    #[inline]
-    fn try_conv(n: Wrapping<F>) -> Result<Wrapping<T>> {
-        n.0.try_cast().map(Wrapping)
-    }
-
-    #[inline]
-    fn conv(n: Wrapping<F>) -> Wrapping<T> {
-        Wrapping(n.0.cast())
-    }
-}
+use core::num::NonZero;
 
 macro_rules! impl_via_trivial {
     ($x:ty) => {
