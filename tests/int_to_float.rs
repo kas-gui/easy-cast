@@ -1,12 +1,28 @@
 use easy_cast::{Error, traits::*};
 
 #[test]
-fn u32_to_f32_exact_and_inexact() {
+fn int_to_float_exact_and_inexact() {
     assert_eq!(f32::try_conv(0u32), Ok(0.0));
     assert_eq!(f32::try_conv(1u32), Ok(1.0));
-    assert_eq!(f32::try_conv(0x00FF_FFFFu32), Ok(16_777_215.0));
-    assert_eq!(f32::try_conv(0x01FF_FFFFu32), Err(Error::Inexact));
+    assert_eq!(f32::try_conv(-0x00FF_FFFFi32), Ok(-16_777_215.0));
+    assert_eq!(f32::try_conv(-0x01FF_FFFFi32), Err(Error::Inexact));
     assert_eq!(f32::try_conv(0xFFFF_FF00u32), Ok(4_294_967_000.0));
+    assert_eq!(f32::try_conv(0xFFFF_FF80u32), Err(Error::Inexact));
+
+    assert_eq!(f64::try_conv(-0x0000_000F_FFFF_FFFFi64), Ok(-68719476735.0));
+    assert_eq!(
+        f64::try_conv(-0x001F_FFFF_FFFF_FFFFi64),
+        Ok(-9007199254740991.0)
+    );
+    assert_eq!(
+        f64::try_conv(-0x003F_FFFF_FFFF_FFFFi64),
+        Err(Error::Inexact)
+    );
+    assert_eq!(
+        f64::try_conv(0xFFFF_FFFF_FFFF_F800u64),
+        Ok(18446744073709549568.0)
+    );
+    assert_eq!(f64::try_conv(0xFFFF_FFFF_FFFF_FC00u64), Err(Error::Inexact));
 }
 
 #[test]
