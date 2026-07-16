@@ -23,6 +23,23 @@ fn int_to_float_exact_and_inexact() {
         Ok(18446744073709549568.0)
     );
     assert_eq!(f64::try_conv(0xFFFF_FFFF_FFFF_FC00u64), Err(Error::Inexact));
+
+    assert_eq!(
+        f32::try_conv(0xFFFFFF00_00000000_00000000_00000001_u128),
+        Err(Error::Inexact)
+    );
+}
+
+#[test]
+fn int_to_float_overflow() {
+    assert_eq!(
+        f32::try_conv(0xFFFFFF00_00000000_00000000_00000000_u128),
+        Ok(f32::MAX)
+    );
+    assert_eq!(
+        f32::try_conv(0xFFFFFF80_00000000_00000000_00000000_u128),
+        Ok(f32::INFINITY)
+    );
 }
 
 #[test]

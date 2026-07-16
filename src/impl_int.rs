@@ -237,8 +237,8 @@ macro_rules! impl_via_digits_check {
                 if cfg!(any(debug_assertions, feature = "assert_digits")) {
                     Self::try_conv(x).unwrap_or_else(|_| {
                         panic!(
-                            "cast x: {} to {}: inexact for x = {}",
-                            stringify!($x), stringify!($y), x
+                            "cast x: {} to {}: inexact for x = {x}",
+                            stringify!($x), stringify!($y)
                         )
                     })
                 } else {
@@ -272,8 +272,8 @@ macro_rules! impl_via_digits_check_signed {
                 if cfg!(any(debug_assertions, feature = "assert_digits")) {
                     Self::try_conv(x).unwrap_or_else(|_| {
                         panic!(
-                            "cast x: {} to {}: inexact for x = {}",
-                            stringify!($x), stringify!($y), x
+                            "cast x: {} to {}: inexact for x = {x}",
+                            stringify!($x), stringify!($y)
                         )
                     })
                 } else {
@@ -303,10 +303,34 @@ macro_rules! impl_via_digits_check_signed {
 
 impl_via_digits_check!(u32: f32);
 impl_via_digits_check!(u64: f32, f64);
-impl_via_digits_check!(u128: f32, f64);
+impl_via_digits_check!(u128: f64);
 impl_via_digits_check!(usize: f32, f64);
 
 impl_via_digits_check_signed!(i32: f32);
 impl_via_digits_check_signed!(i64: f32, f64);
 impl_via_digits_check_signed!(i128: f32, f64);
 impl_via_digits_check_signed!(isize: f32, f64);
+
+impl Conv<u128> for f32 {
+    #[inline]
+    fn conv(x: u128) -> Self {
+        if cfg!(any(debug_assertions, feature = "assert_digits")) {
+            Self::try_conv(x).unwrap_or_else(|_| panic!("cast x: u128 to f32: inexact for x = {x}"))
+        } else {
+            x as f32
+        }
+    }
+    #[inline]
+    fn try_conv(x: u128) -> Result<Self> {
+        if x < 0xffff_ff80_0000_0000_0000_0000_0000_0000_u128 {
+            let src_digits = 128u32.saturating_sub(x.leading_zeros() + x.trailing_zeros());
+            if src_digits <= f32::MANTISSA_DIGITS {
+                Ok(x as f32)
+            } else {
+                Err(Error::Inexact)
+            }
+        } else {
+            Ok(f32::INFINITY)
+        }
+    }
+}
