@@ -7,6 +7,30 @@
 
 use super::*;
 
+impl Conv<f32> for f64 {
+    fn try_conv(x: f32) -> Result<Self> {
+        match x.is_nan() {
+            false => Ok(x as f64),
+            true => Err(Error::Range),
+        }
+    }
+
+    #[inline]
+    fn conv(x: f32) -> f64 {
+        fn trap_nan(x: f32) {
+            if x.is_nan() {
+                panic!("cast float-to-float: NaN")
+            }
+        }
+
+        if cfg!(any(debug_assertions, feature = "assert_float")) {
+            trap_nan(x)
+        }
+
+        x as f64
+    }
+}
+
 #[allow(clippy::manual_range_contains)]
 impl ConvApprox<f64> for f32 {
     fn try_conv_approx(x: f64) -> Result<f32> {
@@ -16,14 +40,19 @@ impl ConvApprox<f64> for f32 {
         }
     }
 
+    #[inline]
     fn conv_approx(x: f64) -> f32 {
-        if cfg!(any(debug_assertions, feature = "assert_float")) {
-            Self::try_conv_approx(x).unwrap_or_else(|_| {
-                panic!("cast x: f64 to f32 (approx): range error for x = {}", x)
-            })
-        } else {
-            x as f32
+        fn trap_nan(x: f64) {
+            if x.is_nan() {
+                panic!("cast float-to-float: NaN")
+            }
         }
+
+        if cfg!(any(debug_assertions, feature = "assert_float")) {
+            trap_nan(x)
+        }
+
+        x as f32
     }
 }
 

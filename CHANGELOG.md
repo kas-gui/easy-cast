@@ -7,6 +7,7 @@ Changelog
     too-large values round to infinity (instead of a range error) and rounding
     uses `roundTiesToEven`. Unlike `as f32`, NAN still yields
     `Err(Error::Range)`. (#47)
+-   Change `Conv<f32> for f64` to trap NAN (#48)
 
 ## [0.5.5] — 2026-07-08
 
