@@ -3,13 +3,15 @@
 // You may obtain a copy of the License in the LICENSE-APACHE file or at:
 //     https://www.apache.org/licenses/LICENSE-2.0
 
-//! Basic impls for Conv
+//! Basic impls
 
-use crate::{Cast, Conv, Error};
+use crate::Error;
+use crate::generic::{Convert, Rounding};
 #[cfg(any(feature = "std", feature = "libm"))]
 use crate::{ConvFloat, RangeError};
+use core::convert::Infallible;
 
-/// Implement [`Conv`] infallibly over a [`From`] implementation
+/// Implement [`Convert`] infallibly over a [`From`] implementation
 ///
 /// # Example
 ///
@@ -33,13 +35,15 @@ use crate::{ConvFloat, RangeError};
 #[macro_export]
 macro_rules! impl_via_from {
     ($x:ty: $y:ty) => {
-        impl $crate::traits::Conv<$x> for $y {
+        impl $crate::generic::Convert<$x, $crate::generic::Exact> for $y {
+            type Error = ::core::convert::Infallible;
+
             #[inline]
-            fn conv(x: $x) -> $y {
+            fn convert(x: $x) -> $y {
                 <$y>::from(x)
             }
             #[inline]
-            fn try_conv(x: $x) -> ::core::result::Result<Self, $crate::Error> {
+            fn try_convert(x: $x) -> Result<Self, Self::Error> {
                 Ok(<$y>::from(x))
             }
         }
@@ -62,20 +66,24 @@ impl_via_from!(u64: i128, u128);
 
 // TODO(unsize): remove T: Copy + Default bound
 // TODO(specialization): implement ConvApprox for arrays and tuples
-impl<S, T: Conv<S> + Copy + Default, const N: usize> Conv<[S; N]> for [T; N] {
+impl<R: Rounding, S, T: Convert<S, R> + Copy + Default, const N: usize> Convert<[S; N], R>
+    for [T; N]
+{
+    type Error = T::Error;
+
     #[inline]
-    fn try_conv(ss: [S; N]) -> Result<Self, Error> {
+    fn try_convert(ss: [S; N]) -> Result<Self, Self::Error> {
         let mut tt = [T::default(); N];
         for (s, t) in IntoIterator::into_iter(ss).zip(tt.iter_mut()) {
-            *t = T::try_conv(s)?;
+            *t = T::try_convert(s)?;
         }
         Ok(tt)
     }
     #[inline]
-    fn conv(ss: [S; N]) -> Self {
+    fn convert(ss: [S; N]) -> Self {
         let mut tt = [T::default(); N];
         for (s, t) in IntoIterator::into_iter(ss).zip(tt.iter_mut()) {
-            *t = T::conv(s);
+            *t = T::convert(s);
         }
         tt
     }
@@ -150,115 +158,165 @@ impl<S, T: ConvFloat<S> + Copy + Default, const N: usize> ConvFloat<[S; N]> for 
     }
 }
 
-impl Conv<()> for () {
+impl<R: Rounding> Convert<(), R> for () {
+    type Error = Infallible;
+
     #[inline]
-    fn try_conv(_: ()) -> Result<Self, Error> {
+    fn try_convert(_: ()) -> Result<Self, Self::Error> {
         Ok(())
     }
     #[inline]
-    fn conv(_: ()) -> Self {}
+    fn convert(_: ()) -> Self {}
 }
-impl<S0, T0: Conv<S0>> Conv<(S0,)> for (T0,) {
+impl<R: Rounding, S0, T0: Convert<S0, R>> Convert<(S0,), R> for (T0,) {
+    type Error = T0::Error;
+
     #[inline]
-    fn try_conv(ss: (S0,)) -> Result<Self, Error> {
-        Ok((ss.0.try_cast()?,))
+    fn try_convert(ss: (S0,)) -> Result<Self, Self::Error> {
+        Ok((T0::try_convert(ss.0)?,))
     }
     #[inline]
-    fn conv(ss: (S0,)) -> Self {
-        (ss.0.cast(),)
-    }
-}
-impl<S0, S1, T0: Conv<S0>, T1: Conv<S1>> Conv<(S0, S1)> for (T0, T1) {
-    #[inline]
-    fn try_conv(ss: (S0, S1)) -> Result<Self, Error> {
-        Ok((ss.0.try_cast()?, ss.1.try_cast()?))
-    }
-    #[inline]
-    fn conv(ss: (S0, S1)) -> Self {
-        (ss.0.cast(), ss.1.cast())
+    fn convert(ss: (S0,)) -> Self {
+        (T0::convert(ss.0),)
     }
 }
-impl<S0, S1, S2, T0: Conv<S0>, T1: Conv<S1>, T2: Conv<S2>> Conv<(S0, S1, S2)> for (T0, T1, T2) {
-    #[inline]
-    fn try_conv(ss: (S0, S1, S2)) -> Result<Self, Error> {
-        Ok((ss.0.try_cast()?, ss.1.try_cast()?, ss.2.try_cast()?))
-    }
-    #[inline]
-    fn conv(ss: (S0, S1, S2)) -> Self {
-        (ss.0.cast(), ss.1.cast(), ss.2.cast())
-    }
-}
-impl<S0, S1, S2, S3, T0: Conv<S0>, T1: Conv<S1>, T2: Conv<S2>, T3: Conv<S3>> Conv<(S0, S1, S2, S3)>
-    for (T0, T1, T2, T3)
+impl<R: Rounding, S0, S1, T0: Convert<S0, R>, T1: Convert<S1, R>> Convert<(S0, S1), R>
+    for (T0, T1)
 {
+    type Error = Error;
+
     #[inline]
-    fn try_conv(ss: (S0, S1, S2, S3)) -> Result<Self, Error> {
+    fn try_convert(ss: (S0, S1)) -> Result<Self, Self::Error> {
         Ok((
-            ss.0.try_cast()?,
-            ss.1.try_cast()?,
-            ss.2.try_cast()?,
-            ss.3.try_cast()?,
+            T0::try_convert(ss.0).map_err(Into::into)?,
+            T1::try_convert(ss.1).map_err(Into::into)?,
         ))
     }
     #[inline]
-    fn conv(ss: (S0, S1, S2, S3)) -> Self {
-        (ss.0.cast(), ss.1.cast(), ss.2.cast(), ss.3.cast())
+    fn convert(ss: (S0, S1)) -> Self {
+        (T0::convert(ss.0), T1::convert(ss.1))
     }
 }
-impl<S0, S1, S2, S3, S4, T0: Conv<S0>, T1: Conv<S1>, T2: Conv<S2>, T3: Conv<S3>, T4: Conv<S4>>
-    Conv<(S0, S1, S2, S3, S4)> for (T0, T1, T2, T3, T4)
+impl<R: Rounding, S0, S1, S2, T0: Convert<S0, R>, T1: Convert<S1, R>, T2: Convert<S2, R>>
+    Convert<(S0, S1, S2), R> for (T0, T1, T2)
 {
+    type Error = Error;
+
     #[inline]
-    fn try_conv(ss: (S0, S1, S2, S3, S4)) -> Result<Self, Error> {
+    fn try_convert(ss: (S0, S1, S2)) -> Result<Self, Self::Error> {
         Ok((
-            ss.0.try_cast()?,
-            ss.1.try_cast()?,
-            ss.2.try_cast()?,
-            ss.3.try_cast()?,
-            ss.4.try_cast()?,
+            T0::try_convert(ss.0).map_err(Into::into)?,
+            T1::try_convert(ss.1).map_err(Into::into)?,
+            T2::try_convert(ss.2).map_err(Into::into)?,
         ))
     }
     #[inline]
-    fn conv(ss: (S0, S1, S2, S3, S4)) -> Self {
+    fn convert(ss: (S0, S1, S2)) -> Self {
+        (T0::convert(ss.0), T1::convert(ss.1), T2::convert(ss.2))
+    }
+}
+impl<
+    R: Rounding,
+    S0,
+    S1,
+    S2,
+    S3,
+    T0: Convert<S0, R>,
+    T1: Convert<S1, R>,
+    T2: Convert<S2, R>,
+    T3: Convert<S3, R>,
+> Convert<(S0, S1, S2, S3), R> for (T0, T1, T2, T3)
+{
+    type Error = Error;
+
+    #[inline]
+    fn try_convert(ss: (S0, S1, S2, S3)) -> Result<Self, Self::Error> {
+        Ok((
+            T0::try_convert(ss.0).map_err(Into::into)?,
+            T1::try_convert(ss.1).map_err(Into::into)?,
+            T2::try_convert(ss.2).map_err(Into::into)?,
+            T3::try_convert(ss.3).map_err(Into::into)?,
+        ))
+    }
+    #[inline]
+    fn convert(ss: (S0, S1, S2, S3)) -> Self {
         (
-            ss.0.cast(),
-            ss.1.cast(),
-            ss.2.cast(),
-            ss.3.cast(),
-            ss.4.cast(),
+            T0::convert(ss.0),
+            T1::convert(ss.1),
+            T2::convert(ss.2),
+            T3::convert(ss.3),
         )
     }
 }
-impl<S0, S1, S2, S3, S4, S5, T0, T1, T2, T3, T4, T5> Conv<(S0, S1, S2, S3, S4, S5)>
-    for (T0, T1, T2, T3, T4, T5)
-where
-    T0: Conv<S0>,
-    T1: Conv<S1>,
-    T2: Conv<S2>,
-    T3: Conv<S3>,
-    T4: Conv<S4>,
-    T5: Conv<S5>,
+impl<
+    R: Rounding,
+    S0,
+    S1,
+    S2,
+    S3,
+    S4,
+    T0: Convert<S0, R>,
+    T1: Convert<S1, R>,
+    T2: Convert<S2, R>,
+    T3: Convert<S3, R>,
+    T4: Convert<S4, R>,
+> Convert<(S0, S1, S2, S3, S4), R> for (T0, T1, T2, T3, T4)
 {
+    type Error = Error;
+
     #[inline]
-    fn try_conv(ss: (S0, S1, S2, S3, S4, S5)) -> Result<Self, Error> {
+    fn try_convert(ss: (S0, S1, S2, S3, S4)) -> Result<Self, Self::Error> {
         Ok((
-            ss.0.try_cast()?,
-            ss.1.try_cast()?,
-            ss.2.try_cast()?,
-            ss.3.try_cast()?,
-            ss.4.try_cast()?,
-            ss.5.try_cast()?,
+            T0::try_convert(ss.0).map_err(Into::into)?,
+            T1::try_convert(ss.1).map_err(Into::into)?,
+            T2::try_convert(ss.2).map_err(Into::into)?,
+            T3::try_convert(ss.3).map_err(Into::into)?,
+            T4::try_convert(ss.4).map_err(Into::into)?,
         ))
     }
     #[inline]
-    fn conv(ss: (S0, S1, S2, S3, S4, S5)) -> Self {
+    fn convert(ss: (S0, S1, S2, S3, S4)) -> Self {
         (
-            ss.0.cast(),
-            ss.1.cast(),
-            ss.2.cast(),
-            ss.3.cast(),
-            ss.4.cast(),
-            ss.5.cast(),
+            T0::convert(ss.0),
+            T1::convert(ss.1),
+            T2::convert(ss.2),
+            T3::convert(ss.3),
+            T4::convert(ss.4),
+        )
+    }
+}
+impl<R: Rounding, S0, S1, S2, S3, S4, S5, T0, T1, T2, T3, T4, T5>
+    Convert<(S0, S1, S2, S3, S4, S5), R> for (T0, T1, T2, T3, T4, T5)
+where
+    T0: Convert<S0, R>,
+    T1: Convert<S1, R>,
+    T2: Convert<S2, R>,
+    T3: Convert<S3, R>,
+    T4: Convert<S4, R>,
+    T5: Convert<S5, R>,
+{
+    type Error = Error;
+
+    #[inline]
+    fn try_convert(ss: (S0, S1, S2, S3, S4, S5)) -> Result<Self, Self::Error> {
+        Ok((
+            T0::try_convert(ss.0).map_err(Into::into)?,
+            T1::try_convert(ss.1).map_err(Into::into)?,
+            T2::try_convert(ss.2).map_err(Into::into)?,
+            T3::try_convert(ss.3).map_err(Into::into)?,
+            T4::try_convert(ss.4).map_err(Into::into)?,
+            T5::try_convert(ss.5).map_err(Into::into)?,
+        ))
+    }
+    #[inline]
+    fn convert(ss: (S0, S1, S2, S3, S4, S5)) -> Self {
+        (
+            T0::convert(ss.0),
+            T1::convert(ss.1),
+            T2::convert(ss.2),
+            T3::convert(ss.3),
+            T4::convert(ss.4),
+            T5::convert(ss.5),
         )
     }
 }
@@ -300,7 +358,7 @@ impl<S0, S1, T0: ConvFloat<S0>, T1: ConvFloat<S1>> ConvFloat<(S0, S1)> for (T0, 
     }
 }
 
-/// Implement a trivial [`Conv`] infallibly
+/// Implement a trivial [`Convert`] infallibly
 ///
 /// A trivial conversion is one which maps a type to itself.
 ///
@@ -314,13 +372,15 @@ impl<S0, S1, T0: ConvFloat<S0>, T1: ConvFloat<S1>> ConvFloat<(S0, S1)> for (T0, 
 #[macro_export]
 macro_rules! impl_via_trivial {
     ($x:ty) => {
-        impl $crate::Conv<$x> for $x {
+        impl<R: $crate::generic::Rounding> $crate::generic::Convert<$x, R> for $x {
+            type Error = ::core::convert::Infallible;
+
             #[inline]
-            fn conv(x: $x) -> Self {
+            fn convert(x: $x) -> Self {
                 x
             }
             #[inline]
-            fn try_conv(x: $x) -> ::core::result::Result<Self, $crate::Error> {
+            fn try_convert(x: $x) -> Result<Self, Self::Error> {
                 Ok(x)
             }
         }

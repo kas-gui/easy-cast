@@ -3,20 +3,24 @@
 // You may obtain a copy of the License in the LICENSE-APACHE file or at:
 //     https://www.apache.org/licenses/LICENSE-2.0
 
-//! `core::num` impls for Conv.
+//! `core::num` impls.
 
-use super::{Cast, Conv, Error};
+use crate::RangeError;
+use crate::generic::{Convert, Exact};
+use core::convert::Infallible;
 use core::num::NonZero;
 
 macro_rules! impl_via_trivial {
     ($x:ty) => {
-        impl Conv<NonZero<$x>> for NonZero<$x> {
+        impl Convert<NonZero<$x>, Exact> for NonZero<$x> {
+            type Error = Infallible;
+
             #[inline]
-            fn conv(x: NonZero<$x>) -> Self {
+            fn convert(x: NonZero<$x>) -> Self {
                 x
             }
             #[inline]
-            fn try_conv(x: NonZero<$x>) -> Result<Self, Error> {
+            fn try_convert(x: NonZero<$x>) -> Result<Self, Infallible> {
                 Ok(x)
             }
         }
@@ -34,13 +38,15 @@ impl_via_trivial!(
 );
 
 macro_rules! impl_nonzero {
-    ($x:ty: $y:ty) => {
-        impl Conv<NonZero<$x>> for NonZero<$y> {
+    ($x:ty : $y:ty) => {
+        impl Convert<NonZero<$x>, Exact> for NonZero<$y> {
+            type Error = RangeError;
+
             #[inline]
-            fn try_conv(n: NonZero<$x>) -> Result<NonZero<$y>, Error> {
-                let m: $y = n.get().try_cast()?;
+            fn try_convert(n: NonZero<$x>) -> Result<NonZero<$y>, Self::Error> {
+                let m: $y = <$y>::try_convert(n.get())?;
                 // An error here should be impossible, but handling one is basically free:
-                NonZero::new(m).ok_or(Error::Range)
+                NonZero::new(m).ok_or(RangeError)
             }
 
             // We do not implement conv since its main purpose is to allow
@@ -48,13 +54,14 @@ macro_rules! impl_nonzero {
             // we cannot omit all checks.
         }
     };
-    ($x:ty: $y:ty, $($yy:ty),+) => {
+    ($x:ty : $y:ty, $($yy:ty),+) => {
         impl_nonzero!($x: $y);
         impl_nonzero!($x: $($yy),+);
     };
 }
 
 // From impl_basic:
+// NOTE: these impls should be Infallible but this would require unsafe code
 impl_nonzero!(i8: i16, i32, i64, i128, isize);
 impl_nonzero!(i16: i32, i64, i128, isize);
 impl_nonzero!(i32: i64, i128);

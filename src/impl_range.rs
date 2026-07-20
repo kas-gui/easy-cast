@@ -3,73 +3,81 @@
 // You may obtain a copy of the License in the LICENSE-APACHE file or at:
 //     https://www.apache.org/licenses/LICENSE-2.0
 
-//! `core::range` impls for Conv.
+//! `core::range` impls.
 
-use crate::{Cast, Conv, Error};
+use crate::generic::{Convert, Rounding};
 use core::range::{Range, RangeFrom, RangeInclusive, RangeToInclusive};
 
-impl<F, T: Conv<F>> Conv<Range<F>> for Range<T> {
+impl<R: Rounding, F, T: Convert<F, R>> Convert<Range<F>, R> for Range<T> {
+    type Error = T::Error;
+
     #[inline]
-    fn try_conv(n: Range<F>) -> Result<Range<T>, Error> {
+    fn try_convert(n: Range<F>) -> Result<Range<T>, Self::Error> {
         Ok(Range {
-            start: n.start.try_cast()?,
-            end: n.end.try_cast()?,
+            start: T::try_convert(n.start)?,
+            end: T::try_convert(n.end)?,
         })
     }
 
     #[inline]
-    fn conv(n: Range<F>) -> Range<T> {
+    fn convert(n: Range<F>) -> Range<T> {
         Range {
-            start: n.start.cast(),
-            end: n.end.cast(),
+            start: T::convert(n.start),
+            end: T::convert(n.end),
         }
     }
 }
 
-impl<F: Clone, T: Conv<F>> Conv<RangeInclusive<F>> for RangeInclusive<T> {
+impl<R: Rounding, F: Clone, T: Convert<F, R>> Convert<RangeInclusive<F>, R> for RangeInclusive<T> {
+    type Error = T::Error;
+
     #[inline]
-    fn try_conv(n: RangeInclusive<F>) -> Result<RangeInclusive<T>, Error> {
-        let start = n.start.clone().try_cast()?;
-        let last = n.last.clone().try_cast()?;
+    fn try_convert(n: RangeInclusive<F>) -> Result<RangeInclusive<T>, Self::Error> {
+        let start = T::try_convert(n.start.clone())?;
+        let last = T::try_convert(n.last.clone())?;
         Ok(RangeInclusive { start, last })
     }
 
     #[inline]
-    fn conv(n: RangeInclusive<F>) -> RangeInclusive<T> {
-        let start = n.start.clone().cast();
-        let last = n.last.clone().cast();
+    fn convert(n: RangeInclusive<F>) -> RangeInclusive<T> {
+        let start = T::convert(n.start.clone());
+        let last = T::convert(n.last.clone());
         RangeInclusive { start, last }
     }
 }
 
-impl<F, T: Conv<F>> Conv<RangeFrom<F>> for RangeFrom<T> {
+impl<R: Rounding, F, T: Convert<F, R>> Convert<RangeFrom<F>, R> for RangeFrom<T> {
+    type Error = T::Error;
+
     #[inline]
-    fn try_conv(n: RangeFrom<F>) -> Result<RangeFrom<T>, Error> {
+    fn try_convert(n: RangeFrom<F>) -> Result<RangeFrom<T>, Self::Error> {
         Ok(RangeFrom {
-            start: n.start.try_cast()?,
+            start: T::try_convert(n.start)?,
         })
     }
 
     #[inline]
-    fn conv(n: RangeFrom<F>) -> RangeFrom<T> {
+    fn convert(n: RangeFrom<F>) -> RangeFrom<T> {
         RangeFrom {
-            start: n.start.cast(),
+            start: T::convert(n.start),
         }
     }
 }
 
-impl<F, T: Conv<F>> Conv<RangeToInclusive<F>> for RangeToInclusive<T> {
+impl<R: Rounding, F, T: Convert<F, R>> Convert<RangeToInclusive<F>, R> for RangeToInclusive<T> {
+    type Error = T::Error;
+
     #[inline]
-    fn try_conv(n: RangeToInclusive<F>) -> Result<RangeToInclusive<T>, Error> {
+    fn try_convert(n: RangeToInclusive<F>) -> Result<RangeToInclusive<T>, Self::Error> {
         Ok(RangeToInclusive {
-            last: n.last.try_cast()?,
+            last: T::try_convert(n.last)?,
         })
     }
 
     #[inline]
-    fn conv(n: RangeToInclusive<F>) -> RangeToInclusive<T> {
+    fn convert(n: RangeToInclusive<F>) -> RangeToInclusive<T> {
         RangeToInclusive {
-            last: n.last.cast(),
+            last: T::convert(n.last),
         }
     }
 }

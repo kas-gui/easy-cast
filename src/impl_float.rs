@@ -3,22 +3,25 @@
 // You may obtain a copy of the License in the LICENSE-APACHE file or at:
 //     https://www.apache.org/licenses/LICENSE-2.0
 
-//! Impls for ConvFloat
+//! Floating-point impls
 
-use crate::{Conv, ConvApprox, Error};
 #[cfg(any(feature = "std", feature = "libm"))]
-use crate::{ConvFloat, RangeError};
+use crate::ConvFloat;
+use crate::generic::{Convert, Exact};
+use crate::{ConvApprox, Error, RangeError};
 
-impl Conv<f32> for f64 {
-    fn try_conv(x: f32) -> Result<Self, Error> {
+impl Convert<f32, Exact> for f64 {
+    type Error = RangeError;
+
+    fn try_convert(x: f32) -> Result<Self, RangeError> {
         match x.is_nan() {
             false => Ok(x as f64),
-            true => Err(Error::Range),
+            true => Err(RangeError),
         }
     }
 
     #[inline]
-    fn conv(x: f32) -> f64 {
+    fn convert(x: f32) -> f64 {
         fn trap_nan(x: f32) {
             if x.is_nan() {
                 panic!("cast float-to-float: NaN")
@@ -302,6 +305,8 @@ impl ConvApprox<f32> for u128 {
     }
     #[inline]
     fn conv_approx(x: f32) -> Self {
+        use crate::ConvFloat;
+
         ConvFloat::<f32>::conv_trunc(x)
     }
 }
