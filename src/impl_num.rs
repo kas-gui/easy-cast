@@ -55,13 +55,13 @@ macro_rules! impl_nonzero {
 }
 
 // From impl_basic:
-impl_nonzero!(i8: i16, i32, i64, i128);
-impl_nonzero!(i16: i32, i64, i128);
+impl_nonzero!(i8: i16, i32, i64, i128, isize);
+impl_nonzero!(i16: i32, i64, i128, isize);
 impl_nonzero!(i32: i64, i128);
 impl_nonzero!(i64: i128);
-impl_nonzero!(u8: i16, i32, i64, i128);
-impl_nonzero!(u8: u16, u32, u64, u128);
-impl_nonzero!(u16: i32, i64, i128, u32, u64, u128);
+impl_nonzero!(u8: i16, i32, i64, i128, isize);
+impl_nonzero!(u8: u16, u32, u64, u128, usize);
+impl_nonzero!(u16: i32, i64, i128, u32, u64, u128, usize);
 impl_nonzero!(u32: i64, i128, u64, u128);
 impl_nonzero!(u64: i128, u128);
 
@@ -84,13 +84,12 @@ impl_nonzero!(i32: i8, i16, u8, u16);
 impl_nonzero!(i64: i8, i16, i32, u8, u16, u32);
 impl_nonzero!(i128: i8, i16, i32, i64, u8, u16, u32, u64);
 
-impl_nonzero!(i8: isize, usize);
-impl_nonzero!(i16: isize, usize);
+impl_nonzero!(i8: usize);
+impl_nonzero!(i16: usize);
 impl_nonzero!(i32: isize, usize);
 impl_nonzero!(i64: isize, usize);
 impl_nonzero!(i128: isize, usize);
-impl_nonzero!(u8: isize, usize);
-impl_nonzero!(u16: isize, usize);
+impl_nonzero!(u16: isize);
 impl_nonzero!(u32: isize, usize);
 impl_nonzero!(u64: isize, usize);
 impl_nonzero!(u128: isize, usize);

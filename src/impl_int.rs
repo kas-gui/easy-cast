@@ -214,13 +214,12 @@ macro_rules! impl_int_generic {
     };
 }
 
-impl_int_generic!(i8: isize, usize);
-impl_int_generic!(i16: isize, usize);
+impl_int_generic!(i8: usize);
+impl_int_generic!(i16: usize);
 impl_int_generic!(i32: isize, usize);
 impl_int_generic!(i64: isize, usize);
 impl_int_generic!(i128: isize, usize);
-impl_int_generic!(u8: isize, usize);
-impl_int_generic!(u16: isize, usize);
+impl_int_generic!(u16: isize);
 impl_int_generic!(u32: isize, usize);
 impl_int_generic!(u64: isize, usize);
 impl_int_generic!(u128: isize, usize);
