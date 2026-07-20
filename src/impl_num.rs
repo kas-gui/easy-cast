@@ -6,13 +6,13 @@
 //! `core::num` impls.
 
 use crate::RangeError;
-use crate::generic::{Convert, Exact};
+use crate::generic::ConvertExact;
 use core::convert::Infallible;
 use core::num::NonZero;
 
 macro_rules! impl_via_trivial {
     ($x:ty) => {
-        impl Convert<NonZero<$x>, Exact> for NonZero<$x> {
+        impl ConvertExact<NonZero<$x>> for NonZero<$x> {
             type Error = Infallible;
 
             #[inline]
@@ -39,7 +39,7 @@ impl_via_trivial!(
 
 macro_rules! impl_nonzero {
     ($x:ty : $y:ty) => {
-        impl Convert<NonZero<$x>, Exact> for NonZero<$y> {
+        impl ConvertExact<NonZero<$x>> for NonZero<$y> {
             type Error = RangeError;
 
             #[inline]

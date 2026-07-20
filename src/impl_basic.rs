@@ -11,7 +11,7 @@ use crate::generic::{Convert, Rounding};
 use crate::{ConvFloat, RangeError};
 use core::convert::Infallible;
 
-/// Implement [`Convert`] infallibly over a [`From`] implementation
+/// Implement [`ConvertExact`] infallibly over a [`From`] implementation
 ///
 /// # Example
 ///
@@ -32,10 +32,12 @@ use core::convert::Infallible;
 ///
 /// easy_cast::impl_via_from!(MyInt: i32, i64);
 /// ```
+///
+/// [`ConvertExact`]: crate::generic::ConvertExact
 #[macro_export]
 macro_rules! impl_via_from {
     ($x:ty: $y:ty) => {
-        impl $crate::generic::Convert<$x, $crate::generic::Exact> for $y {
+        impl $crate::generic::ConvertExact<$x> for $y {
             type Error = ::core::convert::Infallible;
 
             #[inline]
@@ -358,7 +360,7 @@ impl<S0, S1, T0: ConvFloat<S0>, T1: ConvFloat<S1>> ConvFloat<(S0, S1)> for (T0, 
     }
 }
 
-/// Implement a trivial [`Convert`] infallibly
+/// Implement a trivial [`ConvertExact`] infallibly
 ///
 /// A trivial conversion is one which maps a type to itself.
 ///
@@ -369,10 +371,12 @@ impl<S0, S1, T0: ConvFloat<S0>, T1: ConvFloat<S1>> ConvFloat<(S0, S1)> for (T0, 
 ///
 /// easy_cast::impl_via_trivial!(MyInt);
 /// ```
+///
+/// [`ConvertExact`]: crate::generic::ConvertExact
 #[macro_export]
 macro_rules! impl_via_trivial {
     ($x:ty) => {
-        impl<R: $crate::generic::Rounding> $crate::generic::Convert<$x, R> for $x {
+        impl $crate::generic::ConvertExact<$x> for $x {
             type Error = ::core::convert::Infallible;
 
             #[inline]

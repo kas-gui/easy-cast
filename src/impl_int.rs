@@ -7,13 +7,13 @@
 //!
 //! See also `impl_basic` which inherits integer impls from From.
 
-use crate::generic::{Convert, Exact};
+use crate::generic::{Convert, ConvertExact, Exact};
 use crate::{Error, RangeError};
 use core::mem::size_of;
 
 macro_rules! impl_via_as_neg_check {
     ($x:ty: $y:ty) => {
-        impl Convert<$x, Exact> for $y {
+        impl ConvertExact<$x> for $y {
             type Error = RangeError;
 
             #[inline]
@@ -51,7 +51,7 @@ impl_via_as_neg_check!(i128: u128);
 // Assumption: $y::MAX is representable as $x
 macro_rules! impl_via_as_max_check {
     ($x:ty: $y:tt) => {
-        impl Convert<$x, Exact> for $y {
+        impl ConvertExact<$x> for $y {
             type Error = RangeError;
 
             #[inline]
@@ -90,7 +90,7 @@ impl_via_as_max_check!(u128: u8, u16, u32, u64);
 // Assumption: $y::MAX and $y::MIN are representable as $x
 macro_rules! impl_via_as_range_check {
     ($x:ty: $y:tt) => {
-        impl Convert<$x, Exact> for $y {
+        impl ConvertExact<$x> for $y {
             type Error = RangeError;
 
             #[inline]
@@ -126,7 +126,7 @@ impl_via_as_range_check!(i128: i8, i16, i32, i64, u8, u16, u32, u64);
 
 macro_rules! impl_int_generic {
     ($x:tt: $y:tt) => {
-        impl Convert<$x, Exact> for $y {
+        impl ConvertExact<$x> for $y {
             type Error = RangeError;
 
             #[allow(unused_comparisons)]
@@ -245,7 +245,7 @@ macro_rules! impl_via_digits_check {
             #[inline]
             fn convert(x: $x) -> Self {
                 if cfg!(any(debug_assertions, feature = "assert_digits")) {
-                    Self::try_convert(x).unwrap_or_else(|_| {
+                    <Self as Convert<_, _>>::try_convert(x).unwrap_or_else(|_| {
                         panic!(
                             "cast x: {} to {}: inexact for x = {x}",
                             stringify!($x), stringify!($y)
@@ -282,7 +282,7 @@ macro_rules! impl_via_digits_check_signed {
             #[inline]
             fn convert(x: $x) -> Self {
                 if cfg!(any(debug_assertions, feature = "assert_digits")) {
-                    Self::try_convert(x).unwrap_or_else(|_| {
+                    <Self as Convert<_, _>>::try_convert(x).unwrap_or_else(|_| {
                         panic!(
                             "cast x: {} to {}: inexact for x = {x}",
                             stringify!($x), stringify!($y)
@@ -329,7 +329,7 @@ impl Convert<u128, Exact> for f32 {
     #[inline]
     fn convert(x: u128) -> Self {
         if cfg!(any(debug_assertions, feature = "assert_digits")) {
-            Self::try_convert(x)
+            <Self as Convert<_, _>>::try_convert(x)
                 .unwrap_or_else(|_| panic!("cast x: u128 to f32: inexact for x = {x}"))
         } else {
             x as f32

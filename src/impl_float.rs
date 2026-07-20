@@ -7,10 +7,10 @@
 
 #[cfg(any(feature = "std", feature = "libm"))]
 use crate::ConvFloat;
-use crate::generic::{Convert, Exact};
+use crate::generic::ConvertExact;
 use crate::{ConvApprox, Error, RangeError};
 
-impl Convert<f32, Exact> for f64 {
+impl ConvertExact<f32> for f64 {
     type Error = RangeError;
 
     fn try_convert(x: f32) -> Result<Self, RangeError> {
