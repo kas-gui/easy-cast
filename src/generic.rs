@@ -25,6 +25,19 @@ pub trait Rounding: Copy + Default {}
 pub struct Exact;
 impl Rounding for Exact {}
 
+/// Approximate conversion
+///
+/// Conversions may apply implementation-defined rounding when converting. The
+/// result must be close to the input value; more specifically the distance
+/// between the result and the input value should be less than the distance
+/// between the closest two representable values to the input value.
+///
+/// Example: `2.1_f32` may convert to `2_i32` or to `3_i32` (either
+/// implementation is valid so long as the behaviour is well-defined).
+#[derive(Clone, Copy, Debug, Default)]
+pub struct Approx;
+impl Rounding for Approx {}
+
 /// Generic conversion trait for exact conversions
 ///
 /// Implement this trait instead of [`Convert`] where conversions can never be
@@ -89,6 +102,20 @@ pub trait Convert<S, R: Rounding>: Sized {
 }
 
 impl<S, T: ConvertExact<S>> Convert<S, Exact> for T {
+    type Error = T::Error;
+
+    #[inline]
+    fn try_convert(s: S) -> Result<Self, Self::Error> {
+        T::try_convert(s)
+    }
+
+    #[inline]
+    fn convert(s: S) -> Self {
+        T::convert(s)
+    }
+}
+
+impl<S, T: ConvertExact<S>> Convert<S, Approx> for T {
     type Error = T::Error;
 
     #[inline]

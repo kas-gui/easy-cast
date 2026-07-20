@@ -5,10 +5,10 @@
 
 //! Floating-point impls
 
+use crate::RangeError;
+use crate::generic::{Approx, Convert, ConvertExact};
 #[cfg(any(feature = "std", feature = "libm"))]
-use crate::ConvFloat;
-use crate::generic::ConvertExact;
-use crate::{ConvApprox, Error, RangeError};
+use crate::{ConvFloat, Error};
 
 impl ConvertExact<f32> for f64 {
     type Error = RangeError;
@@ -37,16 +37,18 @@ impl ConvertExact<f32> for f64 {
 }
 
 #[allow(clippy::manual_range_contains)]
-impl ConvApprox<f64> for f32 {
-    fn try_conv_approx(x: f64) -> Result<f32, Error> {
+impl Convert<f64, Approx> for f32 {
+    type Error = RangeError;
+
+    fn try_convert(x: f64) -> Result<f32, Self::Error> {
         match x.is_nan() {
             false => Ok(x as f32),
-            true => Err(Error::Range),
+            true => Err(RangeError),
         }
     }
 
     #[inline]
-    fn conv_approx(x: f64) -> f32 {
+    fn convert(x: f64) -> f32 {
         fn trap_nan(x: f64) {
             if x.is_nan() {
                 panic!("cast float-to-float: NaN")
@@ -198,13 +200,15 @@ macro_rules! impl_float {
             }
         }
 
-        impl ConvApprox<$x> for $y {
+        impl Convert<$x, Approx> for $y {
+            type Error = Error;
+
             #[inline]
-            fn try_conv_approx(x: $x) -> Result<Self, Error> {
+            fn try_convert(x: $x) -> Result<Self, Self::Error> {
                 ConvFloat::<$x>::try_conv_trunc(x).map_err(Into::into)
             }
             #[inline]
-            fn conv_approx(x: $x) -> Self {
+            fn convert(x: $x) -> Self {
                 ConvFloat::<$x>::conv_trunc(x)
             }
         }
@@ -298,15 +302,15 @@ impl ConvFloat<f32> for u128 {
 }
 
 #[cfg(any(feature = "std", feature = "libm"))]
-impl ConvApprox<f32> for u128 {
+impl Convert<f32, Approx> for u128 {
+    type Error = Error;
+
     #[inline]
-    fn try_conv_approx(x: f32) -> Result<Self, Error> {
+    fn try_convert(x: f32) -> Result<Self, Self::Error> {
         ConvFloat::<f32>::try_conv_trunc(x).map_err(Into::into)
     }
     #[inline]
-    fn conv_approx(x: f32) -> Self {
-        use crate::ConvFloat;
-
+    fn convert(x: f32) -> Self {
         ConvFloat::<f32>::conv_trunc(x)
     }
 }

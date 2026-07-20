@@ -18,7 +18,7 @@
 use crate::Error;
 #[cfg(any(feature = "std", feature = "libm"))]
 use crate::RangeError;
-use crate::generic::{Convert, Exact};
+use crate::generic::{Approx, Convert, Exact};
 
 /// Like [`From`], but supports fallible conversions
 ///
@@ -119,8 +119,8 @@ impl<S, T: Conv<S>> Cast<T> for S {
 /// is required.
 ///
 /// The sister-trait [`CastApprox`] supports "into" style usage.
-pub trait ConvApprox<T>: Sized {
-    /// Try converting from `T` to `Self`, allowing approximation of value
+pub trait ConvApprox<S>: Sized {
+    /// Try converting from `S` to `Self`, allowing approximation of value
     ///
     /// This conversion may truncate excess precision not supported by the
     /// target type, so long as the *value* is approximately equal, from the
@@ -128,9 +128,9 @@ pub trait ConvApprox<T>: Sized {
     ///
     /// This method should allow approximate conversion, but fail on input not
     /// (approximately) in the target's range.
-    fn try_conv_approx(x: T) -> Result<Self, Error>;
+    fn try_conv_approx(s: S) -> Result<Self, Error>;
 
-    /// Converting from `T` to `Self`, allowing approximation of value
+    /// Converting from `S` to `Self`, allowing approximation of value
     ///
     /// This method must return the same result as [`Self::try_conv_approx`]
     /// where that method succeeds, but differs in the handling of errors:
@@ -149,22 +149,22 @@ pub trait ConvApprox<T>: Sized {
     /// arithmetic in that it is a tool for diagnosing logic errors where
     /// success is expected.
     #[inline]
-    fn conv_approx(x: T) -> Self {
-        Self::try_conv_approx(x).unwrap_or_else(|e| {
+    fn conv_approx(s: S) -> Self {
+        Self::try_conv_approx(s).unwrap_or_else(|e| {
             panic!("ConvApprox::conv_approx(_) failed: {}", e);
         })
     }
 }
 
-// TODO(specialization): implement also where T: ConvFloat<S>
-impl<S, T: Conv<S>> ConvApprox<S> for T {
+impl<S, T: Convert<S, Approx>> ConvApprox<S> for T {
     #[inline]
-    fn try_conv_approx(x: S) -> Result<Self, Error> {
-        T::try_conv(x)
+    fn try_conv_approx(s: S) -> Result<Self, Error> {
+        T::try_convert(s).map_err(Into::into)
     }
+
     #[inline]
-    fn conv_approx(x: S) -> Self {
-        T::conv(x)
+    fn conv_approx(s: S) -> Self {
+        T::convert(s)
     }
 }
 
