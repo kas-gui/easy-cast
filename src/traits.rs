@@ -15,9 +15,10 @@
 //! # }
 //! ```
 
-use super::Error;
+use crate::Error;
 #[cfg(any(feature = "std", feature = "libm"))]
 use crate::RangeError;
+use crate::generic::{Convert, Exact};
 
 /// Like [`From`], but supports fallible conversions
 ///
@@ -28,13 +29,13 @@ use crate::RangeError;
 /// the most important numeric types are supported for now.
 ///
 /// The sister-trait [`Cast`] supports "into" style usage.
-pub trait Conv<T>: Sized {
-    /// Try converting from `T` to `Self`
+pub trait Conv<S>: Sized {
+    /// Try converting from `S` to `Self`
     ///
     /// This method must fail on inexact conversions.
-    fn try_conv(v: T) -> Result<Self, Error>;
+    fn try_conv(s: S) -> Result<Self, Error>;
 
-    /// Convert from `T` to `Self`
+    /// Convert from `S` to `Self`
     ///
     /// This method must return the same result as [`Self::try_conv`] where that
     /// method succeeds, but differs in the handling of errors:
@@ -52,10 +53,22 @@ pub trait Conv<T>: Sized {
     /// This mirrors the behaviour of Rust's overflow checks on integer
     /// arithmetic in that it is a tool for diagnosing logic errors where
     /// success is expected.
-    fn conv(v: T) -> Self {
-        Self::try_conv(v).unwrap_or_else(|e| {
+    fn conv(s: S) -> Self {
+        Self::try_conv(s).unwrap_or_else(|e| {
             panic!("Conv::conv(_) failed: {}", e);
         })
+    }
+}
+
+impl<S, T: Convert<S, Exact>> Conv<S> for T {
+    #[inline]
+    fn try_conv(s: S) -> Result<Self, Error> {
+        T::try_convert(s).map_err(Into::into)
+    }
+
+    #[inline]
+    fn conv(s: S) -> Self {
+        T::convert(s)
     }
 }
 

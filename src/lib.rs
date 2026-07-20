@@ -67,6 +67,8 @@ mod impl_num;
 mod impl_ops;
 mod impl_range;
 
+pub mod generic;
+
 pub mod traits;
 
 use core::convert::Infallible;
