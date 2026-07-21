@@ -1,14 +1,25 @@
 Changelog
 =========
 
-## Unreleased
+## [0.6.0] — 2026-07-21
+
+Fixed:
+
+-   Fix `unsafe` code in `NonZero` conversion on input values which wrap to zero (#52)
+-   Fix: allow overflow of large `u128` values to `f32::INFINITY` (#51)
+
+Changed:
 
 -   Adjust `ConvApprox<f64> for f32` to behave more like `*_f64 as f32`:
     too-large values round to infinity (instead of a range error) and rounding
     uses `roundTiesToEven`. Unlike `as f32`, NAN still yields
     `Err(Error::Range)`. (#47)
 -   Change `Conv<f32> for f64` to trap NAN (#48)
+
+Removed:
+
 -   Remove support for `Saturating`, `Wrapping` (#49)
+-   Remove `assert_nonzero` feature flag (#52)
 
 ## [0.5.5] — 2026-07-08
 
