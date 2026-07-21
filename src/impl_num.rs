@@ -39,24 +39,13 @@ macro_rules! impl_nonzero {
             #[inline]
             fn try_conv(n: NonZero<$x>) -> Result<NonZero<$y>> {
                 let m: $y = n.get().try_cast()?;
-                Ok(if cfg!(any(debug_assertions, feature = "assert_nonzero")) {
-                    NonZero::new(m).expect("should be non-zero")
-                } else {
-                    // SAFETY: since cast() does not change the numeric value, m cannot be zero
-                    unsafe { NonZero::new_unchecked(m) }
-                })
+                // An error here should be impossible, but handling one is basically free:
+                NonZero::new(m).ok_or(Error::Range)
             }
 
-            #[inline]
-            fn conv(n: NonZero<$x>) -> NonZero<$y> {
-                let m: $y = n.get().cast();
-                if cfg!(any(debug_assertions, feature = "assert_nonzero")) {
-                    NonZero::new(m).expect("should be non-zero")
-                } else {
-                    // SAFETY: since cast() does not change the numeric value, m cannot be zero
-                    unsafe { NonZero::new_unchecked(m) }
-                }
-            }
+            // We do not implement conv since its main purpose is to allow
+            // bypassing checks, but since this would allow wrapping-to-zero
+            // we cannot omit all checks.
         }
     };
     ($x:ty: $y:ty, $($yy:ty),+) => {
