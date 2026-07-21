@@ -5,7 +5,6 @@
 
 //! Basic impls
 
-use crate::Error;
 use crate::generic::{Convert, Rounding};
 #[cfg(any(feature = "std", feature = "libm"))]
 use crate::{ConvFloat, RangeError};
@@ -185,7 +184,7 @@ impl<R: Rounding, S0, T0: Convert<S0, R>> Convert<(S0,), R> for (T0,) {
 impl<R: Rounding, S0, S1, T0: Convert<S0, R>, T1: Convert<S1, R>> Convert<(S0, S1), R>
     for (T0, T1)
 {
-    type Error = Error;
+    type Error = R::MaximumError;
 
     #[inline]
     fn try_convert(ss: (S0, S1)) -> Result<Self, Self::Error> {
@@ -202,7 +201,7 @@ impl<R: Rounding, S0, S1, T0: Convert<S0, R>, T1: Convert<S1, R>> Convert<(S0, S
 impl<R: Rounding, S0, S1, S2, T0: Convert<S0, R>, T1: Convert<S1, R>, T2: Convert<S2, R>>
     Convert<(S0, S1, S2), R> for (T0, T1, T2)
 {
-    type Error = Error;
+    type Error = R::MaximumError;
 
     #[inline]
     fn try_convert(ss: (S0, S1, S2)) -> Result<Self, Self::Error> {
@@ -229,7 +228,7 @@ impl<
     T3: Convert<S3, R>,
 > Convert<(S0, S1, S2, S3), R> for (T0, T1, T2, T3)
 {
-    type Error = Error;
+    type Error = R::MaximumError;
 
     #[inline]
     fn try_convert(ss: (S0, S1, S2, S3)) -> Result<Self, Self::Error> {
@@ -264,7 +263,7 @@ impl<
     T4: Convert<S4, R>,
 > Convert<(S0, S1, S2, S3, S4), R> for (T0, T1, T2, T3, T4)
 {
-    type Error = Error;
+    type Error = R::MaximumError;
 
     #[inline]
     fn try_convert(ss: (S0, S1, S2, S3, S4)) -> Result<Self, Self::Error> {
@@ -297,7 +296,7 @@ where
     T4: Convert<S4, R>,
     T5: Convert<S5, R>,
 {
-    type Error = Error;
+    type Error = R::MaximumError;
 
     #[inline]
     fn try_convert(ss: (S0, S1, S2, S3, S4, S5)) -> Result<Self, Self::Error> {

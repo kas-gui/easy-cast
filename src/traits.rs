@@ -15,10 +15,8 @@
 //! # }
 //! ```
 
-use crate::Error;
-#[cfg(any(feature = "std", feature = "libm"))]
-use crate::RangeError;
 use crate::generic::{Approx, Convert, Exact};
+use crate::{Error, RangeError};
 
 /// Like [`From`], but supports fallible conversions
 ///
@@ -128,7 +126,7 @@ pub trait ConvApprox<S>: Sized {
     ///
     /// This method should allow approximate conversion, but fail on input not
     /// (approximately) in the target's range.
-    fn try_conv_approx(s: S) -> Result<Self, Error>;
+    fn try_conv_approx(s: S) -> Result<Self, RangeError>;
 
     /// Converting from `S` to `Self`, allowing approximation of value
     ///
@@ -158,7 +156,7 @@ pub trait ConvApprox<S>: Sized {
 
 impl<S, T: Convert<S, Approx>> ConvApprox<S> for T {
     #[inline]
-    fn try_conv_approx(s: S) -> Result<Self, Error> {
+    fn try_conv_approx(s: S) -> Result<Self, RangeError> {
         T::try_convert(s).map_err(Into::into)
     }
 
@@ -184,7 +182,7 @@ pub trait CastApprox<T> {
     /// Try approximate conversion from `Self` to `T`
     ///
     /// Use this method to explicitly handle errors.
-    fn try_cast_approx(self) -> Result<T, Error>;
+    fn try_cast_approx(self) -> Result<T, RangeError>;
 
     /// Cast approximately from `Self` to `T`
     ///
@@ -202,7 +200,7 @@ pub trait CastApprox<T> {
 
 impl<S, T: ConvApprox<S>> CastApprox<T> for S {
     #[inline]
-    fn try_cast_approx(self) -> Result<T, Error> {
+    fn try_cast_approx(self) -> Result<T, RangeError> {
         T::try_conv_approx(self)
     }
     #[inline]

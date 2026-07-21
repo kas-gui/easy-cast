@@ -5,10 +5,10 @@
 
 //! Floating-point impls
 
+#[cfg(any(feature = "std", feature = "libm"))]
+use crate::ConvFloat;
 use crate::RangeError;
 use crate::generic::{Approx, Convert, ConvertExact};
-#[cfg(any(feature = "std", feature = "libm"))]
-use crate::{ConvFloat, Error};
 
 impl ConvertExact<f32> for f64 {
     type Error = RangeError;
@@ -201,7 +201,7 @@ macro_rules! impl_float {
         }
 
         impl Convert<$x, Approx> for $y {
-            type Error = Error;
+            type Error = RangeError;
 
             #[inline]
             fn try_convert(x: $x) -> Result<Self, Self::Error> {
@@ -303,7 +303,7 @@ impl ConvFloat<f32> for u128 {
 
 #[cfg(any(feature = "std", feature = "libm"))]
 impl Convert<f32, Approx> for u128 {
-    type Error = Error;
+    type Error = RangeError;
 
     #[inline]
     fn try_convert(x: f32) -> Result<Self, Self::Error> {

@@ -69,7 +69,7 @@ fn approx_float_to_int() {
     const MAX: f64 = i32::MAX as f64;
     assert_eq!(i32::conv_approx(MAX), i32::MAX);
     assert_eq!(i32::conv_approx(MAX + 0.9), i32::MAX);
-    assert_eq!(i32::try_conv_approx(MAX + 1.0), Err(Error::Range));
+    assert_eq!(i32::try_conv_approx(MAX + 1.0), Err(RangeError));
 }
 
 #[test]

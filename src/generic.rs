@@ -9,10 +9,14 @@
 //! tool to facilitate writing conversions; [other traits](crate::traits) may be
 //! easier to use to convert values.
 
-use crate::RangeError;
+use crate::{Error, RangeError};
+use core::convert::Infallible;
 
 /// Rounding mode
-pub trait Rounding: Copy + Default {}
+pub trait Rounding: Copy + Default {
+    /// Maximum error type
+    type MaximumError: From<Infallible> + Into<Error> + core::error::Error;
+}
 
 /// Exact conversion only
 ///
@@ -23,7 +27,9 @@ pub trait Rounding: Copy + Default {}
 /// `i32`.
 #[derive(Clone, Copy, Debug, Default)]
 pub struct Exact;
-impl Rounding for Exact {}
+impl Rounding for Exact {
+    type MaximumError = Error;
+}
 
 /// Approximate conversion
 ///
@@ -36,7 +42,9 @@ impl Rounding for Exact {}
 /// implementation is valid so long as the behaviour is well-defined).
 #[derive(Clone, Copy, Debug, Default)]
 pub struct Approx;
-impl Rounding for Approx {}
+impl Rounding for Approx {
+    type MaximumError = RangeError;
+}
 
 /// Generic conversion trait for exact conversions
 ///
@@ -46,8 +54,7 @@ impl Rounding for Approx {}
 pub trait ConvertExact<S>: Sized {
     /// Conversion error type
     ///
-    /// This is either [`Infallible`](core::convert::Infallible) or
-    /// [`RangeError`].
+    /// This is either [`Infallible`] or [`RangeError`].
     type Error: Into<RangeError> + Into<crate::Error> + core::error::Error;
 
     /// Try converting from `S` to `Self`
@@ -77,7 +84,7 @@ pub trait ConvertExact<S>: Sized {
 /// This trait is an extension over [`From`] and [`TryFrom`] for numeric casts.
 pub trait Convert<S, R: Rounding>: Sized {
     /// Conversion error type
-    type Error: Into<crate::Error> + core::error::Error;
+    type Error: Into<R::MaximumError> + core::error::Error;
 
     /// Try converting from `S` to `Self`
     fn try_convert(s: S) -> Result<Self, Self::Error>;
