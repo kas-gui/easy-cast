@@ -7,22 +7,44 @@
 
 use super::*;
 
+/// Implement [`Conv`] infallibly over a [`From`] implementation
+///
+/// # Example
+///
+/// ```
+/// struct MyInt(i32);
+///
+/// impl From<MyInt> for i32 {
+///     fn from(x: MyInt) -> i32 {
+///         x.0
+///     }
+/// }
+///
+/// impl From<MyInt> for i64 {
+///     fn from(x: MyInt) -> i64 {
+///         x.0.into()
+///     }
+/// }
+///
+/// easy_cast::impl_via_from!(MyInt: i32, i64);
+/// ```
+#[macro_export]
 macro_rules! impl_via_from {
     ($x:ty: $y:ty) => {
-        impl Conv<$x> for $y {
+        impl $crate::traits::Conv<$x> for $y {
             #[inline]
             fn conv(x: $x) -> $y {
                 <$y>::from(x)
             }
             #[inline]
-            fn try_conv(x: $x) -> Result<Self> {
+            fn try_conv(x: $x) -> $crate::Result<Self> {
                 Ok(<$y>::from(x))
             }
         }
     };
     ($x:ty: $y:ty, $($yy:ty),+) => {
-        impl_via_from!($x: $y);
-        impl_via_from!($x: $($yy),+);
+        $crate::impl_via_from!($x: $y);
+        $crate::impl_via_from!($x: $($yy),+);
     };
 }
 
@@ -276,22 +298,34 @@ impl<S0, S1, T0: ConvFloat<S0>, T1: ConvFloat<S1>> ConvFloat<(S0, S1)> for (T0, 
     }
 }
 
+/// Implement a trivial [`Conv`] infallibly
+///
+/// A trivial conversion is one which maps a type to itself.
+///
+/// # Example
+///
+/// ```
+/// struct MyInt(i32);
+///
+/// easy_cast::impl_via_trivial!(MyInt);
+/// ```
+#[macro_export]
 macro_rules! impl_via_trivial {
     ($x:ty) => {
-        impl Conv<$x> for $x {
+        impl $crate::Conv<$x> for $x {
             #[inline]
             fn conv(x: $x) -> Self {
                 x
             }
             #[inline]
-            fn try_conv(x: $x) -> Result<Self> {
+            fn try_conv(x: $x) -> $crate::Result<Self> {
                 Ok(x)
             }
         }
     };
     ($x:ty $(, $xx:tt)* $(,)?) => {
-        impl_via_trivial!($x);
-        impl_via_trivial!($($xx),*);
+        $crate::impl_via_trivial!($x);
+        $crate::impl_via_trivial!($($xx),*);
     };
 }
 

@@ -1,6 +1,12 @@
 Changelog
 =========
 
+## [0.6.1] — 2026-07-24
+
+Added:
+
+-   Add pub macros `impl_via_from!`, `impl_via_trivial!` (#54)
+
 ## [0.6.0] — 2026-07-21
 
 Fixed:
