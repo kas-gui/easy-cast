@@ -298,22 +298,34 @@ impl<S0, S1, T0: ConvFloat<S0>, T1: ConvFloat<S1>> ConvFloat<(S0, S1)> for (T0, 
     }
 }
 
+/// Implement a trivial [`Conv`] infallibly
+///
+/// A trivial conversion is one which maps a type to itself.
+///
+/// # Example
+///
+/// ```
+/// struct MyInt(i32);
+///
+/// easy_cast::impl_via_trivial!(MyInt);
+/// ```
+#[macro_export]
 macro_rules! impl_via_trivial {
     ($x:ty) => {
-        impl Conv<$x> for $x {
+        impl $crate::Conv<$x> for $x {
             #[inline]
             fn conv(x: $x) -> Self {
                 x
             }
             #[inline]
-            fn try_conv(x: $x) -> Result<Self> {
+            fn try_conv(x: $x) -> $crate::Result<Self> {
                 Ok(x)
             }
         }
     };
     ($x:ty $(, $xx:tt)* $(,)?) => {
-        impl_via_trivial!($x);
-        impl_via_trivial!($($xx),*);
+        $crate::impl_via_trivial!($x);
+        $crate::impl_via_trivial!($($xx),*);
     };
 }
 
