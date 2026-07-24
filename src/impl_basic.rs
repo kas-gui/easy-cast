@@ -7,22 +7,44 @@
 
 use super::*;
 
+/// Implement [`Conv`] infallibly over a [`From`] implementation
+///
+/// # Example
+///
+/// ```
+/// struct MyInt(i32);
+///
+/// impl From<MyInt> for i32 {
+///     fn from(x: MyInt) -> i32 {
+///         x.0
+///     }
+/// }
+///
+/// impl From<MyInt> for i64 {
+///     fn from(x: MyInt) -> i64 {
+///         x.0.into()
+///     }
+/// }
+///
+/// easy_cast::impl_via_from!(MyInt: i32, i64);
+/// ```
+#[macro_export]
 macro_rules! impl_via_from {
     ($x:ty: $y:ty) => {
-        impl Conv<$x> for $y {
+        impl $crate::traits::Conv<$x> for $y {
             #[inline]
             fn conv(x: $x) -> $y {
                 <$y>::from(x)
             }
             #[inline]
-            fn try_conv(x: $x) -> Result<Self> {
+            fn try_conv(x: $x) -> $crate::Result<Self> {
                 Ok(<$y>::from(x))
             }
         }
     };
     ($x:ty: $y:ty, $($yy:ty),+) => {
-        impl_via_from!($x: $y);
-        impl_via_from!($x: $($yy),+);
+        $crate::impl_via_from!($x: $y);
+        $crate::impl_via_from!($x: $($yy),+);
     };
 }
 
