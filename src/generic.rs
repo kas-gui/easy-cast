@@ -46,7 +46,7 @@ impl Rounding for Approx {
     type MaximumError = RangeError;
 }
 
-/// Generic conversion trait for exact conversions
+/// Generic "from" conversion trait for exact conversions
 ///
 /// Implement this trait instead of [`Convert`] where conversions can never be
 /// inexact. This allows impls of `Convert<S, R>` to be derived for all
@@ -79,7 +79,7 @@ pub trait ConvertExact<S>: Sized {
     }
 }
 
-/// Generic conversion trait
+/// Generic "from" conversion trait
 ///
 /// This trait is an extension over [`From`] and [`TryFrom`] for numeric casts.
 pub trait Convert<S, R: Rounding>: Sized {
@@ -133,5 +133,45 @@ impl<S, T: ConvertExact<S>> Convert<S, Approx> for T {
     #[inline]
     fn convert(s: S) -> Self {
         T::convert(s)
+    }
+}
+
+/// Generic "into" conversion trait
+///
+/// This trait is like [`Into`] but for [`Convert`].
+///
+/// The [`Rounding`] mode must be specified when calling this trait's methods,
+/// for example `x.try_convert(Exact)` or `y.convert(Approx)`. In generic code
+/// (where `R: Rounding`), `z.try_convert(R::default())` may be used.
+pub trait ConvertInto<T, R: Rounding>: Sized {
+    /// Conversion error type
+    type Error: Into<R::MaximumError> + core::error::Error;
+
+    /// Try converting from `Self` to `T`
+    fn try_convert(self, mode: R) -> Result<T, Self::Error>;
+
+    /// Convert from `Self` to `T`
+    ///
+    /// This method must return the same result as [`Self::try_convert`] where
+    /// that method succeeds, but differs in the handling of errors:
+    ///
+    /// -   In debug builds the method must panic on error
+    /// -   In release builds the method may return a different value so long as
+    ///     the behaviour is well defined. This allows implementations to
+    ///     optimize to [`as` numeric casts].
+    ///
+    /// [`as` numeric casts]: https://doc.rust-lang.org/reference/expression
+    fn convert(self, mode: R) -> T;
+}
+
+impl<R: Rounding, S, T: Convert<S, R>> ConvertInto<T, R> for S {
+    type Error = T::Error;
+
+    fn try_convert(self, _: R) -> Result<T, Self::Error> {
+        T::try_convert(self)
+    }
+
+    fn convert(self, _: R) -> T {
+        T::convert(self)
     }
 }
