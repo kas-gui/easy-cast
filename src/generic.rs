@@ -10,7 +10,7 @@
 //! traits support generality over [`Rounding`] modes and more precise error
 //! types as associated types.
 //!
-//! [`ConvertInto`] may be used instead of [`Cast`](crate::Cast) where
+//! [`RoundInto`] may be used instead of [`Cast`](crate::Cast) where
 //! genericity over [`Rounding`] modes is required.
 //!
 //! Conversions which can never be inexact should be implemented using
@@ -154,18 +154,18 @@ impl<S, T: ConvertExact<S>> Convert<S, Approx> for T {
 /// This trait is like [`Into`] but for [`Convert`].
 ///
 /// The [`Rounding`] mode must be specified when calling this trait's methods,
-/// for example `x.try_convert(Exact)` or `y.convert(Approx)`. In generic code
-/// (where `R: Rounding`), `z.try_convert(R::default())` may be used.
-pub trait ConvertInto<T, R: Rounding>: Sized {
+/// for example `x.try_round(Exact)` or `y.round(Approx)`. In generic code
+/// (where `R: Rounding`), `z.try_round(R::default())` may be used.
+pub trait RoundInto<T, R: Rounding>: Sized {
     /// Conversion error type
     type Error: Into<R::MaximumError> + core::error::Error;
 
     /// Try converting from `Self` to `T`
-    fn try_convert(self, mode: R) -> Result<T, Self::Error>;
+    fn try_round(self, mode: R) -> Result<T, Self::Error>;
 
     /// Convert from `Self` to `T`
     ///
-    /// This method must return the same result as [`Self::try_convert`] where
+    /// This method must return the same result as [`Self::try_round`] where
     /// that method succeeds, but differs in the handling of errors:
     ///
     /// -   In debug builds the method must panic on error
@@ -174,17 +174,17 @@ pub trait ConvertInto<T, R: Rounding>: Sized {
     ///     optimize to [`as` numeric casts].
     ///
     /// [`as` numeric casts]: https://doc.rust-lang.org/reference/expressions/operator-expr.html#type-cast-expressions
-    fn convert(self, mode: R) -> T;
+    fn round(self, mode: R) -> T;
 }
 
-impl<R: Rounding, S, T: Convert<S, R>> ConvertInto<T, R> for S {
+impl<R: Rounding, S, T: Convert<S, R>> RoundInto<T, R> for S {
     type Error = T::Error;
 
-    fn try_convert(self, _: R) -> Result<T, Self::Error> {
+    fn try_round(self, _: R) -> Result<T, Self::Error> {
         T::try_convert(self)
     }
 
-    fn convert(self, _: R) -> T {
+    fn round(self, _: R) -> T {
         T::convert(self)
     }
 }

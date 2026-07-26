@@ -72,7 +72,7 @@
 //!
 //! It is usually easier to use the [`traits`] traits to convert values, though
 //! these shouldn't be used in generic impls of [`generic`] traits; instead
-//! [`generic::ConvertInto`] may be used.
+//! [`generic::RoundInto`] may be used.
 //!
 //! [`TryFrom`]: core::convert::TryFrom
 //! [`TryInto`]: core::convert::TryInto
