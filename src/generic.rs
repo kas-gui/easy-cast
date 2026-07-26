@@ -87,7 +87,7 @@ pub trait ConvertExact<S>: Sized {
     #[inline]
     fn convert(s: S) -> Self {
         Self::try_convert(s).unwrap_or_else(|e| {
-            panic!("Convert::convert(_) failed: {}", e);
+            panic!("ConvertExact::convert(_) failed: {}", e);
         })
     }
 }
@@ -112,7 +112,7 @@ pub trait Convert<S, R: Rounding>: Sized {
     ///     the behaviour is well defined. This allows implementations to
     ///     optimize to [`as` numeric casts].
     ///
-    /// [`as` numeric casts]: https://doc.rust-lang.org/reference/expression
+    /// [`as` numeric casts]: https://doc.rust-lang.org/reference/expressions/operator-expr.html#type-cast-expressions
     #[inline]
     fn convert(s: S) -> Self {
         Self::try_convert(s).unwrap_or_else(|e| {
@@ -173,7 +173,7 @@ pub trait ConvertInto<T, R: Rounding>: Sized {
     ///     the behaviour is well defined. This allows implementations to
     ///     optimize to [`as` numeric casts].
     ///
-    /// [`as` numeric casts]: https://doc.rust-lang.org/reference/expression
+    /// [`as` numeric casts]: https://doc.rust-lang.org/reference/expressions/operator-expr.html#type-cast-expressions
     fn convert(self, mode: R) -> T;
 }
 
