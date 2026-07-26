@@ -5,54 +5,74 @@
 
 //! Type conversion, success expected
 //!
+//! ## Converting values
+//!
 //! This library exists to make fallible numeric type conversions easy, without
 //! resorting to the `as` keyword.
 //!
-//! -   [`Conv`] is like [`From`], but supports fallible conversions
-//! -   [`Cast`] is to [`Conv`] what [`Into`] is to [`From`]
-//! -   [`ConvApprox`] and [`CastApprox`] support fallible, approximate conversion
-//! -   [`ConvFloat`] and [`CastFloat`] are similar, providing precise control over rounding
+//! -   Use [`Cast`] and [`Conv`] instead of [`Into`] and [`From`] for exact
+//!     conversions
+//! -   Use [`CastApprox`] and [`ConvApprox`] for approximate conversions
+//!     (rounding mode is implementation-defined just like `as`)
+//! -   Use [`CastFloat`] and [`ConvFloat`] for approximate conversions with
+//!     specified rounding mode (requires `std` or `libm` feature)
 //!
-//! If you are wondering "why not just use `as`", there are a few reasons:
+//! ### Error handling
 //!
-//! -   integer conversions may silently truncate or sign-extend which does not
-//!     preserve value
-//! -   prior to Rust 1.45.0 float-to-int conversions were not fully defined;
-//!     since this version they use saturating conversion (NaN converts to 0)
-//! -   you want some assurance (at least in debug builds) that the conversion
-//!     will preserve values correctly
+//! All trait methods have two variants:
 //!
-//! Why might you *not* want to use this library?
-//!
-//! -   You want saturating / truncating / other non-value-preserving conversion
-//! -   You want to convert non-numeric types ([`From`] supports a lot more
-//!     conversions than [`Conv`] does)!
-//! -   You want a thoroughly tested library (we're not quite there yet)
-//!
-//! ## Error handling
-//!
-//! All traits support two methods:
-//!
-//! -   `try_*` methods return a `Result` and always fail if the correct
-//!     conversion is not possible
-//! -   other methods may panic or return incorrect results
+//! -   A `try_` variant (e.g. `try_cast`) which returns a `Result` and fails if
+//!     the requested conversion is not possible.
+//! -   A "plain" variant (e.g. `cast`) which returns the same result on success
+//!     but may return a different result on error (see below).
 //!
 //! In debug builds, methods not returning `Result` must panic on failure. As
 //! with the overflow checks on Rust's standard integer arithmetic, this is
 //! considered a tool for finding logic errors. In release builds, these methods
-//! are permitted to return defined but incorrect results similar to the `as`
-//! keyword.
+//! are permitted to return a different (implementation-defined) result, usually
+//! matching the behaviour of [`as` numeric casts](https://doc.rust-lang.org/reference/expressions/operator-expr.html#r-expr.as.numeric).
 //!
 //! If the `always_assert` feature flag is set, assertions will be turned on in
-//! all builds. Some additional feature flags are available for finer-grained
-//! control (see `Cargo.toml`).
+//! all builds (i.e. "plain" variants will panic on failure). Some additional
+//! feature flags are available for finer-grained control (see `Cargo.toml`).
 //!
-//! ## no_std support
+//! ### Example
 //!
-//! When the crate's default features are disabled (and `std` is not enabled)
-//! then the library supports `no_std`. In this case, [`ConvFloat`] and
-//! [`CastFloat`] are only available if the `libm` optional dependency is
-//! enabled.
+//! ```
+//! use easy_cast::traits::*;
+//!
+//! fn nth_root<X: CastApprox<f64>>(x: X, n: u32) {
+//!     let x = x.cast_approx();    // Into-like approximate conversion
+//!     if x < 0.0 && n % 2 == 0 {
+//!         println!("Imaginary values not supported!");
+//!         return;
+//!     }
+//!
+//!     let power = -i32::conv(n);  // From-like exact conversion
+//!     let root = x.powi(power);
+//!
+//!     println!("The {n}-th root of {x} is {root}");
+//!
+//!     // TryFrom-like approximate (nearest) conversion
+//!     if let Ok(nearest) = isize::try_conv_nearest(root) {
+//!         println!("Nearest integer: {nearest}");
+//!     }
+//! }
+//! ```
+//!
+//! ## Generic traits
+//!
+//! The [`generic`] traits support abstracting over rounding modes and tighter
+//! bounds on the `Error` type. Additionally, various blanket implementations
+//! supporting e.g. arrays, tuples and range types are implemented over these
+//! traits.
+//!
+//! It is recommended to implement the traits in [`generic`] instead of those in
+//! [`traits`] when supporting additional types.
+//!
+//! It is usually easier to use the [`traits`] traits to convert values, though
+//! these shouldn't be used in generic impls of [`generic`] traits; instead
+//! [`generic::ConvertInto`] may be used.
 //!
 //! [`TryFrom`]: core::convert::TryFrom
 //! [`TryInto`]: core::convert::TryInto

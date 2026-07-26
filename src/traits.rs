@@ -20,13 +20,23 @@ use crate::{Error, RangeError};
 
 /// Like [`From`], but supports fallible conversions
 ///
-/// This trait is intended to be an extension over [`From`], also supporting
-/// fallible conversions of numeric types.
-/// Since Rust does not yet have stable support for handling conflicting
-/// implementations (specialization or otherwise), only conversions between
-/// the most important numeric types are supported for now.
+/// This trait is similar to [`From`], but limited to numeric conversions:
+/// -   Like [`TryFrom`] (unlike [`From`]), conversions may be *fallible*.
+///     Unlike [`TryFrom`], the [`Error`] type is fixed with precisely two
+///     variants: [`Error::Range`] and [`Error::Inexact`].
+/// -   Like [`From`], conversions must be *lossless*. For example, `Conv<f64>`
+///     is not implemented for `f32` since `f64` carries more precision; use
+///     [`ConvApprox`] instead for cases where loss-of-precision is intended.
+/// -   Like [`From`], conversions must be *value-preserving*. For example,
+///     `-1_i8` and `-1_i32` are conceptually the same value while `255_u8` is
+///     conceptually a different value, thus while `Conv<i8>` is implemented for
+///     both `i32` and `u8`, attempting to convert `-1` to `u8` will fail with
+///     [`Error::Range`].
 ///
 /// The sister-trait [`Cast`] supports "into" style usage.
+///
+/// It is recommended not to implement this trait directly but to instead
+/// implement one of the [`generic`](crate::generic) traits.
 pub trait Conv<S>: Sized {
     /// Try converting from `S` to `Self`
     ///
@@ -107,16 +117,23 @@ impl<S, T: Conv<S>> Cast<T> for S {
 
 /// Like [`From`], but for approximate numerical conversions
 ///
-/// On success, the result must be approximately the same as the input value:
-/// the difference must be smaller than the precision of the target type.
+/// Unlike [`Conv`], conversions are permitted to lose precision provided that
+/// the result is close to the input value. More precisely, the difference
+/// between the input and output values should be less than the difference
+/// between the two closest representable values in the target type.
 /// For example, one may have `i32::conv_approx(1.9f32) = 1` or
 /// `f32::conv_approx(1f64 + (f32::EPSILON as f64) / 2.0) = 1.0`.
 ///
-/// Precise rounding mode should usually be truncation (round towards zero),
-/// but this is not required. Use [`ConvFloat`] where a specific rounding mode
-/// is required.
+/// The rounding mode is implementation-defined, usually aligning with the
+/// behavior of [`as` numeric casts]. Use [`ConvFloat`] instead where control
+/// over rounding modes is required.
 ///
 /// The sister-trait [`CastApprox`] supports "into" style usage.
+///
+/// It is recommended not to implement this trait directly but to instead
+/// implement one of the [`generic`](crate::generic) traits.
+///
+/// [`as` numeric casts]: https://doc.rust-lang.org/reference/expressions/operator-expr.html#type-cast-expressions
 pub trait ConvApprox<S>: Sized {
     /// Try converting from `S` to `Self`, allowing approximation of value
     ///
@@ -168,13 +185,16 @@ impl<S, T: Convert<S, Approx>> ConvApprox<S> for T {
 
 /// Like [`Into`], but for [`ConvApprox`]
 ///
-/// On success, the result must be approximately the same as the input value:
-/// the difference must be smaller than the precision of the target type.
-/// For example, one may have `1.9f32.cast_approx() = 1`.
+/// Unlike [`Cast`], conversions are permitted to lose precision provided that
+/// the result is close to the input value. More precisely, the difference
+/// between the input and output values should be less than the difference
+/// between the two closest representable values in the target type.
+/// For example, one may have `i32::conv_approx(1.9f32) = 1` or
+/// `f32::conv_approx(1f64 + (f32::EPSILON as f64) / 2.0) = 1.0`.
 ///
-/// Precise rounding mode should usually be truncation (round towards zero),
-/// but this is not required. Use [`CastFloat`] where a specific rounding mode
-/// is required.
+/// The rounding mode is implementation-defined, usually aligning with the
+/// behavior of [`as` numeric casts]. Use [`CastFloat`] instead where control
+/// over rounding modes is required.
 ///
 /// This trait is automatically implemented for every implementation of
 /// [`ConvApprox`].

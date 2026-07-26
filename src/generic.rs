@@ -5,9 +5,22 @@
 
 //! Generic conversion support
 //!
-//! The [`Convert`] trait is generic over rounding modes. This is provided as a
-//! tool to facilitate writing conversions; [other traits](crate::traits) may be
-//! easier to use to convert values.
+//! The traits of this module are more generic than the
+//! [other traits](crate::traits) provided by `easy-cast`; in particular, these
+//! traits support generality over [`Rounding`] modes and more precise error
+//! types as associated types.
+//!
+//! [`ConvertInto`] may be used instead of [`Cast`](crate::Cast) where
+//! genericity over [`Rounding`] modes is required.
+//!
+//! Conversions which can never be inexact should be implemented using
+//! [`ConvertExact`].
+//!
+//! Conversions which may apply rounding or may reject inputs not precisely
+//! representable by the target type should be implemented using [`Convert`].
+//! It is permissible to implement such conversions for multiple [`Rounding`]
+//! modes, for example an [`Approx`] conversion (which rounds inputs where
+//! required) and an [`Exact`] conversion (which rejects these inputs).
 
 use crate::{Error, RangeError};
 use core::convert::Infallible;
