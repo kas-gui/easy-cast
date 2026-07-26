@@ -7,8 +7,9 @@
 //!
 //! See also `impl_basic` which inherits integer impls from From.
 
-use crate::generic::{Convert, ConvertExact, Exact};
+use crate::generic::{Approx, Convert, ConvertExact, ConvertInto, Exact};
 use crate::{Error, RangeError};
+use core::convert::Infallible;
 use core::mem::size_of;
 
 macro_rules! impl_via_as_neg_check {
@@ -245,7 +246,7 @@ macro_rules! impl_via_digits_check {
             #[inline]
             fn convert(x: $x) -> Self {
                 if cfg!(any(debug_assertions, feature = "assert_digits")) {
-                    <Self as Convert<_, _>>::try_convert(x).unwrap_or_else(|_| {
+                    x.try_convert(Exact).unwrap_or_else(|_| {
                         panic!(
                             "cast x: {} to {}: inexact for x = {x}",
                             stringify!($x), stringify!($y)
@@ -282,7 +283,7 @@ macro_rules! impl_via_digits_check_signed {
             #[inline]
             fn convert(x: $x) -> Self {
                 if cfg!(any(debug_assertions, feature = "assert_digits")) {
-                    <Self as Convert<_, _>>::try_convert(x).unwrap_or_else(|_| {
+                    x.try_convert(Exact).unwrap_or_else(|_| {
                         panic!(
                             "cast x: {} to {}: inexact for x = {x}",
                             stringify!($x), stringify!($y)
@@ -329,7 +330,7 @@ impl Convert<u128, Exact> for f32 {
     #[inline]
     fn convert(x: u128) -> Self {
         if cfg!(any(debug_assertions, feature = "assert_digits")) {
-            <Self as Convert<_, _>>::try_convert(x)
+            x.try_convert(Exact)
                 .unwrap_or_else(|_| panic!("cast x: u128 to f32: inexact for x = {x}"))
         } else {
             x as f32
@@ -349,3 +350,34 @@ impl Convert<u128, Exact> for f32 {
         }
     }
 }
+
+macro_rules! impl_approx {
+    ($x:ty: $y:tt) => {
+        impl Convert<$x, Approx> for $y {
+            type Error = Infallible;
+
+            #[inline]
+            fn convert(x: $x) -> Self {
+                x as $y
+            }
+            #[inline]
+            fn try_convert(x: $x) -> Result<Self, Infallible> {
+                Ok(x as $y)
+            }
+        }
+    };
+    ($x:ty: $y:tt, $($yy:tt),+) => {
+        impl_approx!($x: $y);
+        impl_approx!($x: $($yy),+);
+    };
+}
+
+impl_approx!(u32: f32);
+impl_approx!(u64: f32, f64);
+impl_approx!(u128: f32, f64);
+impl_approx!(usize: f32, f64);
+
+impl_approx!(i32: f32);
+impl_approx!(i64: f32, f64);
+impl_approx!(i128: f32, f64);
+impl_approx!(isize: f32, f64);

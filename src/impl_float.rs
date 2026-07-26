@@ -7,8 +7,8 @@
 
 #[cfg(any(feature = "std", feature = "libm"))]
 use crate::ConvFloat;
-use crate::RangeError;
-use crate::generic::{Approx, Convert, ConvertExact};
+use crate::generic::{Approx, Convert, ConvertExact, Exact};
+use crate::{Error, RangeError};
 
 impl ConvertExact<f32> for f64 {
     type Error = RangeError;
@@ -59,6 +59,24 @@ impl Convert<f64, Approx> for f32 {
         }
 
         x as f32
+    }
+}
+
+impl Convert<f64, Exact> for f32 {
+    type Error = Error;
+
+    fn try_convert(x: f64) -> Result<f32, Self::Error> {
+        match x.is_nan() {
+            false => {
+                let y = x as f32;
+                if <f64 as ConvertExact<f32>>::try_convert(y) == Ok(x) {
+                    Ok(y)
+                } else {
+                    Err(Error::Inexact)
+                }
+            }
+            true => Err(Error::Range),
+        }
     }
 }
 
