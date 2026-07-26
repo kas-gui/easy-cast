@@ -136,6 +136,3 @@ impl core::fmt::Display for Error {
 
 #[cfg(feature = "std")]
 impl std::error::Error for Error {}
-
-/// Result enum with bound [`Error`] type
-pub type Result<T> = core::result::Result<T, Error>;

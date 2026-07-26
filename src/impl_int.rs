@@ -7,7 +7,7 @@
 //!
 //! See also `impl_basic` which inherits integer impls from From.
 
-use super::*;
+use super::{Conv, Error};
 use core::mem::size_of;
 
 macro_rules! impl_via_as_neg_check {
@@ -24,7 +24,7 @@ macro_rules! impl_via_as_neg_check {
                 x as $y
             }
             #[inline]
-            fn try_conv(x: $x) -> Result<Self> {
+            fn try_conv(x: $x) -> Result<Self, Error> {
                 if x >= 0 {
                     Ok(x as $y)
                 } else {
@@ -60,7 +60,7 @@ macro_rules! impl_via_as_max_check {
                 x as $y
             }
             #[inline]
-            fn try_conv(x: $x) -> Result<Self> {
+            fn try_conv(x: $x) -> Result<Self, Error> {
                 if x <= $y::MAX as $x {
                     Ok(x as $y)
                 } else {
@@ -97,7 +97,7 @@ macro_rules! impl_via_as_range_check {
                 x as $y
             }
             #[inline]
-            fn try_conv(x: $x) -> Result<Self> {
+            fn try_conv(x: $x) -> Result<Self, Error> {
                 if $y::MIN as $x <= x && x <= $y::MAX as $x {
                     Ok(x as $y)
                 } else {
@@ -172,7 +172,7 @@ macro_rules! impl_int_generic {
             }
             #[allow(unused_comparisons)]
             #[inline]
-            fn try_conv(x: $x) -> Result<Self> {
+            fn try_conv(x: $x) -> Result<Self, Error> {
                 let src_is_signed = $x::MIN != 0;
                 let dst_is_signed = $y::MIN != 0;
                 if size_of::<$x>() < size_of::<$y>() {
@@ -245,7 +245,7 @@ macro_rules! impl_via_digits_check {
                 }
             }
             #[inline]
-            fn try_conv(x: $x) -> Result<Self> {
+            fn try_conv(x: $x) -> Result<Self, Error> {
                 let src_ty_bits = (size_of::<$x>() * 8) as u32;
                 let src_digits = src_ty_bits.saturating_sub(x.leading_zeros() + x.trailing_zeros());
                 let dst_digits = $y::MANTISSA_DIGITS;
@@ -280,7 +280,7 @@ macro_rules! impl_via_digits_check_signed {
                 }
             }
             #[inline]
-            fn try_conv(x: $x) -> Result<Self> {
+            fn try_conv(x: $x) -> Result<Self, Error> {
                 let src_ty_bits = (size_of::<$x>() * 8) as u32;
                 let src_digits = x.checked_abs()
                     .map(|y| src_ty_bits.saturating_sub(y.leading_zeros() + y.trailing_zeros()))
@@ -320,7 +320,7 @@ impl Conv<u128> for f32 {
         }
     }
     #[inline]
-    fn try_conv(x: u128) -> Result<Self> {
+    fn try_conv(x: u128) -> Result<Self, Error> {
         if x < 0xffff_ff80_0000_0000_0000_0000_0000_0000_u128 {
             let src_digits = 128u32.saturating_sub(x.leading_zeros() + x.trailing_zeros());
             if src_digits <= f32::MANTISSA_DIGITS {
