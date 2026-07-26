@@ -9,6 +9,9 @@ use crate::{ConvExact, ConvTo, Error, RangeError};
 use core::convert::Infallible;
 
 /// Rounding mode
+///
+/// Implementations of this trait are (probably) unit structs, used to mark the
+/// type of rounding used at the type level.
 pub trait Rounding: Copy + Default {
     /// Maximum error type
     type MaximumError: From<Infallible> + Into<Error> + core::error::Error;
@@ -20,11 +23,11 @@ pub trait Rounding: Copy + Default {
 /// exactly.
 ///
 /// Example: `2.0_f32` may convert to `2_i32`. `2.1_f32` is not convertible to
-/// `i32`.
+/// [`i32`].
 ///
-/// Another example: `u128::MAX` (which is larger than `f32::MAX`) may not be
-/// converted to `f32` with `Exact` rounding (though with other modes it may
-/// convert to `f32::INFINITY`).
+/// Another example: [`u128::MAX`] (which is larger than [`f32::MAX`]) may not
+/// be converted to [`f32`] with `Exact` rounding (with other modes it may
+/// round to [`f32::INFINITY`]).
 #[derive(Clone, Copy, Debug, Default)]
 pub struct Exact;
 impl Rounding for Exact {
@@ -33,13 +36,32 @@ impl Rounding for Exact {
 
 /// Approximate conversion
 ///
-/// Conversions may apply implementation-defined rounding when converting. The
-/// result must be close to the input value; more specifically the distance
-/// between the result and the input value should be less than the distance
-/// between the closest two representable values to the input value.
+/// This rounding mode allows an implementation-defined rounding mode.
+/// The result must be close to the input value (see below).
 ///
 /// Example: `2.1_f32` may convert to `2_i32` or to `3_i32` (either
 /// implementation is valid so long as the behaviour is well-defined).
+///
+/// # Limits of approximation
+///
+/// (This section applies to all [`Rounding`] modes provided by `easy-cast`
+/// except for [`Exact`].)
+///
+/// The output value of a successful conversion must be close to the input
+/// value. More precisely, the distance between the input and output values
+/// should be less than the distance between the two closest representable
+/// values in the target type.
+/// For example, `1.9_f32` may be approximated to `1_i32` or `2_i32` since
+/// mathematically `1.9` lies between `1` and `2`. As another example,
+/// `1_f64 + (f32::EPSILON as f64) / 2.0` may be approximated to
+/// `1_f32` or `1_f32 + f32::EPSILON`.
+///
+/// Infinity "values" like [`f32::INFINITY`] are a bit special; essentially we
+/// allow any input of the appropriate sign to approximate to "infinity" where
+/// the input may not approximate to another value. For example, the above rules
+/// may be used to calculate the maximum `u128` value which is allowed to
+/// approximate to `f32::MAX` (`0xFFFFFF7F_FFFFFFFF_FFFFFFFF_FFFFFFFF`);
+/// the value above this should thus approximate to `f32::INFINITY`.
 #[derive(Clone, Copy, Debug, Default)]
 pub struct Approx;
 impl Rounding for Approx {
@@ -52,6 +74,9 @@ impl Rounding for Approx {
 /// mode used by [`as` numeric casts] for floating-point to integer conversions.
 ///
 /// Example: `2.9_f32` converts to `2_i32`, `-2.9_f32` converts to `-2_i32`.
+///
+/// The [`§ Limits of approximation`](Approx#limits-of-approximation) as
+/// specified by [`Approx`] apply.
 ///
 /// [`as` numeric casts]: https://doc.rust-lang.org/reference/expressions/operator-expr.html#r-expr.as.numeric
 #[derive(Clone, Copy, Debug, Default)]
@@ -66,8 +91,11 @@ impl Rounding for Trunc {
 /// [`as` numeric casts] for integer to floating-point conversions.
 ///
 /// Example: `2.5_f32` converts to `3_i32`, `-2.5_f32` converts to `-3_i32`.
-/// Another example: converting `i32::MAX` to `f32` rounds up (effectively to
-/// `1u32 << 31 = (i32::MAX as u32) + 1`).
+/// Another example: converting [`i32::MAX`] to [`f32`] rounds up to
+/// 2<sup>31</sup>.
+///
+/// The [`§ Limits of approximation`](Approx#limits-of-approximation) as
+/// specified by [`Approx`] apply.
 ///
 /// [`as` numeric casts]: https://doc.rust-lang.org/reference/expressions/operator-expr.html#r-expr.as.numeric
 #[cfg(any(feature = "std", feature = "libm"))]
@@ -83,6 +111,9 @@ impl Rounding for Nearest {
 /// Returns the largest integer less than or equal to the input.
 ///
 /// Example: `2.9_f32` converts to `2_i32`, `-2.1_f32` converts to `-3_i32`.
+///
+/// The [`§ Limits of approximation`](Approx#limits-of-approximation) as
+/// specified by [`Approx`] apply.
 #[cfg(any(feature = "std", feature = "libm"))]
 #[derive(Clone, Copy, Debug, Default)]
 pub struct Floor;
@@ -96,6 +127,9 @@ impl Rounding for Floor {
 /// Returns the smallest integer greater than or equal to the input.
 ///
 /// Example: `2.1_f32` converts to `3_i32`, `-2.9_f32` converts to `-2_i32`.
+///
+/// The [`§ Limits of approximation`](Approx#limits-of-approximation) as
+/// specified by [`Approx`] apply.
 #[cfg(any(feature = "std", feature = "libm"))]
 #[derive(Clone, Copy, Debug, Default)]
 pub struct Ceil;
