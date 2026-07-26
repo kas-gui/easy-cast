@@ -36,7 +36,6 @@ impl ConvertExact<f32> for f64 {
     }
 }
 
-#[allow(clippy::manual_range_contains)]
 impl Convert<f64, Approx> for f32 {
     type Error = RangeError;
 
@@ -307,7 +306,7 @@ impl Convert<f32, Approx> for u128 {
 
     #[inline]
     fn try_convert(x: f32) -> Result<Self, Self::Error> {
-        ConvFloat::<f32>::try_conv_trunc(x).map_err(Into::into)
+        ConvFloat::<f32>::try_conv_trunc(x)
     }
     #[inline]
     fn convert(x: f32) -> Self {
