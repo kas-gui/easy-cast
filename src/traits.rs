@@ -270,12 +270,14 @@ pub trait ConvFloat<T>: Sized {
     /// Convert to integer with truncatation
     ///
     /// Rounds towards zero (same as `as`).
+    #[inline]
     fn conv_trunc(x: T) -> Self {
         Self::try_conv_trunc(x).unwrap_or_else(|e| panic!("ConvFloat::conv_trunc(_) failed: {}", e))
     }
     /// Convert to the nearest integer
     ///
     /// Half-way cases are rounded away from `0`.
+    #[inline]
     fn conv_nearest(x: T) -> Self {
         Self::try_conv_nearest(x)
             .unwrap_or_else(|e| panic!("ConvFloat::conv_nearest(_) failed: {}", e))
@@ -283,12 +285,14 @@ pub trait ConvFloat<T>: Sized {
     /// Convert the floor to an integer
     ///
     /// Returns the largest integer less than or equal to `x`.
+    #[inline]
     fn conv_floor(x: T) -> Self {
         Self::try_conv_floor(x).unwrap_or_else(|e| panic!("ConvFloat::conv_floor(_) failed: {}", e))
     }
     /// Convert the ceiling to an integer
     ///
     /// Returns the smallest integer greater than or equal to `x`.
+    #[inline]
     fn conv_ceil(x: T) -> Self {
         Self::try_conv_ceil(x).unwrap_or_else(|e| panic!("ConvFloat::conv_ceil(_) failed: {}", e))
     }
