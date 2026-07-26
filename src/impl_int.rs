@@ -3,18 +3,21 @@
 // You may obtain a copy of the License in the LICENSE-APACHE file or at:
 //     https://www.apache.org/licenses/LICENSE-2.0
 
-//! Integer impls for Conv.
+//! Integer impls.
 //!
 //! See also `impl_basic` which inherits integer impls from From.
 
-use super::{Conv, Error};
+use crate::generic::{Convert, ConvertExact, Exact};
+use crate::{Error, RangeError};
 use core::mem::size_of;
 
 macro_rules! impl_via_as_neg_check {
     ($x:ty: $y:ty) => {
-        impl Conv<$x> for $y {
+        impl ConvertExact<$x> for $y {
+            type Error = RangeError;
+
             #[inline]
-            fn conv(x: $x) -> $y {
+            fn convert(x: $x) -> $y {
                 #[cfg(any(debug_assertions, feature = "assert_int"))]
                 assert!(
                     x >= 0,
@@ -24,11 +27,11 @@ macro_rules! impl_via_as_neg_check {
                 x as $y
             }
             #[inline]
-            fn try_conv(x: $x) -> Result<Self, Error> {
+            fn try_convert(x: $x) -> Result<Self, RangeError> {
                 if x >= 0 {
                     Ok(x as $y)
                 } else {
-                    Err(Error::Range)
+                    Err(RangeError)
                 }
             }
         }
@@ -48,9 +51,11 @@ impl_via_as_neg_check!(i128: u128);
 // Assumption: $y::MAX is representable as $x
 macro_rules! impl_via_as_max_check {
     ($x:ty: $y:tt) => {
-        impl Conv<$x> for $y {
+        impl ConvertExact<$x> for $y {
+            type Error = RangeError;
+
             #[inline]
-            fn conv(x: $x) -> $y {
+            fn convert(x: $x) -> $y {
                 #[cfg(any(debug_assertions, feature = "assert_int"))]
                 assert!(
                     x <= $y::MAX as $x,
@@ -60,11 +65,11 @@ macro_rules! impl_via_as_max_check {
                 x as $y
             }
             #[inline]
-            fn try_conv(x: $x) -> Result<Self, Error> {
+            fn try_convert(x: $x) -> Result<Self, RangeError> {
                 if x <= $y::MAX as $x {
                     Ok(x as $y)
                 } else {
-                    Err(Error::Range)
+                    Err(RangeError)
                 }
             }
         }
@@ -85,9 +90,11 @@ impl_via_as_max_check!(u128: u8, u16, u32, u64);
 // Assumption: $y::MAX and $y::MIN are representable as $x
 macro_rules! impl_via_as_range_check {
     ($x:ty: $y:tt) => {
-        impl Conv<$x> for $y {
+        impl ConvertExact<$x> for $y {
+            type Error = RangeError;
+
             #[inline]
-            fn conv(x: $x) -> $y {
+            fn convert(x: $x) -> $y {
                 #[cfg(any(debug_assertions, feature = "assert_int"))]
                 assert!(
                     $y::MIN as $x <= x && x <= $y::MAX as $x,
@@ -97,11 +104,11 @@ macro_rules! impl_via_as_range_check {
                 x as $y
             }
             #[inline]
-            fn try_conv(x: $x) -> Result<Self, Error> {
+            fn try_convert(x: $x) -> Result<Self, RangeError> {
                 if $y::MIN as $x <= x && x <= $y::MAX as $x {
                     Ok(x as $y)
                 } else {
-                    Err(Error::Range)
+                    Err(RangeError)
                 }
             }
         }
@@ -119,10 +126,12 @@ impl_via_as_range_check!(i128: i8, i16, i32, i64, u8, u16, u32, u64);
 
 macro_rules! impl_int_generic {
     ($x:tt: $y:tt) => {
-        impl Conv<$x> for $y {
+        impl ConvertExact<$x> for $y {
+            type Error = RangeError;
+
             #[allow(unused_comparisons)]
             #[inline]
-            fn conv(x: $x) -> $y {
+            fn convert(x: $x) -> $y {
                 let src_is_signed = $x::MIN != 0;
                 let dst_is_signed = $y::MIN != 0;
                 if size_of::<$x>() < size_of::<$y>() {
@@ -172,7 +181,7 @@ macro_rules! impl_int_generic {
             }
             #[allow(unused_comparisons)]
             #[inline]
-            fn try_conv(x: $x) -> Result<Self, Error> {
+            fn try_convert(x: $x) -> Result<Self, Self::Error> {
                 let src_is_signed = $x::MIN != 0;
                 let dst_is_signed = $y::MIN != 0;
                 if size_of::<$x>() < size_of::<$y>() {
@@ -204,7 +213,7 @@ macro_rules! impl_int_generic {
                         }
                     }
                 }
-                Err(Error::Range)
+                Err(RangeError)
             }
         }
     };
@@ -230,11 +239,13 @@ impl_int_generic!(usize: u8, u16, u32, u64, u128);
 
 macro_rules! impl_via_digits_check {
     ($x:ty: $y:tt) => {
-        impl Conv<$x> for $y {
+        impl Convert<$x, Exact> for $y {
+            type Error = Error;
+
             #[inline]
-            fn conv(x: $x) -> Self {
+            fn convert(x: $x) -> Self {
                 if cfg!(any(debug_assertions, feature = "assert_digits")) {
-                    Self::try_conv(x).unwrap_or_else(|_| {
+                    <Self as Convert<_, _>>::try_convert(x).unwrap_or_else(|_| {
                         panic!(
                             "cast x: {} to {}: inexact for x = {x}",
                             stringify!($x), stringify!($y)
@@ -245,7 +256,7 @@ macro_rules! impl_via_digits_check {
                 }
             }
             #[inline]
-            fn try_conv(x: $x) -> Result<Self, Error> {
+            fn try_convert(x: $x) -> Result<Self, Error> {
                 let src_ty_bits = (size_of::<$x>() * 8) as u32;
                 let src_digits = src_ty_bits.saturating_sub(x.leading_zeros() + x.trailing_zeros());
                 let dst_digits = $y::MANTISSA_DIGITS;
@@ -265,11 +276,13 @@ macro_rules! impl_via_digits_check {
 
 macro_rules! impl_via_digits_check_signed {
     ($x:ty: $y:tt) => {
-        impl Conv<$x> for $y {
+        impl Convert<$x, Exact> for $y {
+            type Error = Error;
+
             #[inline]
-            fn conv(x: $x) -> Self {
+            fn convert(x: $x) -> Self {
                 if cfg!(any(debug_assertions, feature = "assert_digits")) {
-                    Self::try_conv(x).unwrap_or_else(|_| {
+                    <Self as Convert<_, _>>::try_convert(x).unwrap_or_else(|_| {
                         panic!(
                             "cast x: {} to {}: inexact for x = {x}",
                             stringify!($x), stringify!($y)
@@ -280,7 +293,7 @@ macro_rules! impl_via_digits_check_signed {
                 }
             }
             #[inline]
-            fn try_conv(x: $x) -> Result<Self, Error> {
+            fn try_convert(x: $x) -> Result<Self, Error> {
                 let src_ty_bits = (size_of::<$x>() * 8) as u32;
                 let src_digits = x.checked_abs()
                     .map(|y| src_ty_bits.saturating_sub(y.leading_zeros() + y.trailing_zeros()))
@@ -310,17 +323,20 @@ impl_via_digits_check_signed!(i64: f32, f64);
 impl_via_digits_check_signed!(i128: f32, f64);
 impl_via_digits_check_signed!(isize: f32, f64);
 
-impl Conv<u128> for f32 {
+impl Convert<u128, Exact> for f32 {
+    type Error = Error;
+
     #[inline]
-    fn conv(x: u128) -> Self {
+    fn convert(x: u128) -> Self {
         if cfg!(any(debug_assertions, feature = "assert_digits")) {
-            Self::try_conv(x).unwrap_or_else(|_| panic!("cast x: u128 to f32: inexact for x = {x}"))
+            <Self as Convert<_, _>>::try_convert(x)
+                .unwrap_or_else(|_| panic!("cast x: u128 to f32: inexact for x = {x}"))
         } else {
             x as f32
         }
     }
     #[inline]
-    fn try_conv(x: u128) -> Result<Self, Error> {
+    fn try_convert(x: u128) -> Result<Self, Error> {
         if x < 0xffff_ff80_0000_0000_0000_0000_0000_0000_u128 {
             let src_digits = 128u32.saturating_sub(x.leading_zeros() + x.trailing_zeros());
             if src_digits <= f32::MANTISSA_DIGITS {

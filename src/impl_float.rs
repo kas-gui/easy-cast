@@ -3,22 +3,25 @@
 // You may obtain a copy of the License in the LICENSE-APACHE file or at:
 //     https://www.apache.org/licenses/LICENSE-2.0
 
-//! Impls for ConvFloat
+//! Floating-point impls
 
-use crate::{Conv, ConvApprox, Error};
 #[cfg(any(feature = "std", feature = "libm"))]
-use crate::{ConvFloat, RangeError};
+use crate::ConvFloat;
+use crate::RangeError;
+use crate::generic::{Approx, Convert, ConvertExact};
 
-impl Conv<f32> for f64 {
-    fn try_conv(x: f32) -> Result<Self, Error> {
+impl ConvertExact<f32> for f64 {
+    type Error = RangeError;
+
+    fn try_convert(x: f32) -> Result<Self, RangeError> {
         match x.is_nan() {
             false => Ok(x as f64),
-            true => Err(Error::Range),
+            true => Err(RangeError),
         }
     }
 
     #[inline]
-    fn conv(x: f32) -> f64 {
+    fn convert(x: f32) -> f64 {
         fn trap_nan(x: f32) {
             if x.is_nan() {
                 panic!("cast float-to-float: NaN")
@@ -33,17 +36,18 @@ impl Conv<f32> for f64 {
     }
 }
 
-#[allow(clippy::manual_range_contains)]
-impl ConvApprox<f64> for f32 {
-    fn try_conv_approx(x: f64) -> Result<f32, Error> {
+impl Convert<f64, Approx> for f32 {
+    type Error = RangeError;
+
+    fn try_convert(x: f64) -> Result<f32, Self::Error> {
         match x.is_nan() {
             false => Ok(x as f32),
-            true => Err(Error::Range),
+            true => Err(RangeError),
         }
     }
 
     #[inline]
-    fn conv_approx(x: f64) -> f32 {
+    fn convert(x: f64) -> f32 {
         fn trap_nan(x: f64) {
             if x.is_nan() {
                 panic!("cast float-to-float: NaN")
@@ -195,13 +199,15 @@ macro_rules! impl_float {
             }
         }
 
-        impl ConvApprox<$x> for $y {
+        impl Convert<$x, Approx> for $y {
+            type Error = RangeError;
+
             #[inline]
-            fn try_conv_approx(x: $x) -> Result<Self, Error> {
+            fn try_convert(x: $x) -> Result<Self, Self::Error> {
                 ConvFloat::<$x>::try_conv_trunc(x).map_err(Into::into)
             }
             #[inline]
-            fn conv_approx(x: $x) -> Self {
+            fn convert(x: $x) -> Self {
                 ConvFloat::<$x>::conv_trunc(x)
             }
         }
@@ -295,13 +301,15 @@ impl ConvFloat<f32> for u128 {
 }
 
 #[cfg(any(feature = "std", feature = "libm"))]
-impl ConvApprox<f32> for u128 {
+impl Convert<f32, Approx> for u128 {
+    type Error = RangeError;
+
     #[inline]
-    fn try_conv_approx(x: f32) -> Result<Self, Error> {
-        ConvFloat::<f32>::try_conv_trunc(x).map_err(Into::into)
+    fn try_convert(x: f32) -> Result<Self, Self::Error> {
+        ConvFloat::<f32>::try_conv_trunc(x)
     }
     #[inline]
-    fn conv_approx(x: f32) -> Self {
+    fn convert(x: f32) -> Self {
         ConvFloat::<f32>::conv_trunc(x)
     }
 }

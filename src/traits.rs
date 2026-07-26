@@ -15,26 +15,35 @@
 //! # }
 //! ```
 
-use super::Error;
-#[cfg(any(feature = "std", feature = "libm"))]
-use crate::RangeError;
+use crate::generic::{Approx, Convert, Exact};
+use crate::{Error, RangeError};
 
 /// Like [`From`], but supports fallible conversions
 ///
-/// This trait is intended to be an extension over [`From`], also supporting
-/// fallible conversions of numeric types.
-/// Since Rust does not yet have stable support for handling conflicting
-/// implementations (specialization or otherwise), only conversions between
-/// the most important numeric types are supported for now.
+/// This trait is similar to [`From`], but limited to numeric conversions:
+/// -   Like [`TryFrom`] (unlike [`From`]), conversions may be *fallible*.
+///     Unlike [`TryFrom`], the [`Error`] type is fixed with precisely two
+///     variants: [`Error::Range`] and [`Error::Inexact`].
+/// -   Like [`From`], conversions must be *lossless*. For example, `Conv<f64>`
+///     is not implemented for `f32` since `f64` carries more precision; use
+///     [`ConvApprox`] instead for cases where loss-of-precision is intended.
+/// -   Like [`From`], conversions must be *value-preserving*. For example,
+///     `-1_i8` and `-1_i32` are conceptually the same value while `255_u8` is
+///     conceptually a different value, thus while `Conv<i8>` is implemented for
+///     both `i32` and `u8`, attempting to convert `-1` to `u8` will fail with
+///     [`Error::Range`].
 ///
 /// The sister-trait [`Cast`] supports "into" style usage.
-pub trait Conv<T>: Sized {
-    /// Try converting from `T` to `Self`
+///
+/// It is recommended not to implement this trait directly but to instead
+/// implement one of the [`generic`](crate::generic) traits.
+pub trait Conv<S>: Sized {
+    /// Try converting from `S` to `Self`
     ///
     /// This method must fail on inexact conversions.
-    fn try_conv(v: T) -> Result<Self, Error>;
+    fn try_conv(s: S) -> Result<Self, Error>;
 
-    /// Convert from `T` to `Self`
+    /// Convert from `S` to `Self`
     ///
     /// This method must return the same result as [`Self::try_conv`] where that
     /// method succeeds, but differs in the handling of errors:
@@ -52,10 +61,22 @@ pub trait Conv<T>: Sized {
     /// This mirrors the behaviour of Rust's overflow checks on integer
     /// arithmetic in that it is a tool for diagnosing logic errors where
     /// success is expected.
-    fn conv(v: T) -> Self {
-        Self::try_conv(v).unwrap_or_else(|e| {
+    fn conv(s: S) -> Self {
+        Self::try_conv(s).unwrap_or_else(|e| {
             panic!("Conv::conv(_) failed: {}", e);
         })
+    }
+}
+
+impl<S, T: Convert<S, Exact>> Conv<S> for T {
+    #[inline]
+    fn try_conv(s: S) -> Result<Self, Error> {
+        T::try_convert(s).map_err(Into::into)
+    }
+
+    #[inline]
+    fn conv(s: S) -> Self {
+        T::convert(s)
     }
 }
 
@@ -96,18 +117,25 @@ impl<S, T: Conv<S>> Cast<T> for S {
 
 /// Like [`From`], but for approximate numerical conversions
 ///
-/// On success, the result must be approximately the same as the input value:
-/// the difference must be smaller than the precision of the target type.
+/// Unlike [`Conv`], conversions are permitted to lose precision provided that
+/// the result is close to the input value. More precisely, the difference
+/// between the input and output values should be less than the difference
+/// between the two closest representable values in the target type.
 /// For example, one may have `i32::conv_approx(1.9f32) = 1` or
 /// `f32::conv_approx(1f64 + (f32::EPSILON as f64) / 2.0) = 1.0`.
 ///
-/// Precise rounding mode should usually be truncation (round towards zero),
-/// but this is not required. Use [`ConvFloat`] where a specific rounding mode
-/// is required.
+/// The rounding mode is implementation-defined, usually aligning with the
+/// behavior of [`as` numeric casts]. Use [`ConvFloat`] instead where control
+/// over rounding modes is required.
 ///
 /// The sister-trait [`CastApprox`] supports "into" style usage.
-pub trait ConvApprox<T>: Sized {
-    /// Try converting from `T` to `Self`, allowing approximation of value
+///
+/// It is recommended not to implement this trait directly but to instead
+/// implement one of the [`generic`](crate::generic) traits.
+///
+/// [`as` numeric casts]: https://doc.rust-lang.org/reference/expressions/operator-expr.html#type-cast-expressions
+pub trait ConvApprox<S>: Sized {
+    /// Try converting from `S` to `Self`, allowing approximation of value
     ///
     /// This conversion may truncate excess precision not supported by the
     /// target type, so long as the *value* is approximately equal, from the
@@ -115,9 +143,9 @@ pub trait ConvApprox<T>: Sized {
     ///
     /// This method should allow approximate conversion, but fail on input not
     /// (approximately) in the target's range.
-    fn try_conv_approx(x: T) -> Result<Self, Error>;
+    fn try_conv_approx(s: S) -> Result<Self, RangeError>;
 
-    /// Converting from `T` to `Self`, allowing approximation of value
+    /// Converting from `S` to `Self`, allowing approximation of value
     ///
     /// This method must return the same result as [`Self::try_conv_approx`]
     /// where that method succeeds, but differs in the handling of errors:
@@ -136,34 +164,37 @@ pub trait ConvApprox<T>: Sized {
     /// arithmetic in that it is a tool for diagnosing logic errors where
     /// success is expected.
     #[inline]
-    fn conv_approx(x: T) -> Self {
-        Self::try_conv_approx(x).unwrap_or_else(|e| {
+    fn conv_approx(s: S) -> Self {
+        Self::try_conv_approx(s).unwrap_or_else(|e| {
             panic!("ConvApprox::conv_approx(_) failed: {}", e);
         })
     }
 }
 
-// TODO(specialization): implement also where T: ConvFloat<S>
-impl<S, T: Conv<S>> ConvApprox<S> for T {
+impl<S, T: Convert<S, Approx>> ConvApprox<S> for T {
     #[inline]
-    fn try_conv_approx(x: S) -> Result<Self, Error> {
-        T::try_conv(x)
+    fn try_conv_approx(s: S) -> Result<Self, RangeError> {
+        T::try_convert(s).map_err(Into::into)
     }
+
     #[inline]
-    fn conv_approx(x: S) -> Self {
-        T::conv(x)
+    fn conv_approx(s: S) -> Self {
+        T::convert(s)
     }
 }
 
 /// Like [`Into`], but for [`ConvApprox`]
 ///
-/// On success, the result must be approximately the same as the input value:
-/// the difference must be smaller than the precision of the target type.
-/// For example, one may have `1.9f32.cast_approx() = 1`.
+/// Unlike [`Cast`], conversions are permitted to lose precision provided that
+/// the result is close to the input value. More precisely, the difference
+/// between the input and output values should be less than the difference
+/// between the two closest representable values in the target type.
+/// For example, one may have `i32::conv_approx(1.9f32) = 1` or
+/// `f32::conv_approx(1f64 + (f32::EPSILON as f64) / 2.0) = 1.0`.
 ///
-/// Precise rounding mode should usually be truncation (round towards zero),
-/// but this is not required. Use [`CastFloat`] where a specific rounding mode
-/// is required.
+/// The rounding mode is implementation-defined, usually aligning with the
+/// behavior of [`as` numeric casts]. Use [`CastFloat`] instead where control
+/// over rounding modes is required.
 ///
 /// This trait is automatically implemented for every implementation of
 /// [`ConvApprox`].
@@ -171,7 +202,7 @@ pub trait CastApprox<T> {
     /// Try approximate conversion from `Self` to `T`
     ///
     /// Use this method to explicitly handle errors.
-    fn try_cast_approx(self) -> Result<T, Error>;
+    fn try_cast_approx(self) -> Result<T, RangeError>;
 
     /// Cast approximately from `Self` to `T`
     ///
@@ -189,7 +220,7 @@ pub trait CastApprox<T> {
 
 impl<S, T: ConvApprox<S>> CastApprox<T> for S {
     #[inline]
-    fn try_cast_approx(self) -> Result<T, Error> {
+    fn try_cast_approx(self) -> Result<T, RangeError> {
         T::try_conv_approx(self)
     }
     #[inline]
