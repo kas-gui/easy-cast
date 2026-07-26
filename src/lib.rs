@@ -95,8 +95,7 @@ impl core::fmt::Display for RangeError {
     }
 }
 
-#[cfg(feature = "std")]
-impl std::error::Error for RangeError {}
+impl core::error::Error for RangeError {}
 
 /// Error types for conversions
 #[derive(Clone, Copy, Debug, Hash, PartialEq, Eq, PartialOrd, Ord)]
@@ -134,5 +133,4 @@ impl core::fmt::Display for Error {
     }
 }
 
-#[cfg(feature = "std")]
-impl std::error::Error for Error {}
+impl core::error::Error for Error {}
