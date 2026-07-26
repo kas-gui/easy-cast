@@ -5,12 +5,12 @@
 
 //! `core::range` impls for Conv.
 
-use super::*;
+use crate::{Cast, Conv, Error};
 use core::range::{Range, RangeFrom, RangeInclusive, RangeToInclusive};
 
 impl<F, T: Conv<F>> Conv<Range<F>> for Range<T> {
     #[inline]
-    fn try_conv(n: Range<F>) -> Result<Range<T>> {
+    fn try_conv(n: Range<F>) -> Result<Range<T>, Error> {
         Ok(Range {
             start: n.start.try_cast()?,
             end: n.end.try_cast()?,
@@ -28,7 +28,7 @@ impl<F, T: Conv<F>> Conv<Range<F>> for Range<T> {
 
 impl<F: Clone, T: Conv<F>> Conv<RangeInclusive<F>> for RangeInclusive<T> {
     #[inline]
-    fn try_conv(n: RangeInclusive<F>) -> Result<RangeInclusive<T>> {
+    fn try_conv(n: RangeInclusive<F>) -> Result<RangeInclusive<T>, Error> {
         let start = n.start.clone().try_cast()?;
         let last = n.last.clone().try_cast()?;
         Ok(RangeInclusive { start, last })
@@ -44,7 +44,7 @@ impl<F: Clone, T: Conv<F>> Conv<RangeInclusive<F>> for RangeInclusive<T> {
 
 impl<F, T: Conv<F>> Conv<RangeFrom<F>> for RangeFrom<T> {
     #[inline]
-    fn try_conv(n: RangeFrom<F>) -> Result<RangeFrom<T>> {
+    fn try_conv(n: RangeFrom<F>) -> Result<RangeFrom<T>, Error> {
         Ok(RangeFrom {
             start: n.start.try_cast()?,
         })
@@ -60,7 +60,7 @@ impl<F, T: Conv<F>> Conv<RangeFrom<F>> for RangeFrom<T> {
 
 impl<F, T: Conv<F>> Conv<RangeToInclusive<F>> for RangeToInclusive<T> {
     #[inline]
-    fn try_conv(n: RangeToInclusive<F>) -> Result<RangeToInclusive<T>> {
+    fn try_conv(n: RangeToInclusive<F>) -> Result<RangeToInclusive<T>, Error> {
         Ok(RangeToInclusive {
             last: n.last.try_cast()?,
         })

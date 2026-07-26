@@ -1,6 +1,6 @@
 #![cfg(any(feature = "std", feature = "libm"))]
 
-use easy_cast::{Error, traits::*};
+use easy_cast::{Error, RangeError, traits::*};
 
 #[test]
 fn integer_array_conversions_cover_success_and_failure() {
@@ -34,7 +34,7 @@ fn float_array_conversions_cover_all_rounding_modes() {
     );
     assert_eq!(
         <[u8; 3]>::try_conv_trunc([1.0f32, 256.0, 3.0]),
-        Err(Error::Range)
+        Err(RangeError)
     );
 }
 

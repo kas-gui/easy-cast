@@ -69,16 +69,60 @@ mod impl_range;
 
 pub mod traits;
 
+use core::convert::Infallible;
+
 #[doc(inline)]
 pub use traits::*;
 
+/// Source value lies outside of target type's range
+///
+/// More precisely, all values of the target type's domain are either
+/// incomparable to the source value or are closer to another value within
+/// the target type's domain than to the source value.
+#[derive(Clone, Copy, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+pub struct RangeError;
+
+impl From<Infallible> for RangeError {
+    #[inline]
+    fn from(error: Infallible) -> Self {
+        match error {}
+    }
+}
+
+impl core::fmt::Display for RangeError {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        write!(f, "source value not in target range")
+    }
+}
+
+#[cfg(feature = "std")]
+impl std::error::Error for RangeError {}
+
 /// Error types for conversions
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub enum Error {
     /// Source value lies outside of target type's range
+    ///
+    /// More precisely, all values of the target type's domain are either
+    /// incomparable to the source value or are closer to another value within
+    /// the target type's domain than to the source value.
     Range,
     /// Loss of precision and/or outside of target type's range
     Inexact,
+}
+
+impl From<Infallible> for Error {
+    #[inline]
+    fn from(error: Infallible) -> Self {
+        match error {}
+    }
+}
+
+impl From<RangeError> for Error {
+    #[inline]
+    fn from(_: RangeError) -> Self {
+        Self::Range
+    }
 }
 
 impl core::fmt::Display for Error {
@@ -92,6 +136,3 @@ impl core::fmt::Display for Error {
 
 #[cfg(feature = "std")]
 impl std::error::Error for Error {}
-
-/// Result enum with bound [`Error`] type
-pub type Result<T> = core::result::Result<T, Error>;

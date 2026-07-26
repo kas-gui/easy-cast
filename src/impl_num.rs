@@ -5,7 +5,7 @@
 
 //! `core::num` impls for Conv.
 
-use super::*;
+use super::{Cast, Conv, Error};
 use core::num::NonZero;
 
 macro_rules! impl_via_trivial {
@@ -16,7 +16,7 @@ macro_rules! impl_via_trivial {
                 x
             }
             #[inline]
-            fn try_conv(x: NonZero<$x>) -> Result<Self> {
+            fn try_conv(x: NonZero<$x>) -> Result<Self, Error> {
                 Ok(x)
             }
         }
@@ -37,7 +37,7 @@ macro_rules! impl_nonzero {
     ($x:ty: $y:ty) => {
         impl Conv<NonZero<$x>> for NonZero<$y> {
             #[inline]
-            fn try_conv(n: NonZero<$x>) -> Result<NonZero<$y>> {
+            fn try_conv(n: NonZero<$x>) -> Result<NonZero<$y>, Error> {
                 let m: $y = n.get().try_cast()?;
                 // An error here should be impossible, but handling one is basically free:
                 NonZero::new(m).ok_or(Error::Range)
