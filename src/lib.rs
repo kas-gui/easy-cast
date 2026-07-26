@@ -70,9 +70,9 @@
 //! It is recommended to implement the traits in [`generic`] instead of those in
 //! [`traits`] when supporting additional types.
 //!
-//! It is usually easier to use the [`traits`] traits to convert values, though
-//! these shouldn't be used in generic impls of [`generic`] traits; instead
-//! [`RoundInto`] may be used.
+//! It is recommended to use the [`traits`] traits to convert values. In
+//! implementations of generic traits, [`RoundFrom`] and [`RoundInto`] are
+//! usually the most appropriate traits to use.
 //!
 //! [`TryFrom`]: core::convert::TryFrom
 //! [`TryInto`]: core::convert::TryInto

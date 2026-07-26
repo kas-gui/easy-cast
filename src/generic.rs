@@ -10,8 +10,9 @@
 //! traits support generality over [`Rounding`] modes and more precise error
 //! types as associated types.
 //!
-//! [`RoundInto`] may be used instead of [`Cast`](crate::Cast) where
-//! genericity over [`Rounding`] modes is required.
+//! [`RoundInto`] and [`RoundFrom`] may be used instead of
+//! [`Cast`](crate::Cast) and [`Conv`](crate::Conv) where genericity over
+//! [`Rounding`] modes is required.
 //!
 //! Conversions which can never be inexact should be implemented using
 //! [`ConvertExact`].
@@ -23,6 +24,7 @@
 //! required) and an [`Exact`] conversion (which rejects these inputs).
 //!
 //! [`RoundInto`]: crate::RoundInto
+//! [`RoundFrom`]: crate::RoundFrom
 
 use crate::{Error, RangeError};
 use core::convert::Infallible;
