@@ -48,13 +48,13 @@ macro_rules! impl_via_from {
     };
 }
 
-impl_via_from!(i8: f32, f64, i16, i32, i64, i128);
-impl_via_from!(i16: f32, f64, i32, i64, i128);
+impl_via_from!(i8: f32, f64, i16, i32, i64, i128, isize);
+impl_via_from!(i16: f32, f64, i32, i64, i128, isize);
 impl_via_from!(i32: f64, i64, i128);
 impl_via_from!(i64: i128);
-impl_via_from!(u8: f32, f64, i16, i32, i64, i128);
-impl_via_from!(u8: u16, u32, u64, u128);
-impl_via_from!(u16: f32, f64, i32, i64, i128, u32, u64, u128);
+impl_via_from!(u8: f32, f64, i16, i32, i64, i128, isize);
+impl_via_from!(u8: u16, u32, u64, u128, usize);
+impl_via_from!(u16: f32, f64, i32, i64, i128, u32, u64, u128, usize);
 impl_via_from!(u32: f64, i64, i128, u64, u128);
 impl_via_from!(u64: i128, u128);
 
