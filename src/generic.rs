@@ -122,3 +122,63 @@ impl<S, T: ConvertExact<S>> Convert<S, Approx> for T {
         T::convert(s)
     }
 }
+
+#[cfg(any(feature = "std", feature = "libm"))]
+impl<S, T: ConvertExact<S>> Convert<S, Trunc> for T {
+    type Error = T::Error;
+
+    #[inline]
+    fn try_convert(s: S) -> Result<Self, Self::Error> {
+        T::try_convert(s)
+    }
+
+    #[inline]
+    fn convert(s: S) -> Self {
+        T::convert(s)
+    }
+}
+
+#[cfg(any(feature = "std", feature = "libm"))]
+impl<S, T: ConvertExact<S>> Convert<S, Nearest> for T {
+    type Error = T::Error;
+
+    #[inline]
+    fn try_convert(s: S) -> Result<Self, Self::Error> {
+        T::try_convert(s)
+    }
+
+    #[inline]
+    fn convert(s: S) -> Self {
+        T::convert(s)
+    }
+}
+
+#[cfg(any(feature = "std", feature = "libm"))]
+impl<S, T: ConvertExact<S>> Convert<S, Floor> for T {
+    type Error = T::Error;
+
+    #[inline]
+    fn try_convert(s: S) -> Result<Self, Self::Error> {
+        T::try_convert(s)
+    }
+
+    #[inline]
+    fn convert(s: S) -> Self {
+        T::convert(s)
+    }
+}
+
+#[cfg(any(feature = "std", feature = "libm"))]
+impl<S, T: ConvertExact<S>> Convert<S, Ceil> for T {
+    type Error = T::Error;
+
+    #[inline]
+    fn try_convert(s: S) -> Result<Self, Self::Error> {
+        T::try_convert(s)
+    }
+
+    #[inline]
+    fn convert(s: S) -> Self {
+        T::convert(s)
+    }
+}

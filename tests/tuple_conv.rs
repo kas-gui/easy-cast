@@ -1,6 +1,7 @@
 #![cfg(any(feature = "std", feature = "libm"))]
 
 use easy_cast::{Error, traits::*};
+use easy_cast::generic::{Ceil, Floor, Nearest, Trunc};
 
 #[test]
 fn tuple_arities() {
@@ -54,8 +55,8 @@ fn tuple_conversions_cover_mixed_types_and_errors() {
 
 #[test]
 fn tuple_float_conversions_cover_all_rounding_modes() {
-    assert_eq!(<(i32, u8)>::try_conv_trunc((1.9f32, 2.9f32)), Ok((1, 2)));
-    assert_eq!(<(i32, u8)>::try_conv_nearest((1.5f32, 2.5f32)), Ok((2, 3)));
-    assert_eq!(<(i32, u8)>::try_conv_floor((1.9f32, 2.9f32)), Ok((1, 2)));
-    assert_eq!(<(i32, u8)>::try_conv_ceil((1.1f32, 2.1f32)), Ok((2, 3)));
+    assert_eq!(<(i32, u8) as easy_cast::generic::Convert<(f32, f32), Trunc>>::try_convert((1.9f32, 2.9f32)), Ok((1, 2)));
+    assert_eq!(<(i32, u8) as easy_cast::generic::Convert<(f32, f32), Nearest>>::try_convert((1.5f32, 2.5f32)), Ok((2, 3)));
+    assert_eq!(<(i32, u8) as easy_cast::generic::Convert<(f32, f32), Floor>>::try_convert((1.9f32, 2.9f32)), Ok((1, 2)));
+    assert_eq!(<(i32, u8) as easy_cast::generic::Convert<(f32, f32), Ceil>>::try_convert((1.1f32, 2.1f32)), Ok((2, 3)));
 }

@@ -7,10 +7,10 @@
 //!
 //! This module only contains traits, allowing relatively safe glob-import:
 //! ```
-//! use easy_cast::traits::*;
+//! use easy_cast::*;
 //!
 //! # fn main() {
-//! let x = i32::conv_nearest(8.5);
+//! let x = <i32 as easy_cast::RoundFrom<f32, _>>::round(8.5f32, easy_cast::generic::Nearest);
 //! let y: f32 = 12.cast();
 //! # }
 //! ```
@@ -125,8 +125,9 @@ impl<S, T: Conv<S>> Cast<T> for S {
 /// `f32::conv_approx(1f64 + (f32::EPSILON as f64) / 2.0) = 1.0`.
 ///
 /// The rounding mode is implementation-defined, usually aligning with the
-/// behavior of [`as` numeric casts]. Use [`ConvFloat`] instead where control
-/// over rounding modes is required.
+/// behavior of [`as` numeric casts]. Use [`RoundFrom`] or [`RoundInto`] with
+/// an explicit rounding mode (e.g. [`generic::Nearest`](crate::generic::Nearest))
+/// instead where control over rounding is required.
 ///
 /// The sister-trait [`CastApprox`] supports "into" style usage.
 ///
@@ -193,8 +194,9 @@ impl<S, T: Convert<S, Approx>> ConvApprox<S> for T {
 /// `f32::conv_approx(1f64 + (f32::EPSILON as f64) / 2.0) = 1.0`.
 ///
 /// The rounding mode is implementation-defined, usually aligning with the
-/// behavior of [`as` numeric casts]. Use [`CastFloat`] instead where control
-/// over rounding modes is required.
+/// behavior of [`as` numeric casts]. Use [`RoundFrom`] or [`RoundInto`] with
+/// an explicit rounding mode (e.g. [`generic::Nearest`](crate::generic::Nearest))
+/// instead where control over rounding is required.
 ///
 /// This trait is automatically implemented for every implementation of
 /// [`ConvApprox`].
@@ -226,166 +228,6 @@ impl<S, T: ConvApprox<S>> CastApprox<T> for S {
     #[inline]
     fn cast_approx(self) -> T {
         T::conv_approx(self)
-    }
-}
-
-/// Nearest / floor / ceiling conversions from floating point types
-///
-/// This trait is explicitly for conversions from floating-point values to
-/// integers, supporting four rounding modes.
-///
-/// As with [`Conv`], the `try_conv_*` methods must be implemented and must fail
-/// if conversion to the expected value is not possible. If the source is non-
-/// finite (`inf` or `NaN`), then `Error::Range` should be returned.
-///
-/// The `conv_*` methods each have a default implementation over the `try_..`
-/// variant which panics on failure. Implementations handle errors as follows:
-///
-/// -   In debug builds, the methods must panic
-/// -   Otherwise, the method may panic or may return a different value; all
-///     results must be well-defined and *safe*.
-/// -   Implementations provided by this library will also panic if the
-///     `always_assert` or `assert_float` feature flag is used.
-///
-/// The sister-trait [`CastFloat`] supports "into" style usage.
-#[cfg(any(feature = "std", feature = "libm"))]
-pub trait ConvFloat<T>: Sized {
-    /// Try converting to integer with truncation
-    ///
-    /// Rounds towards zero (same as `as`).
-    fn try_conv_trunc(x: T) -> Result<Self, RangeError>;
-    /// Try converting to the nearest integer
-    ///
-    /// Half-way cases are rounded away from `0`.
-    fn try_conv_nearest(x: T) -> Result<Self, RangeError>;
-    /// Try converting the floor to an integer
-    ///
-    /// Returns the largest integer less than or equal to `x`.
-    fn try_conv_floor(x: T) -> Result<Self, RangeError>;
-    /// Try convert the ceiling to an integer
-    ///
-    /// Returns the smallest integer greater than or equal to `x`.
-    fn try_conv_ceil(x: T) -> Result<Self, RangeError>;
-
-    /// Convert to integer with truncatation
-    ///
-    /// Rounds towards zero (same as `as`).
-    #[inline]
-    fn conv_trunc(x: T) -> Self {
-        Self::try_conv_trunc(x).unwrap_or_else(|e| panic!("ConvFloat::conv_trunc(_) failed: {}", e))
-    }
-    /// Convert to the nearest integer
-    ///
-    /// Half-way cases are rounded away from `0`.
-    #[inline]
-    fn conv_nearest(x: T) -> Self {
-        Self::try_conv_nearest(x)
-            .unwrap_or_else(|e| panic!("ConvFloat::conv_nearest(_) failed: {}", e))
-    }
-    /// Convert the floor to an integer
-    ///
-    /// Returns the largest integer less than or equal to `x`.
-    #[inline]
-    fn conv_floor(x: T) -> Self {
-        Self::try_conv_floor(x).unwrap_or_else(|e| panic!("ConvFloat::conv_floor(_) failed: {}", e))
-    }
-    /// Convert the ceiling to an integer
-    ///
-    /// Returns the smallest integer greater than or equal to `x`.
-    #[inline]
-    fn conv_ceil(x: T) -> Self {
-        Self::try_conv_ceil(x).unwrap_or_else(|e| panic!("ConvFloat::conv_ceil(_) failed: {}", e))
-    }
-}
-
-/// Like [`Into`], but for [`ConvFloat`]
-///
-/// Use:
-///
-/// -   `try_cast_*` methods to explicitly handle errors
-/// -   `cast_*` methods *only* where success is expected. Implementations are
-///     permitted to panic or silently return a different (safe, defined) value
-///     on error.
-///
-///     In debug builds, implementations must panic.
-///
-///     Implementations by this library will panic in debug builds or if the
-///     `always_assert` or `assert_float` feature flag is used, otherwise
-///     conversions have similar behaviour to the `as` keyword.
-///
-/// This trait is automatically implemented for every implementation of
-/// [`ConvFloat`].
-#[cfg(any(feature = "std", feature = "libm"))]
-pub trait CastFloat<T> {
-    /// Cast to integer, truncating
-    ///
-    /// Rounds towards zero (same as `as`).
-    fn cast_trunc(self) -> T;
-    /// Cast to the nearest integer
-    ///
-    /// Half-way cases are rounded away from `0`.
-    fn cast_nearest(self) -> T;
-    /// Cast the floor to an integer
-    ///
-    /// Returns the largest integer less than or equal to `self`.
-    fn cast_floor(self) -> T;
-    /// Cast the ceiling to an integer
-    ///
-    /// Returns the smallest integer greater than or equal to `self`.
-    fn cast_ceil(self) -> T;
-
-    /// Try converting to integer with truncation
-    ///
-    /// Rounds towards zero (same as `as`).
-    fn try_cast_trunc(self) -> Result<T, RangeError>;
-    /// Try converting to the nearest integer
-    ///
-    /// Half-way cases are rounded away from `0`.
-    fn try_cast_nearest(self) -> Result<T, RangeError>;
-    /// Try converting the floor to an integer
-    ///
-    /// Returns the largest integer less than or equal to `x`.
-    fn try_cast_floor(self) -> Result<T, RangeError>;
-    /// Try convert the ceiling to an integer
-    ///
-    /// Returns the smallest integer greater than or equal to `x`.
-    fn try_cast_ceil(self) -> Result<T, RangeError>;
-}
-
-#[cfg(any(feature = "std", feature = "libm"))]
-impl<S, T: ConvFloat<S>> CastFloat<T> for S {
-    #[inline]
-    fn cast_trunc(self) -> T {
-        T::conv_trunc(self)
-    }
-    #[inline]
-    fn cast_nearest(self) -> T {
-        T::conv_nearest(self)
-    }
-    #[inline]
-    fn cast_floor(self) -> T {
-        T::conv_floor(self)
-    }
-    #[inline]
-    fn cast_ceil(self) -> T {
-        T::conv_ceil(self)
-    }
-
-    #[inline]
-    fn try_cast_trunc(self) -> Result<T, RangeError> {
-        T::try_conv_trunc(self)
-    }
-    #[inline]
-    fn try_cast_nearest(self) -> Result<T, RangeError> {
-        T::try_conv_nearest(self)
-    }
-    #[inline]
-    fn try_cast_floor(self) -> Result<T, RangeError> {
-        T::try_conv_floor(self)
-    }
-    #[inline]
-    fn try_cast_ceil(self) -> Result<T, RangeError> {
-        T::try_conv_ceil(self)
     }
 }
 

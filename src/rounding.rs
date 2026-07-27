@@ -41,3 +41,55 @@ pub struct Approx;
 impl Rounding for Approx {
     type MaximumError = RangeError;
 }
+
+/// Truncation towards zero
+///
+/// Converts floating-point to integer by truncating towards zero (same as `as`).
+///
+/// Example: `2.9_f32` converts to `2_i32`, `-2.9_f32` converts to `-2_i32`.
+#[cfg(any(feature = "std", feature = "libm"))]
+#[derive(Clone, Copy, Debug, Default)]
+pub struct Trunc;
+#[cfg(any(feature = "std", feature = "libm"))]
+impl Rounding for Trunc {
+    type MaximumError = RangeError;
+}
+
+/// Round to nearest integer
+///
+/// Half-way cases are rounded away from `0`.
+///
+/// Example: `2.5_f32` converts to `3_i32`, `-2.5_f32` converts to `-3_i32`.
+#[cfg(any(feature = "std", feature = "libm"))]
+#[derive(Clone, Copy, Debug, Default)]
+pub struct Nearest;
+#[cfg(any(feature = "std", feature = "libm"))]
+impl Rounding for Nearest {
+    type MaximumError = RangeError;
+}
+
+/// Round towards negative infinity (floor)
+///
+/// Returns the largest integer less than or equal to the input.
+///
+/// Example: `2.9_f32` converts to `2_i32`, `-2.1_f32` converts to `-3_i32`.
+#[cfg(any(feature = "std", feature = "libm"))]
+#[derive(Clone, Copy, Debug, Default)]
+pub struct Floor;
+#[cfg(any(feature = "std", feature = "libm"))]
+impl Rounding for Floor {
+    type MaximumError = RangeError;
+}
+
+/// Round towards positive infinity (ceiling)
+///
+/// Returns the smallest integer greater than or equal to the input.
+///
+/// Example: `2.1_f32` converts to `3_i32`, `-2.9_f32` converts to `-2_i32`.
+#[cfg(any(feature = "std", feature = "libm"))]
+#[derive(Clone, Copy, Debug, Default)]
+pub struct Ceil;
+#[cfg(any(feature = "std", feature = "libm"))]
+impl Rounding for Ceil {
+    type MaximumError = RangeError;
+}
