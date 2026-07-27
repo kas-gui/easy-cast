@@ -26,42 +26,10 @@
 //! [`RoundInto`]: crate::RoundInto
 //! [`RoundFrom`]: crate::RoundFrom
 
-use crate::{Error, RangeError};
-use core::convert::Infallible;
+use crate::RangeError;
 
-/// Rounding mode
-pub trait Rounding: Copy + Default {
-    /// Maximum error type
-    type MaximumError: From<Infallible> + Into<Error> + core::error::Error;
-}
-
-/// Exact conversion only
-///
-/// Successful conversions using this "rounding" mode must preserve value
-/// exactly.
-///
-/// Example: `2.0_f32` may convert to `2_i32`. `2.1_f32` is not convertible to
-/// `i32`.
-#[derive(Clone, Copy, Debug, Default)]
-pub struct Exact;
-impl Rounding for Exact {
-    type MaximumError = Error;
-}
-
-/// Approximate conversion
-///
-/// Conversions may apply implementation-defined rounding when converting. The
-/// result must be close to the input value; more specifically the distance
-/// between the result and the input value should be less than the distance
-/// between the closest two representable values to the input value.
-///
-/// Example: `2.1_f32` may convert to `2_i32` or to `3_i32` (either
-/// implementation is valid so long as the behaviour is well-defined).
-#[derive(Clone, Copy, Debug, Default)]
-pub struct Approx;
-impl Rounding for Approx {
-    type MaximumError = RangeError;
-}
+#[doc(inline)]
+pub use crate::rounding::*;
 
 /// Generic "from" conversion trait for exact conversions
 ///
@@ -72,6 +40,8 @@ pub trait ConvertExact<S>: Sized {
     /// Conversion error type
     ///
     /// This is either [`Infallible`] or [`RangeError`].
+    ///
+    /// [`Infallible`]: std::convert::Infallible
     type Error: Into<RangeError> + Into<crate::Error> + core::error::Error;
 
     /// Try converting from `S` to `Self`

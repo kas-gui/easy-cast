@@ -86,6 +86,7 @@ mod impl_int;
 mod impl_num;
 mod impl_ops;
 mod impl_range;
+mod rounding;
 
 pub mod generic;
 
