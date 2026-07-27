@@ -15,7 +15,7 @@
 //! # }
 //! ```
 
-use crate::generic::{Approx, Convert, Exact};
+use crate::generic::{Approx, Convert, Exact, Rounding};
 use crate::{Error, RangeError};
 
 /// Like [`From`], but supports fallible conversions
@@ -386,5 +386,85 @@ impl<S, T: ConvFloat<S>> CastFloat<T> for S {
     #[inline]
     fn try_cast_ceil(self) -> Result<T, RangeError> {
         T::try_conv_ceil(self)
+    }
+}
+
+/// Generic "from" conversion trait
+///
+/// This trait is like [`From`] but for [`Convert`].
+///
+/// The [`Rounding`] mode must be specified when calling this trait's methods,
+/// for example `x.try_round(Exact)` or `y.round(Approx)`. In generic code
+/// (where `R: Rounding`), `z.try_round(R::default())` may be used.
+pub trait RoundFrom<S, R: Rounding>: Sized {
+    /// Conversion error type
+    type Error: Into<R::MaximumError> + core::error::Error;
+
+    /// Try converting from `S` to `Self`
+    fn try_round(s: S, mode: R) -> Result<Self, Self::Error>;
+
+    /// Convert from `S` to `Self`
+    ///
+    /// This method must return the same result as [`Self::try_round`] where
+    /// that method succeeds, but differs in the handling of errors:
+    ///
+    /// -   In debug builds the method must panic on error
+    /// -   In release builds the method may return a different value so long as
+    ///     the behaviour is well defined. This allows implementations to
+    ///     optimize to [`as` numeric casts].
+    ///
+    /// [`as` numeric casts]: https://doc.rust-lang.org/reference/expressions/operator-expr.html#type-cast-expressions
+    fn round(s: S, mode: R) -> Self;
+}
+
+impl<R: Rounding, S, T: Convert<S, R>> RoundFrom<S, R> for T {
+    type Error = T::Error;
+
+    fn try_round(s: S, _: R) -> Result<Self, Self::Error> {
+        T::try_convert(s)
+    }
+
+    fn round(s: S, _: R) -> Self {
+        T::convert(s)
+    }
+}
+
+/// Generic "into" conversion trait
+///
+/// This trait is like [`Into`] but for [`Convert`].
+///
+/// The [`Rounding`] mode must be specified when calling this trait's methods,
+/// for example `x.try_round(Exact)` or `y.round(Approx)`. In generic code
+/// (where `R: Rounding`), `z.try_round(R::default())` may be used.
+pub trait RoundInto<T, R: Rounding>: Sized {
+    /// Conversion error type
+    type Error: Into<R::MaximumError> + core::error::Error;
+
+    /// Try converting from `Self` to `T`
+    fn try_round(self, mode: R) -> Result<T, Self::Error>;
+
+    /// Convert from `Self` to `T`
+    ///
+    /// This method must return the same result as [`Self::try_round`] where
+    /// that method succeeds, but differs in the handling of errors:
+    ///
+    /// -   In debug builds the method must panic on error
+    /// -   In release builds the method may return a different value so long as
+    ///     the behaviour is well defined. This allows implementations to
+    ///     optimize to [`as` numeric casts].
+    ///
+    /// [`as` numeric casts]: https://doc.rust-lang.org/reference/expressions/operator-expr.html#type-cast-expressions
+    fn round(self, mode: R) -> T;
+}
+
+impl<R: Rounding, S, T: Convert<S, R>> RoundInto<T, R> for S {
+    type Error = T::Error;
+
+    fn try_round(self, _: R) -> Result<T, Self::Error> {
+        T::try_convert(self)
+    }
+
+    fn round(self, _: R) -> T {
+        T::convert(self)
     }
 }

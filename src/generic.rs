@@ -10,8 +10,9 @@
 //! traits support generality over [`Rounding`] modes and more precise error
 //! types as associated types.
 //!
-//! [`ConvertInto`] may be used instead of [`Cast`](crate::Cast) where
-//! genericity over [`Rounding`] modes is required.
+//! [`RoundInto`] and [`RoundFrom`] may be used instead of
+//! [`Cast`](crate::Cast) and [`Conv`](crate::Conv) where genericity over
+//! [`Rounding`] modes is required.
 //!
 //! Conversions which can never be inexact should be implemented using
 //! [`ConvertExact`].
@@ -21,43 +22,14 @@
 //! It is permissible to implement such conversions for multiple [`Rounding`]
 //! modes, for example an [`Approx`] conversion (which rounds inputs where
 //! required) and an [`Exact`] conversion (which rejects these inputs).
+//!
+//! [`RoundInto`]: crate::RoundInto
+//! [`RoundFrom`]: crate::RoundFrom
 
-use crate::{Error, RangeError};
-use core::convert::Infallible;
+use crate::RangeError;
 
-/// Rounding mode
-pub trait Rounding: Copy + Default {
-    /// Maximum error type
-    type MaximumError: From<Infallible> + Into<Error> + core::error::Error;
-}
-
-/// Exact conversion only
-///
-/// Successful conversions using this "rounding" mode must preserve value
-/// exactly.
-///
-/// Example: `2.0_f32` may convert to `2_i32`. `2.1_f32` is not convertible to
-/// `i32`.
-#[derive(Clone, Copy, Debug, Default)]
-pub struct Exact;
-impl Rounding for Exact {
-    type MaximumError = Error;
-}
-
-/// Approximate conversion
-///
-/// Conversions may apply implementation-defined rounding when converting. The
-/// result must be close to the input value; more specifically the distance
-/// between the result and the input value should be less than the distance
-/// between the closest two representable values to the input value.
-///
-/// Example: `2.1_f32` may convert to `2_i32` or to `3_i32` (either
-/// implementation is valid so long as the behaviour is well-defined).
-#[derive(Clone, Copy, Debug, Default)]
-pub struct Approx;
-impl Rounding for Approx {
-    type MaximumError = RangeError;
-}
+#[doc(inline)]
+pub use crate::rounding::*;
 
 /// Generic "from" conversion trait for exact conversions
 ///
@@ -68,6 +40,8 @@ pub trait ConvertExact<S>: Sized {
     /// Conversion error type
     ///
     /// This is either [`Infallible`] or [`RangeError`].
+    ///
+    /// [`Infallible`]: std::convert::Infallible
     type Error: Into<RangeError> + Into<crate::Error> + core::error::Error;
 
     /// Try converting from `S` to `Self`
@@ -146,45 +120,5 @@ impl<S, T: ConvertExact<S>> Convert<S, Approx> for T {
     #[inline]
     fn convert(s: S) -> Self {
         T::convert(s)
-    }
-}
-
-/// Generic "into" conversion trait
-///
-/// This trait is like [`Into`] but for [`Convert`].
-///
-/// The [`Rounding`] mode must be specified when calling this trait's methods,
-/// for example `x.try_convert(Exact)` or `y.convert(Approx)`. In generic code
-/// (where `R: Rounding`), `z.try_convert(R::default())` may be used.
-pub trait ConvertInto<T, R: Rounding>: Sized {
-    /// Conversion error type
-    type Error: Into<R::MaximumError> + core::error::Error;
-
-    /// Try converting from `Self` to `T`
-    fn try_convert(self, mode: R) -> Result<T, Self::Error>;
-
-    /// Convert from `Self` to `T`
-    ///
-    /// This method must return the same result as [`Self::try_convert`] where
-    /// that method succeeds, but differs in the handling of errors:
-    ///
-    /// -   In debug builds the method must panic on error
-    /// -   In release builds the method may return a different value so long as
-    ///     the behaviour is well defined. This allows implementations to
-    ///     optimize to [`as` numeric casts].
-    ///
-    /// [`as` numeric casts]: https://doc.rust-lang.org/reference/expressions/operator-expr.html#type-cast-expressions
-    fn convert(self, mode: R) -> T;
-}
-
-impl<R: Rounding, S, T: Convert<S, R>> ConvertInto<T, R> for S {
-    type Error = T::Error;
-
-    fn try_convert(self, _: R) -> Result<T, Self::Error> {
-        T::try_convert(self)
-    }
-
-    fn convert(self, _: R) -> T {
-        T::convert(self)
     }
 }
