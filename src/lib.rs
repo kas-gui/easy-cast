@@ -58,7 +58,7 @@
 //!     println!("The {n}-th root of {x} is {root}");
 //!
 //!     // TryFrom-like approximate (nearest) conversion
-//!     if let Ok(nearest) = <isize as RoundFrom<_, _>>::try_round(root, Nearest) {
+//!     if let Ok(nearest) = isize::try_round_from(root, Nearest) {
 //!         println!("Nearest integer: {nearest}");
 //!     }
 //! }
