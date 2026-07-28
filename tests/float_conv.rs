@@ -1,6 +1,6 @@
 #![cfg(any(feature = "std", feature = "libm"))]
 
-use easy_cast::{Error, RangeError, traits::*};
+use easy_cast::{RangeError, traits::*};
 
 #[test]
 fn f64_to_f32_zero() {
@@ -54,7 +54,7 @@ fn f64_to_f32_overflow() {
 
 #[test]
 fn float_nan() {
-    assert_eq!(f64::try_conv(f32::NAN), Err(Error::Range));
+    assert_eq!(f64::try_conv(f32::NAN), Err(RangeError));
     assert_eq!(f64::try_conv_approx(f32::NAN), Err(RangeError));
     assert_eq!(f32::try_conv_approx(f64::NAN), Err(RangeError));
 }

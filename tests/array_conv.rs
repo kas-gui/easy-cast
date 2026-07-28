@@ -2,12 +2,12 @@
 
 use easy_cast::generic::{Ceil, Floor, Nearest, Trunc};
 use easy_cast::traits::*;
-use easy_cast::{Error, RangeError, RoundFrom};
+use easy_cast::{RangeError, RoundFrom};
 
 #[test]
 fn integer_array_conversions_cover_success_and_failure() {
     assert_eq!(<[u8; 4]>::try_conv([0u32, 1, 255, 42]), Ok([0, 1, 255, 42]));
-    assert_eq!(<[u8; 4]>::try_conv([0u32, 1, 256, 42]), Err(Error::Range));
+    assert_eq!(<[u8; 4]>::try_conv([0u32, 1, 256, 42]), Err(RangeError));
 }
 
 #[test]

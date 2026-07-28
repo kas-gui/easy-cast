@@ -1,11 +1,11 @@
-use easy_cast::{Error, traits::*};
+use easy_cast::{RangeError, traits::*};
 
 macro_rules! assert_signed_to_unsigned {
     ($src:ty => $dst:ty) => {
         assert_eq!(<$dst>::try_conv(0 as $src), Ok(0 as $dst));
         assert_eq!(<$dst>::try_conv(1 as $src), Ok(1 as $dst));
         assert_eq!(<$dst>::try_conv(<$src>::MAX), Ok(<$src>::MAX as $dst));
-        assert_eq!(<$dst>::try_conv(-1 as $src), Err(Error::Range));
+        assert_eq!(<$dst>::try_conv(-1 as $src), Err(RangeError));
     };
     ($src:ty => $($dst:ty),+ $(,)?) => {
         $(assert_signed_to_unsigned!($src => $dst);)+
@@ -19,7 +19,7 @@ macro_rules! assert_unsigned_to_signed {
         assert_eq!(<$dst>::try_conv(<$dst>::MAX as $src), Ok(<$dst>::MAX));
         assert_eq!(
             <$dst>::try_conv((<$dst>::MAX as $src) + 1),
-            Err(Error::Range)
+            Err(RangeError)
         );
     };
     ($src:ty => $($dst:ty),+ $(,)?) => {
@@ -62,8 +62,8 @@ fn unsigned_to_signed_boundaries() {
 fn narrowing_signed_to_signed_boundaries() {
     assert_eq!(i8::try_conv(i32::from(i8::MIN)), Ok(i8::MIN));
     assert_eq!(i8::try_conv(i32::from(i8::MAX)), Ok(i8::MAX));
-    assert_eq!(i8::try_conv(i32::from(i8::MIN) - 1), Err(Error::Range));
-    assert_eq!(i8::try_conv(i32::from(i8::MAX) + 1), Err(Error::Range));
+    assert_eq!(i8::try_conv(i32::from(i8::MIN) - 1), Err(RangeError));
+    assert_eq!(i8::try_conv(i32::from(i8::MAX) + 1), Err(RangeError));
 }
 
 #[test]
@@ -71,8 +71,8 @@ fn isize_usize_boundaries() {
     assert_eq!(isize::try_conv(isize::MAX), Ok(isize::MAX));
     assert_eq!(usize::try_conv(0isize), Ok(0usize));
     assert_eq!(usize::try_conv(1isize), Ok(1usize));
-    assert_eq!(usize::try_conv(-1isize), Err(Error::Range));
-    assert_eq!(isize::try_conv(usize::MAX), Err(Error::Range));
+    assert_eq!(usize::try_conv(-1isize), Err(RangeError));
+    assert_eq!(isize::try_conv(usize::MAX), Err(RangeError));
 }
 
 #[test]
