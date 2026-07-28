@@ -56,25 +56,19 @@ fn tuple_conversions_cover_mixed_types_and_errors() {
 #[test]
 fn tuple_float_conversions_cover_all_rounding_modes() {
     assert_eq!(
-        <(i32, u8) as easy_cast::generic::Convert<(f32, f32), Trunc>>::try_convert((
-            1.9f32, 2.9f32
-        )),
+        <(i32, u8)>::try_round_from((1.9f32, 2.9f32), Trunc),
         Ok((1, 2))
     );
     assert_eq!(
-        <(i32, u8) as easy_cast::generic::Convert<(f32, f32), Nearest>>::try_convert((
-            1.5f32, 2.5f32
-        )),
+        <(i32, u8)>::try_round_from((1.5f32, 2.5f32), Nearest),
         Ok((2, 3))
     );
     assert_eq!(
-        <(i32, u8) as easy_cast::generic::Convert<(f32, f32), Floor>>::try_convert((
-            1.9f32, 2.9f32
-        )),
+        <(i32, u8)>::try_round_from((1.9f32, 2.9f32), Floor),
         Ok((1, 2))
     );
     assert_eq!(
-        <(i32, u8) as easy_cast::generic::Convert<(f32, f32), Ceil>>::try_convert((1.1f32, 2.1f32)),
+        <(i32, u8)>::try_round_from((1.1f32, 2.1f32), Ceil),
         Ok((2, 3))
     );
 }
