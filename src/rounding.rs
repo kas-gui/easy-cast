@@ -44,9 +44,12 @@ impl Rounding for Approx {
 
 /// Truncation towards zero
 ///
-/// Converts floating-point to integer by truncating towards zero (same as `as`).
+/// Excess precision is truncated (rounds towards zero). This is the rounding
+/// mode used by [`as` numeric casts] for floating-point to integer conversions.
 ///
 /// Example: `2.9_f32` converts to `2_i32`, `-2.9_f32` converts to `-2_i32`.
+///
+/// [`as` numeric casts]: https://doc.rust-lang.org/reference/expressions/operator-expr.html#r-expr.as.numeric
 #[cfg(any(feature = "std", feature = "libm"))]
 #[derive(Clone, Copy, Debug, Default)]
 pub struct Trunc;

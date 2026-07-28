@@ -134,7 +134,7 @@ impl<S, T: Conv<S>> Cast<T> for S {
 /// It is recommended not to implement this trait directly but to instead
 /// implement one of the [`generic`](crate::generic) traits.
 ///
-/// [`as` numeric casts]: https://doc.rust-lang.org/reference/expressions/operator-expr.html#type-cast-expressions
+/// [`as` numeric casts]: https://doc.rust-lang.org/reference/expressions/operator-expr.html#r-expr.as.numeric
 pub trait ConvApprox<S>: Sized {
     /// Try converting from `S` to `Self`, allowing approximation of value
     ///
@@ -255,7 +255,7 @@ pub trait RoundFrom<S, R: Rounding>: Sized {
     ///     the behaviour is well defined. This allows implementations to
     ///     optimize to [`as` numeric casts].
     ///
-    /// [`as` numeric casts]: https://doc.rust-lang.org/reference/expressions/operator-expr.html#type-cast-expressions
+    /// [`as` numeric casts]: https://doc.rust-lang.org/reference/expressions/operator-expr.html#r-expr.as.numeric
     fn round_from(s: S, mode: R) -> Self;
 }
 
@@ -295,7 +295,7 @@ pub trait RoundInto<T, R: Rounding>: Sized {
     ///     the behaviour is well defined. This allows implementations to
     ///     optimize to [`as` numeric casts].
     ///
-    /// [`as` numeric casts]: https://doc.rust-lang.org/reference/expressions/operator-expr.html#type-cast-expressions
+    /// [`as` numeric casts]: https://doc.rust-lang.org/reference/expressions/operator-expr.html#r-expr.as.numeric
     fn round(self, mode: R) -> T;
 }
 

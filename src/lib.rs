@@ -32,7 +32,7 @@
 //! with the overflow checks on Rust's standard integer arithmetic, this is
 //! considered a tool for finding logic errors. In release builds, these methods
 //! are permitted to return a different (implementation-defined) result, usually
-//! matching the behaviour of [`as` numeric casts](https://doc.rust-lang.org/reference/expressions/operator-expr.html#r-expr.as.numeric).
+//! matching the behaviour of [`as` numeric casts].
 //!
 //! If the `always_assert` feature flag is set, assertions will be turned on in
 //! all builds (i.e. "plain" variants will panic on failure). Some additional
@@ -80,6 +80,7 @@
 //!
 //! [`TryFrom`]: core::convert::TryFrom
 //! [`TryInto`]: core::convert::TryInto
+//! [`as` numeric casts]: https://doc.rust-lang.org/reference/expressions/operator-expr.html#r-expr.as.numeric
 
 #![deny(missing_docs)]
 #![cfg_attr(not(feature = "std"), no_std)]
