@@ -1,6 +1,6 @@
 use core::num::*;
 use core::range::{Range, RangeFrom, RangeInclusive, RangeToInclusive};
-use easy_cast::{Error, traits::*};
+use easy_cast::{RangeError, traits::*};
 
 #[test]
 fn nonzero_casts() {
@@ -50,7 +50,7 @@ fn range_try_conv_boundary_checks() {
     );
     assert_eq!(
         Range::<u8>::try_conv((0u32..256u32).into()),
-        Err(Error::Range)
+        Err(RangeError)
     );
 
     assert_eq!(
@@ -59,7 +59,7 @@ fn range_try_conv_boundary_checks() {
     );
     assert_eq!(
         RangeInclusive::<u8>::try_conv((0u32..=256u32).into()),
-        Err(Error::Range)
+        Err(RangeError)
     );
 
     assert_eq!(
@@ -68,7 +68,7 @@ fn range_try_conv_boundary_checks() {
     );
     assert_eq!(
         RangeFrom::<u8>::try_conv((256u32..).into()),
-        Err(Error::Range)
+        Err(RangeError)
     );
 
     assert_eq!(
@@ -77,6 +77,6 @@ fn range_try_conv_boundary_checks() {
     );
     assert_eq!(
         RangeToInclusive::<u8>::try_conv((..=256u32).into()),
-        Err(Error::Range)
+        Err(RangeError)
     );
 }

@@ -1,7 +1,7 @@
 #![cfg(any(feature = "std", feature = "libm"))]
 
 use easy_cast::generic::{Ceil, Floor, Nearest, Trunc};
-use easy_cast::{Error, traits::*};
+use easy_cast::{Error, RangeError, traits::*};
 
 #[test]
 fn tuple_arities() {
@@ -33,7 +33,7 @@ fn tuple_conversions_cover_mixed_types_and_errors() {
         Ok((42u8, -12i16, 1.25f64)),
     );
 
-    assert_eq!(<(u8,)>::try_conv((256u16,)), Err(Error::Range));
+    assert_eq!(<(u8,)>::try_conv((256u16,)), Err(RangeError));
     assert_eq!(<(u8, i8)>::try_conv((1u16, 128i16)), Err(Error::Range));
     assert_eq!(
         <(u8, i8, u16)>::try_conv((1u16, -1i16, 70_000u32)),

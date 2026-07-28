@@ -22,8 +22,8 @@ use crate::{Error, RangeError};
 ///
 /// This trait is similar to [`From`], but limited to numeric conversions:
 /// -   Like [`TryFrom`] (unlike [`From`]), conversions may be *fallible*.
-///     Unlike [`TryFrom`], the [`Error`] type is fixed with precisely two
-///     variants: [`Error::Range`] and [`Error::Inexact`].
+///     Unlike [`TryFrom`], precisely two failure modes are allowed:
+///     domain ([`Error::Range`]) and loss-of-precision ([`Error::Inexact`]).
 /// -   Like [`From`], conversions must be *lossless*. For example, `Conv<f64>`
 ///     is not implemented for `f32` since `f64` carries more precision; use
 ///     [`ConvApprox`] instead for cases where loss-of-precision is intended.
@@ -31,17 +31,20 @@ use crate::{Error, RangeError};
 ///     `-1_i8` and `-1_i32` are conceptually the same value while `255_u8` is
 ///     conceptually a different value, thus while `Conv<i8>` is implemented for
 ///     both `i32` and `u8`, attempting to convert `-1` to `u8` will fail with
-///     [`Error::Range`].
+///     [`RangeError`].
 ///
 /// The sister-trait [`Cast`] supports "into" style usage.
 ///
 /// It is recommended not to implement this trait directly but to instead
 /// implement one of the [`generic`](crate::generic) traits.
 pub trait Conv<S>: Sized {
+    /// Conversion error type
+    type Error: Into<Error> + core::error::Error;
+
     /// Try converting from `S` to `Self`
     ///
     /// This method must fail on inexact conversions.
-    fn try_conv(s: S) -> Result<Self, Error>;
+    fn try_conv(s: S) -> Result<Self, Self::Error>;
 
     /// Convert from `S` to `Self`
     ///
@@ -69,9 +72,11 @@ pub trait Conv<S>: Sized {
 }
 
 impl<S, T: Convert<S, Exact>> Conv<S> for T {
+    type Error = T::Error;
+
     #[inline]
-    fn try_conv(s: S) -> Result<Self, Error> {
-        T::try_convert(s).map_err(Into::into)
+    fn try_conv(s: S) -> Result<Self, Self::Error> {
+        T::try_convert(s)
     }
 
     #[inline]
@@ -85,10 +90,13 @@ impl<S, T: Convert<S, Exact>> Conv<S> for T {
 /// This trait is automatically implemented for every implementation of
 /// [`Conv`].
 pub trait Cast<T> {
+    /// Conversion error type
+    type Error: Into<Error> + core::error::Error;
+
     /// Try converting from `Self` to `T`
     ///
     /// Use this method to explicitly handle errors.
-    fn try_cast(self) -> Result<T, Error>;
+    fn try_cast(self) -> Result<T, Self::Error>;
 
     /// Cast from `Self` to `T`
     ///
@@ -105,12 +113,14 @@ pub trait Cast<T> {
 }
 
 impl<S, T: Conv<S>> Cast<T> for S {
+    type Error = T::Error;
+
     #[inline]
     fn cast(self) -> T {
         T::conv(self)
     }
     #[inline]
-    fn try_cast(self) -> Result<T, Error> {
+    fn try_cast(self) -> Result<T, Self::Error> {
         T::try_conv(self)
     }
 }
