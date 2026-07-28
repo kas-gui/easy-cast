@@ -1,3 +1,5 @@
+#[cfg(any(feature = "std", feature = "libm"))]
+use easy_cast::generic::{Ceil, Floor, Nearest, Trunc};
 use easy_cast::*;
 
 #[test]
@@ -52,10 +54,10 @@ fn int_to_float_inexact() {
 #[test]
 fn f32_max_to_u128() {
     let v = 0xFFFFFF00_00000000_00000000_00000000u128;
-    assert_eq!(u128::conv_trunc(f32::MAX), v);
-    assert_eq!(u128::conv_nearest(f32::MAX), v);
-    assert_eq!(u128::conv_floor(f32::MAX), v);
-    assert_eq!(u128::conv_ceil(f32::MAX), v);
+    assert_eq!(u128::round_from(f32::MAX, Trunc), v);
+    assert_eq!(u128::round_from(f32::MAX, Nearest), v);
+    assert_eq!(u128::round_from(f32::MAX, Floor), v);
+    assert_eq!(u128::round_from(f32::MAX, Ceil), v);
     assert_eq!(u128::conv_approx(f32::MAX), v);
 }
 
@@ -75,12 +77,12 @@ fn approx_float_to_int() {
 #[test]
 #[cfg(any(feature = "std", feature = "libm"))]
 fn float_casts() {
-    assert_eq!(u64::conv_nearest(13.2f32), 13);
-    let x: i128 = 13.5f32.cast_nearest();
+    assert_eq!(u64::round_from(13.2f32, Nearest), 13);
+    let x: i128 = i128::round_from(13.5f32, Nearest);
     assert_eq!(x, 14);
-    assert_eq!(u8::conv_floor(13.8f64), 13);
-    assert_eq!(u32::conv_ceil(13.1f32), 14);
-    assert_eq!(i64::conv_floor(-3168565.13), -3168566);
+    assert_eq!(u8::round_from(13.8f64, Floor), 13);
+    assert_eq!(u32::round_from(13.1f32, Ceil), 14);
+    assert_eq!(i64::round_from(-3168565.13f64, Floor), -3168566);
 }
 
 #[test]
@@ -89,7 +91,7 @@ fn float_trunc() {
     let xx = [-32768.0f32, -32768.99, -0.99, 0.99, 32767.99];
     let yy = [-32768i16, -32768, 0, 0, 32767];
     for (x, y) in xx[..].iter().zip(yy[..].iter()) {
-        assert_eq!(i16::conv_trunc(*x), *y);
+        assert_eq!(i16::round_from(*x, Trunc), *y);
     }
 }
 
@@ -97,7 +99,7 @@ fn float_trunc() {
 #[should_panic(expected = "cast x: f32 to i16 (trunc): range error for x = 32768")]
 #[cfg(any(feature = "std", feature = "libm"))]
 fn float_trunc_fail1() {
-    i16::conv_trunc(32768.0f32);
+    i16::round_from(32768.0f32, Trunc);
 }
 
 #[test]

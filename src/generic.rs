@@ -57,7 +57,7 @@ pub trait ConvertExact<S>: Sized {
     ///     the behaviour is well defined. This allows implementations to
     ///     optimize to [`as` numeric casts].
     ///
-    /// [`as` numeric casts]: https://doc.rust-lang.org/reference/expressions/operator-expr.html#type-cast-expressions
+    /// [`as` numeric casts]: https://doc.rust-lang.org/reference/expressions/operator-expr.html#r-expr.as.numeric
     #[inline]
     fn convert(s: S) -> Self {
         Self::try_convert(s).unwrap_or_else(|e| {
@@ -86,7 +86,7 @@ pub trait Convert<S, R: Rounding>: Sized {
     ///     the behaviour is well defined. This allows implementations to
     ///     optimize to [`as` numeric casts].
     ///
-    /// [`as` numeric casts]: https://doc.rust-lang.org/reference/expressions/operator-expr.html#type-cast-expressions
+    /// [`as` numeric casts]: https://doc.rust-lang.org/reference/expressions/operator-expr.html#r-expr.as.numeric
     #[inline]
     fn convert(s: S) -> Self {
         Self::try_convert(s).unwrap_or_else(|e| {
@@ -110,6 +110,66 @@ impl<S, T: ConvertExact<S>> Convert<S, Exact> for T {
 }
 
 impl<S, T: ConvertExact<S>> Convert<S, Approx> for T {
+    type Error = T::Error;
+
+    #[inline]
+    fn try_convert(s: S) -> Result<Self, Self::Error> {
+        T::try_convert(s)
+    }
+
+    #[inline]
+    fn convert(s: S) -> Self {
+        T::convert(s)
+    }
+}
+
+#[cfg(any(feature = "std", feature = "libm"))]
+impl<S, T: ConvertExact<S>> Convert<S, Trunc> for T {
+    type Error = T::Error;
+
+    #[inline]
+    fn try_convert(s: S) -> Result<Self, Self::Error> {
+        T::try_convert(s)
+    }
+
+    #[inline]
+    fn convert(s: S) -> Self {
+        T::convert(s)
+    }
+}
+
+#[cfg(any(feature = "std", feature = "libm"))]
+impl<S, T: ConvertExact<S>> Convert<S, Nearest> for T {
+    type Error = T::Error;
+
+    #[inline]
+    fn try_convert(s: S) -> Result<Self, Self::Error> {
+        T::try_convert(s)
+    }
+
+    #[inline]
+    fn convert(s: S) -> Self {
+        T::convert(s)
+    }
+}
+
+#[cfg(any(feature = "std", feature = "libm"))]
+impl<S, T: ConvertExact<S>> Convert<S, Floor> for T {
+    type Error = T::Error;
+
+    #[inline]
+    fn try_convert(s: S) -> Result<Self, Self::Error> {
+        T::try_convert(s)
+    }
+
+    #[inline]
+    fn convert(s: S) -> Self {
+        T::convert(s)
+    }
+}
+
+#[cfg(any(feature = "std", feature = "libm"))]
+impl<S, T: ConvertExact<S>> Convert<S, Ceil> for T {
     type Error = T::Error;
 
     #[inline]

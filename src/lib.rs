@@ -14,8 +14,10 @@
 //!     conversions
 //! -   Use [`CastApprox`] and [`ConvApprox`] for approximate conversions
 //!     (rounding mode is implementation-defined just like `as`)
-//! -   Use [`CastFloat`] and [`ConvFloat`] for approximate conversions with
-//!     specified rounding mode (requires `std` or `libm` feature)
+//! -   Use [`RoundFrom`] and [`RoundInto`] with an explicit rounding mode
+//!     ([`generic::Trunc`], [`generic::Nearest`], [`generic::Floor`],
+//!     [`generic::Ceil`]) for conversions with a specified rounding mode
+//!     (requires `std` or `libm` feature)
 //!
 //! ### Error handling
 //!
@@ -30,7 +32,7 @@
 //! with the overflow checks on Rust's standard integer arithmetic, this is
 //! considered a tool for finding logic errors. In release builds, these methods
 //! are permitted to return a different (implementation-defined) result, usually
-//! matching the behaviour of [`as` numeric casts](https://doc.rust-lang.org/reference/expressions/operator-expr.html#r-expr.as.numeric).
+//! matching the behaviour of [`as` numeric casts].
 //!
 //! If the `always_assert` feature flag is set, assertions will be turned on in
 //! all builds (i.e. "plain" variants will panic on failure). Some additional
@@ -40,6 +42,8 @@
 //!
 //! ```
 //! use easy_cast::traits::*;
+//! use easy_cast::generic::Nearest;
+//! use easy_cast::RoundFrom;
 //!
 //! fn nth_root<X: CastApprox<f64>>(x: X, n: u32) {
 //!     let x = x.cast_approx();    // Into-like approximate conversion
@@ -54,7 +58,7 @@
 //!     println!("The {n}-th root of {x} is {root}");
 //!
 //!     // TryFrom-like approximate (nearest) conversion
-//!     if let Ok(nearest) = isize::try_conv_nearest(root) {
+//!     if let Ok(nearest) = isize::try_round_from(root, Nearest) {
 //!         println!("Nearest integer: {nearest}");
 //!     }
 //! }
@@ -76,6 +80,7 @@
 //!
 //! [`TryFrom`]: core::convert::TryFrom
 //! [`TryInto`]: core::convert::TryInto
+//! [`as` numeric casts]: https://doc.rust-lang.org/reference/expressions/operator-expr.html#r-expr.as.numeric
 
 #![deny(missing_docs)]
 #![cfg_attr(not(feature = "std"), no_std)]
