@@ -1,25 +1,46 @@
 #![cfg(any(feature = "std", feature = "libm"))]
 
-use easy_cast::{RangeError, RoundFrom};
 use easy_cast::generic::{Ceil, Floor, Nearest, Trunc};
+use easy_cast::{RangeError, RoundFrom};
 
 #[test]
 fn float_boundaries_for_small_integer_types() {
     assert_eq!(i8::try_round_from(f32::from(i8::MIN), Trunc), Ok(i8::MIN));
     assert_eq!(i8::try_round_from(f32::from(i8::MAX), Trunc), Ok(i8::MAX));
-    assert_eq!(i8::try_round_from(f32::from(i8::MIN) - 1.0, Trunc), Err(RangeError));
-    assert_eq!(i8::try_round_from(f32::from(i8::MAX) + 1.0, Trunc), Err(RangeError));
+    assert_eq!(
+        i8::try_round_from(f32::from(i8::MIN) - 1.0, Trunc),
+        Err(RangeError)
+    );
+    assert_eq!(
+        i8::try_round_from(f32::from(i8::MAX) + 1.0, Trunc),
+        Err(RangeError)
+    );
 
     assert_eq!(u8::try_round_from(255.0f32, Nearest), Ok(u8::MAX));
     assert_eq!(u8::try_round_from(256.0f32, Nearest), Err(RangeError));
 
-    assert_eq!(i16::try_round_from(f64::from(i16::MIN), Floor), Ok(i16::MIN));
+    assert_eq!(
+        i16::try_round_from(f64::from(i16::MIN), Floor),
+        Ok(i16::MIN)
+    );
     assert_eq!(i16::try_round_from(f64::from(i16::MAX), Ceil), Ok(i16::MAX));
-    assert_eq!(i16::try_round_from(f64::from(i16::MIN) - 1.0, Floor), Err(RangeError));
-    assert_eq!(i16::try_round_from(f64::from(i16::MAX) + 1.0, Ceil), Err(RangeError));
+    assert_eq!(
+        i16::try_round_from(f64::from(i16::MIN) - 1.0, Floor),
+        Err(RangeError)
+    );
+    assert_eq!(
+        i16::try_round_from(f64::from(i16::MAX) + 1.0, Ceil),
+        Err(RangeError)
+    );
 
-    assert_eq!(u32::try_round_from(f64::from(u32::MAX), Trunc), Ok(u32::MAX));
-    assert_eq!(u32::try_round_from(f64::from(u32::MAX) + 1.0, Trunc), Err(RangeError));
+    assert_eq!(
+        u32::try_round_from(f64::from(u32::MAX), Trunc),
+        Ok(u32::MAX)
+    );
+    assert_eq!(
+        u32::try_round_from(f64::from(u32::MAX) + 1.0, Trunc),
+        Err(RangeError)
+    );
 }
 
 #[test]

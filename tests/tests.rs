@@ -1,5 +1,5 @@
-use easy_cast::*;
 use easy_cast::generic::{Ceil, Floor, Nearest, Trunc};
+use easy_cast::*;
 
 #[test]
 fn int_casts() {

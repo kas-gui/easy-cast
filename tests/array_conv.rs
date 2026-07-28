@@ -1,8 +1,8 @@
 #![cfg(any(feature = "std", feature = "libm"))]
 
-use easy_cast::{Error, RangeError, RoundFrom};
 use easy_cast::generic::{Ceil, Floor, Nearest, Trunc};
 use easy_cast::traits::*;
+use easy_cast::{Error, RangeError, RoundFrom};
 
 #[test]
 fn integer_array_conversions_cover_success_and_failure() {
