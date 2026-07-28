@@ -10,7 +10,7 @@
 //! use easy_cast::*;
 //!
 //! # fn main() {
-//! let x = <i32 as easy_cast::RoundFrom<f32, _>>::round(8.5f32, easy_cast::generic::Nearest);
+//! let x = <i32 as easy_cast::RoundFrom<f32, _>>::round_from(8.5f32, easy_cast::generic::Nearest);
 //! let y: f32 = 12.cast();
 //! # }
 //! ```
