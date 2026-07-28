@@ -7,10 +7,10 @@
 //!
 //! This module only contains traits, allowing relatively safe glob-import:
 //! ```
-//! use easy_cast::*;
+//! use easy_cast::{Cast, RoundFrom, generic::Nearest};
 //!
 //! # fn main() {
-//! let x = <i32 as easy_cast::RoundFrom<f32, _>>::round_from(8.5f32, easy_cast::generic::Nearest);
+//! let x = i32::round_from(8.5f32, Nearest);
 //! let y: f32 = 12.cast();
 //! # }
 //! ```
