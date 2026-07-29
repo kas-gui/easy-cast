@@ -14,7 +14,7 @@
 //!     conversions
 //! -   Use [`CastApprox`] and [`ConvApprox`] for approximate conversions
 //!     (rounding mode is implementation-defined just like `as`)
-//! -   Use [`RoundFrom`] and [`RoundInto`] with an explicit rounding mode
+//! -   Use [`RoundFrom`] and [`CastTo`] with an explicit rounding mode
 //!     ([`generic::Trunc`], [`generic::Nearest`], [`generic::Floor`],
 //!     [`generic::Ceil`]) for conversions with a specified rounding mode
 //!     (requires `std` or `libm` feature)
@@ -75,7 +75,7 @@
 //! [`traits`] when supporting additional types.
 //!
 //! It is recommended to use the [`traits`] traits to convert values. In
-//! implementations of generic traits, [`RoundFrom`] and [`RoundInto`] are
+//! implementations of generic traits, [`RoundFrom`] and [`CastTo`] are
 //! usually the most appropriate traits to use.
 //!
 //! [`TryFrom`]: core::convert::TryFrom
