@@ -7,10 +7,10 @@
 //!
 //! This module only contains traits, allowing relatively safe glob-import:
 //! ```
-//! use easy_cast::{Cast, RoundFrom, generic::Nearest};
+//! use easy_cast::{Cast, ConvTo, generic::Nearest};
 //!
 //! # fn main() {
-//! let x = i32::round_from(8.5f32, Nearest);
+//! let x = i32::conv_to(8.5f32, Nearest);
 //! let y: f32 = 12.cast();
 //! # }
 //! ```
@@ -137,7 +137,7 @@ impl<S, T: Conv<S>> Cast<T> for S {
 /// Only one failure mode is allowed: domain ([`RangeError`]).
 ///
 /// The rounding mode is implementation-defined, usually aligning with the
-/// behavior of [`as` numeric casts]. Use [`RoundFrom`] or [`CastTo`] with
+/// behavior of [`as` numeric casts]. Use [`ConvTo`] or [`CastTo`] with
 /// an explicit rounding mode (e.g. [`generic::Nearest`](crate::generic::Nearest))
 /// instead where control over rounding is required.
 ///
@@ -211,7 +211,7 @@ impl<S, T: Convert<S, Approx>> ConvApprox<S> for T {
 /// `f32::conv_approx(1f64 + (f32::EPSILON as f64) / 2.0) = 1.0`.
 ///
 /// The rounding mode is implementation-defined, usually aligning with the
-/// behavior of [`as` numeric casts]. Use [`RoundFrom`] or [`CastTo`] with
+/// behavior of [`as` numeric casts]. Use [`ConvTo`] or [`CastTo`] with
 /// an explicit rounding mode (e.g. [`generic::Nearest`](crate::generic::Nearest))
 /// instead where control over rounding is required.
 ///
@@ -253,23 +253,23 @@ impl<S, T: ConvApprox<S>> CastApprox<T> for S {
     }
 }
 
-/// Generic "from" conversion trait
+/// Generic "from" conversion trait with specified rounding mode
 ///
-/// This trait is like [`From`] but for [`Convert`].
+/// This trait is like [`From`] but for [`Convert`]. It is similar to
+/// [`Conv`] but provides control over the rounding mode used.
 ///
 /// The [`Rounding`] mode must be specified when calling this trait's methods,
-/// for example `x.try_round_from(Exact)` or `y.round_from(Approx)`. In generic
-/// code (where `R: Rounding`), `z.try_round_from(R::default())` may be used.
-pub trait RoundFrom<S, R: Rounding>: Sized {
+/// for example `f32::try_conv_to(Exact, x)` or `i32::conv_to(Approx, y)`.
+pub trait ConvTo<S, R: Rounding>: Sized {
     /// Conversion error type
     type Error: Into<R::MaximumError> + core::error::Error;
 
     /// Try converting from `S` to `Self`
-    fn try_round_from(s: S, mode: R) -> Result<Self, Self::Error>;
+    fn try_conv_to(s: S, mode: R) -> Result<Self, Self::Error>;
 
     /// Convert from `S` to `Self`
     ///
-    /// This method must return the same result as [`Self::try_round_from`] where
+    /// This method must return the same result as [`Self::try_conv_to`] where
     /// that method succeeds, but differs in the handling of errors:
     ///
     /// -   In debug builds the method must panic on error
@@ -278,24 +278,24 @@ pub trait RoundFrom<S, R: Rounding>: Sized {
     ///     optimize to [`as` numeric casts].
     ///
     /// [`as` numeric casts]: https://doc.rust-lang.org/reference/expressions/operator-expr.html#r-expr.as.numeric
-    fn round_from(s: S, mode: R) -> Self;
+    fn conv_to(s: S, mode: R) -> Self;
 }
 
-impl<R: Rounding, S, T: Convert<S, R>> RoundFrom<S, R> for T {
+impl<R: Rounding, S, T: Convert<S, R>> ConvTo<S, R> for T {
     type Error = T::Error;
 
-    fn try_round_from(s: S, _: R) -> Result<Self, Self::Error> {
+    fn try_conv_to(s: S, _: R) -> Result<Self, Self::Error> {
         T::try_convert(s)
     }
 
-    fn round_from(s: S, _: R) -> Self {
+    fn conv_to(s: S, _: R) -> Self {
         T::convert(s)
     }
 }
 
 /// Generic "into" conversion trait with specified rounding mode
 ///
-/// This trait is like [`Into`] but for [`RoundFrom`]. It is similar to
+/// This trait is like [`Into`] but for [`ConvTo`]. It is similar to
 /// [`Cast`] but provides control over rounding modes.
 ///
 /// The [`Rounding`] mode must be specified when calling this trait's methods,

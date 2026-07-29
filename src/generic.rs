@@ -10,7 +10,7 @@
 //! traits support generality over [`Rounding`] modes and more precise error
 //! types as associated types.
 //!
-//! [`CastTo`] and [`RoundFrom`] may be used instead of
+//! [`CastTo`] and [`ConvTo`] may be used instead of
 //! [`Cast`](crate::Cast) and [`Conv`](crate::Conv) where genericity over
 //! [`Rounding`] modes is required.
 //!
@@ -24,7 +24,7 @@
 //! required) and an [`Exact`] conversion (which rejects these inputs).
 //!
 //! [`CastTo`]: crate::CastTo
-//! [`RoundFrom`]: crate::RoundFrom
+//! [`ConvTo`]: crate::ConvTo
 
 use crate::RangeError;
 
