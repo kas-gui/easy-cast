@@ -10,7 +10,7 @@
 //! use easy_cast::{Cast, ConvTo, generic::Nearest};
 //!
 //! # fn main() {
-//! let x = i32::conv_to(8.5f32, Nearest);
+//! let x = i32::conv_to(Nearest, 8.5f32);
 //! let y: f32 = 12.cast();
 //! # }
 //! ```
@@ -265,7 +265,7 @@ pub trait ConvTo<S, R: Rounding>: Sized {
     type Error: Into<R::MaximumError> + core::error::Error;
 
     /// Try converting from `S` to `Self`
-    fn try_conv_to(s: S, mode: R) -> Result<Self, Self::Error>;
+    fn try_conv_to(mode: R, s: S) -> Result<Self, Self::Error>;
 
     /// Convert from `S` to `Self`
     ///
@@ -278,17 +278,17 @@ pub trait ConvTo<S, R: Rounding>: Sized {
     ///     optimize to [`as` numeric casts].
     ///
     /// [`as` numeric casts]: https://doc.rust-lang.org/reference/expressions/operator-expr.html#r-expr.as.numeric
-    fn conv_to(s: S, mode: R) -> Self;
+    fn conv_to(mode: R, s: S) -> Self;
 }
 
 impl<R: Rounding, S, T: Convert<S, R>> ConvTo<S, R> for T {
     type Error = T::Error;
 
-    fn try_conv_to(s: S, _: R) -> Result<Self, Self::Error> {
+    fn try_conv_to(_: R, s: S) -> Result<Self, Self::Error> {
         T::try_convert(s)
     }
 
-    fn conv_to(s: S, _: R) -> Self {
+    fn conv_to(_: R, s: S) -> Self {
         T::convert(s)
     }
 }

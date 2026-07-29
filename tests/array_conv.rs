@@ -19,23 +19,23 @@ fn zero_length_array_conversions_work() {
 #[test]
 fn float_array_conversions_cover_all_rounding_modes() {
     assert_eq!(
-        <[i32; 3]>::try_conv_to([1.9f32, -1.9, 2.0], Trunc),
+        <[i32; 3]>::try_conv_to(Trunc, [1.9f32, -1.9, 2.0]),
         Ok([1i32, -1, 2])
     );
     assert_eq!(
-        <[i32; 3]>::try_conv_to([1.5f32, -1.5, 2.4], Nearest),
+        <[i32; 3]>::try_conv_to(Nearest, [1.5f32, -1.5, 2.4]),
         Ok([2i32, -2, 2]),
     );
     assert_eq!(
-        <[i32; 3]>::try_conv_to([1.9f32, -1.1, 2.0], Floor),
+        <[i32; 3]>::try_conv_to(Floor, [1.9f32, -1.1, 2.0]),
         Ok([1i32, -2, 2])
     );
     assert_eq!(
-        <[i32; 3]>::try_conv_to([1.1f32, -1.9, 2.0], Ceil),
+        <[i32; 3]>::try_conv_to(Ceil, [1.1f32, -1.9, 2.0]),
         Ok([2i32, -1, 2])
     );
     assert_eq!(
-        <[u8; 3]>::try_conv_to([1.0f32, 256.0, 3.0], Trunc),
+        <[u8; 3]>::try_conv_to(Trunc, [1.0f32, 256.0, 3.0]),
         Err(RangeError)
     );
 }

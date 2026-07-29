@@ -56,16 +56,16 @@ fn tuple_conversions_cover_mixed_types_and_errors() {
 #[test]
 fn tuple_float_conversions_cover_all_rounding_modes() {
     assert_eq!(
-        <(i32, u8)>::try_conv_to((1.9f32, 2.9f32), Trunc),
+        <(i32, u8)>::try_conv_to(Trunc, (1.9f32, 2.9f32)),
         Ok((1, 2))
     );
     assert_eq!(
-        <(i32, u8)>::try_conv_to((1.5f32, 2.5f32), Nearest),
+        <(i32, u8)>::try_conv_to(Nearest, (1.5f32, 2.5f32)),
         Ok((2, 3))
     );
     assert_eq!(
-        <(i32, u8)>::try_conv_to((1.9f32, 2.9f32), Floor),
+        <(i32, u8)>::try_conv_to(Floor, (1.9f32, 2.9f32)),
         Ok((1, 2))
     );
-    assert_eq!(<(i32, u8)>::try_conv_to((1.1f32, 2.1f32), Ceil), Ok((2, 3)));
+    assert_eq!(<(i32, u8)>::try_conv_to(Ceil, (1.1f32, 2.1f32)), Ok((2, 3)));
 }
