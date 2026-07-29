@@ -70,6 +70,21 @@ fn int_to_float_approx() {
     );
 }
 
+#[cfg(any(feature = "std", feature = "libm"))]
+#[test]
+fn int_to_float_nearest() {
+    use easy_cast::generic::Nearest;
+
+    // Repeat a few of the above tests using Nearest rounding (equivalent)
+    assert_eq!(f32::try_conv_to(Nearest, 0xFFFF_FF00u32), Ok(4294967040.0));
+    assert_eq!(f32::try_conv_to(Nearest, 0xFFFF_FF70u32), Ok(4294967040.0));
+    assert_eq!(f32::try_conv_to(Nearest, 0xFFFF_FF80u32), Ok(4294967168.0));
+    assert_eq!(
+        f32::try_conv_to(Nearest, 0xFFFF_FFFF_FFFF_FC00u64),
+        Ok(18446744073709550592.0)
+    );
+}
+
 #[test]
 fn int_to_float_overflow() {
     assert_eq!(

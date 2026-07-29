@@ -365,6 +365,21 @@ macro_rules! impl_approx {
                 Ok(x as $y)
             }
         }
+
+        // Note: `as` numeric int-to-float casts round to nearest
+        #[cfg(any(feature = "std", feature = "libm"))]
+        impl Convert<$x, crate::generic::Nearest> for $y {
+            type Error = Infallible;
+
+            #[inline]
+            fn convert(x: $x) -> Self {
+                x as $y
+            }
+            #[inline]
+            fn try_convert(x: $x) -> Result<Self, Infallible> {
+                Ok(x as $y)
+            }
+        }
     };
     ($x:ty: $y:tt, $($yy:tt),+) => {
         impl_approx!($x: $y);
