@@ -33,10 +33,8 @@ use crate::{Error, RangeError};
 ///     both `i32` and `u8`, attempting to convert `-1` to `u8` will fail with
 ///     [`RangeError`].
 ///
-/// The sister-trait [`Cast`] supports "into" style usage.
-///
-/// It is recommended not to implement this trait directly but to instead
-/// implement one of the [`generic`](crate::generic) traits.
+/// The sister-trait [`Cast`] supports "into" style usage. The more generic
+/// trait [`ConvTo`] allows control over the rounding mode.
 pub trait Conv<S>: Sized {
     /// Conversion error type
     type Error: Into<Error> + core::error::Error;
@@ -89,6 +87,8 @@ impl<S, T: Convert<S, Exact>> Conv<S> for T {
 ///
 /// This trait is automatically implemented for every implementation of
 /// [`Conv`].
+///
+/// The more generic trait [`CastTo`] allows control over the rounding mode.
 pub trait Cast<T> {
     /// Conversion error type
     type Error: Into<Error> + core::error::Error;
@@ -255,11 +255,16 @@ impl<S, T: ConvApprox<S>> CastApprox<T> for S {
 
 /// Generic "from" conversion trait with specified rounding mode
 ///
-/// This trait is like [`From`] but for [`Convert`]. It is similar to
-/// [`Conv`] but provides control over the rounding mode used.
+/// This trait is similar to [`TryFrom`] but for numeric conversions with a
+/// specified rounding mode. Usage with rounding mode [`Exact`] is equivalent to
+/// [`Conv`].
 ///
-/// The [`Rounding`] mode must be specified when calling this trait's methods,
-/// for example `f32::try_conv_to(Exact, x)` or `i32::conv_to(Approx, y)`.
+/// The [`Rounding`] mode must be specified:
+/// ```
+/// # use easy_cast::{generic::{Exact, Nearest}, ConvTo};
+/// assert_eq!(i32::conv_to(Nearest, 7.6f32), 8);
+/// assert_eq!(f32::conv_to(Exact, 20), 20.0);
+/// ```
 pub trait ConvTo<S, R: Rounding>: Sized {
     /// Conversion error type
     type Error: Into<R::MaximumError> + core::error::Error;
@@ -295,12 +300,20 @@ impl<R: Rounding, S, T: Convert<S, R>> ConvTo<S, R> for T {
 
 /// Generic "into" conversion trait with specified rounding mode
 ///
-/// This trait is like [`Into`] but for [`ConvTo`]. It is similar to
-/// [`Cast`] but provides control over rounding modes.
+/// This trait is like [`TryInto`] but for for numeric conversions with a
+/// specified rounding mode. Usage with rounding mode [`Exact`] is equivalent to
+/// [`Cast`].
 ///
-/// The [`Rounding`] mode must be specified when calling this trait's methods,
-/// for example `x.try_cast_to(Exact)` or `y.cast_to(Approx)`. In generic code
-/// (where `R: Rounding`), `z.try_cast_to(R::default())` may be used.
+/// The [`Rounding`] mode must be specified:
+/// ```
+/// # use easy_cast::{generic::{Floor, Nearest}, CastTo};
+/// let x: i32 = 3.14192.cast_to(Floor);
+/// assert_eq!(x, 3);
+///
+/// let y = (1i32 << 30) - 1;
+/// let z: f32 = y.cast_to(Nearest);  // this example rounds up
+/// assert_eq!(z as i32, 1i32 << 30);
+/// ```
 pub trait CastTo<T, R: Rounding>: Sized {
     /// Conversion error type
     type Error: Into<R::MaximumError> + core::error::Error;
