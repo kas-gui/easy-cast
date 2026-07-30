@@ -8,7 +8,7 @@
 //! See also `impl_basic` which inherits integer impls from From.
 
 use crate::generic::{Approx, Convert, ConvertExact, Exact};
-use crate::{Error, RangeError, RoundInto};
+use crate::{CastTo, Error, RangeError};
 use core::convert::Infallible;
 use core::mem::size_of;
 
@@ -246,7 +246,7 @@ macro_rules! impl_via_digits_check {
             #[inline]
             fn convert(x: $x) -> Self {
                 if cfg!(any(debug_assertions, feature = "assert_digits")) {
-                    x.try_round(Exact).unwrap_or_else(|_| {
+                    x.try_cast_to(Exact).unwrap_or_else(|_| {
                         panic!(
                             "cast x: {} to {}: inexact for x = {x}",
                             stringify!($x), stringify!($y)
@@ -283,7 +283,7 @@ macro_rules! impl_via_digits_check_signed {
             #[inline]
             fn convert(x: $x) -> Self {
                 if cfg!(any(debug_assertions, feature = "assert_digits")) {
-                    x.try_round(Exact).unwrap_or_else(|_| {
+                    x.try_cast_to(Exact).unwrap_or_else(|_| {
                         panic!(
                             "cast x: {} to {}: inexact for x = {x}",
                             stringify!($x), stringify!($y)
@@ -330,7 +330,7 @@ impl Convert<u128, Exact> for f32 {
     #[inline]
     fn convert(x: u128) -> Self {
         if cfg!(any(debug_assertions, feature = "assert_digits")) {
-            x.try_round(Exact)
+            x.try_cast_to(Exact)
                 .unwrap_or_else(|_| panic!("cast x: u128 to f32: inexact for x = {x}"))
         } else {
             x as f32
@@ -354,6 +354,21 @@ impl Convert<u128, Exact> for f32 {
 macro_rules! impl_approx {
     ($x:ty: $y:tt) => {
         impl Convert<$x, Approx> for $y {
+            type Error = Infallible;
+
+            #[inline]
+            fn convert(x: $x) -> Self {
+                x as $y
+            }
+            #[inline]
+            fn try_convert(x: $x) -> Result<Self, Infallible> {
+                Ok(x as $y)
+            }
+        }
+
+        // Note: `as` numeric int-to-float casts round to nearest
+        #[cfg(any(feature = "std", feature = "libm"))]
+        impl Convert<$x, crate::generic::Nearest> for $y {
             type Error = Infallible;
 
             #[inline]

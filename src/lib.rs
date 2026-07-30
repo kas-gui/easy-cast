@@ -14,7 +14,7 @@
 //!     conversions
 //! -   Use [`CastApprox`] and [`ConvApprox`] for approximate conversions
 //!     (rounding mode is implementation-defined just like `as`)
-//! -   Use [`RoundFrom`] and [`RoundInto`] with an explicit rounding mode
+//! -   Use [`ConvTo`] and [`CastTo`] with an explicit rounding mode
 //!     ([`generic::Trunc`], [`generic::Nearest`], [`generic::Floor`],
 //!     [`generic::Ceil`]) for conversions with a specified rounding mode
 //!     (requires `std` or `libm` feature)
@@ -43,7 +43,7 @@
 //! ```
 //! use easy_cast::traits::*;
 //! use easy_cast::generic::Nearest;
-//! use easy_cast::RoundFrom;
+//! use easy_cast::ConvTo;
 //!
 //! fn nth_root<X: CastApprox<f64>>(x: X, n: u32) {
 //!     let x = x.cast_approx();    // Into-like approximate conversion
@@ -58,7 +58,7 @@
 //!     println!("The {n}-th root of {x} is {root}");
 //!
 //!     // TryFrom-like approximate (nearest) conversion
-//!     if let Ok(nearest) = isize::try_round_from(root, Nearest) {
+//!     if let Ok(nearest) = isize::try_conv_to(Nearest, root) {
 //!         println!("Nearest integer: {nearest}");
 //!     }
 //! }
@@ -75,7 +75,7 @@
 //! [`traits`] when supporting additional types.
 //!
 //! It is recommended to use the [`traits`] traits to convert values. In
-//! implementations of generic traits, [`RoundFrom`] and [`RoundInto`] are
+//! implementations of generic traits, [`ConvTo`] and [`CastTo`] are
 //! usually the most appropriate traits to use.
 //!
 //! [`TryFrom`]: core::convert::TryFrom

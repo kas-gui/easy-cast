@@ -58,11 +58,16 @@ impl Rounding for Trunc {
     type MaximumError = RangeError;
 }
 
-/// Round to nearest integer
+/// Round to the nearest representable value
 ///
-/// Half-way cases are rounded away from `0`.
+/// Half-way cases are rounded away from zero. This is the rounding mode used by
+/// [`as` numeric casts] for integer to floating-point conversions.
 ///
 /// Example: `2.5_f32` converts to `3_i32`, `-2.5_f32` converts to `-3_i32`.
+/// Another example: converting `i32::MAX` to `f32` rounds up (effectively to
+/// `1u32 << 31 = (i32::MAX as u32) + 1`).
+///
+/// [`as` numeric casts]: https://doc.rust-lang.org/reference/expressions/operator-expr.html#r-expr.as.numeric
 #[cfg(any(feature = "std", feature = "libm"))]
 #[derive(Clone, Copy, Debug, Default)]
 pub struct Nearest;
