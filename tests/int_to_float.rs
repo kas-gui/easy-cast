@@ -73,7 +73,7 @@ fn int_to_float_approx() {
 #[cfg(any(feature = "std", feature = "libm"))]
 #[test]
 fn int_to_float_nearest() {
-    use easy_cast::generic::Nearest;
+    use easy_cast::Nearest;
 
     // Repeat a few of the above tests using Nearest rounding (equivalent)
     assert_eq!(f32::try_conv_to(Nearest, 0xFFFF_FF00u32), Ok(4294967040.0));

@@ -5,9 +5,10 @@
 
 //! Floating-point impls
 
-use crate::generic::{Approx, Convert, ConvertExact, Exact};
+use crate::generic::{Convert, ConvertExact};
+use crate::{Approx, Exact};
 #[cfg(any(feature = "std", feature = "libm"))]
-use crate::generic::{Ceil, Floor, Nearest, Trunc};
+use crate::{Ceil, Floor, Nearest, Trunc};
 use crate::{Error, RangeError};
 
 impl ConvertExact<f32> for f64 {

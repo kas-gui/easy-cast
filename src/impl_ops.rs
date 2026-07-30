@@ -5,7 +5,7 @@
 
 //! `core::ops` impls.
 
-use crate::generic::{Convert, Rounding};
+use crate::{Rounding, generic::Convert};
 use core::ops::{Range, RangeFrom, RangeInclusive, RangeTo, RangeToInclusive};
 
 impl<R: Rounding, F, T: Convert<F, R>> Convert<Range<F>, R> for Range<T> {

@@ -5,7 +5,7 @@
 
 //! Basic impls
 
-use crate::generic::{Convert, Rounding};
+use crate::{Rounding, generic::Convert};
 use core::convert::Infallible;
 
 /// Implement [`ConvertExact`] infallibly over a [`From`] implementation

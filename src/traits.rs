@@ -7,7 +7,7 @@
 //!
 //! This module only contains traits, allowing relatively safe glob-import:
 //! ```
-//! use easy_cast::{Cast, ConvTo, generic::Nearest};
+//! use easy_cast::{Cast, ConvTo, Nearest};
 //!
 //! # fn main() {
 //! let x = i32::conv_to(Nearest, 8.5f32);
@@ -15,7 +15,8 @@
 //! # }
 //! ```
 
-use crate::generic::{Approx, Convert, Exact, Rounding};
+use crate::generic::Convert;
+use crate::{Approx, Exact, Rounding};
 use crate::{Error, RangeError};
 
 /// Like [`From`], but supports fallible conversions
@@ -138,7 +139,7 @@ impl<S, T: Conv<S>> Cast<T> for S {
 ///
 /// The rounding mode is implementation-defined, usually aligning with the
 /// behavior of [`as` numeric casts]. Use [`ConvTo`] or [`CastTo`] with
-/// an explicit rounding mode (e.g. [`generic::Nearest`](crate::generic::Nearest))
+/// an explicit rounding mode (e.g. [`Nearest`](crate::Nearest))
 /// instead where control over rounding is required.
 ///
 /// The sister-trait [`CastApprox`] supports "into" style usage.
@@ -212,7 +213,7 @@ impl<S, T: Convert<S, Approx>> ConvApprox<S> for T {
 ///
 /// The rounding mode is implementation-defined, usually aligning with the
 /// behavior of [`as` numeric casts]. Use [`ConvTo`] or [`CastTo`] with
-/// an explicit rounding mode (e.g. [`generic::Nearest`](crate::generic::Nearest))
+/// an explicit rounding mode (e.g. [`Nearest`](crate::Nearest))
 /// instead where control over rounding is required.
 ///
 /// This trait is automatically implemented for every implementation of
@@ -261,7 +262,7 @@ impl<S, T: ConvApprox<S>> CastApprox<T> for S {
 ///
 /// The [`Rounding`] mode must be specified:
 /// ```
-/// # use easy_cast::{generic::{Exact, Nearest}, ConvTo};
+/// # use easy_cast::{ConvTo, Exact, Nearest};
 /// assert_eq!(i32::conv_to(Nearest, 7.6f32), 8);
 /// assert_eq!(f32::conv_to(Exact, 20), 20.0);
 /// ```
@@ -306,7 +307,7 @@ impl<R: Rounding, S, T: Convert<S, R>> ConvTo<S, R> for T {
 ///
 /// The [`Rounding`] mode must be specified:
 /// ```
-/// # use easy_cast::{generic::{Floor, Nearest}, CastTo};
+/// # use easy_cast::{CastTo, Floor, Nearest};
 /// let x: i32 = 3.14192.cast_to(Floor);
 /// assert_eq!(x, 3);
 ///

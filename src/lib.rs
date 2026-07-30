@@ -15,9 +15,8 @@
 //! -   Use [`CastApprox`] and [`ConvApprox`] for approximate conversions
 //!     (rounding mode is implementation-defined just like `as`)
 //! -   Use [`ConvTo`] and [`CastTo`] with an explicit rounding mode
-//!     ([`generic::Trunc`], [`generic::Nearest`], [`generic::Floor`],
-//!     [`generic::Ceil`]) for conversions with a specified rounding mode
-//!     (requires `std` or `libm` feature)
+//!     ([`Trunc`], [`Nearest`], [`Floor`], [`Ceil`]) for conversions with a
+//!     specified rounding mode (requires `std` or `libm` feature)
 //!
 //! ### Error handling
 //!
@@ -42,8 +41,7 @@
 //!
 //! ```
 //! use easy_cast::traits::*;
-//! use easy_cast::generic::Nearest;
-//! use easy_cast::ConvTo;
+//! use easy_cast::{ConvTo, Nearest};
 //!
 //! fn nth_root<X: CastApprox<f64>>(x: X, n: u32) {
 //!     let x = x.cast_approx();    // Into-like approximate conversion
@@ -98,6 +96,9 @@ pub mod generic;
 pub mod traits;
 
 use core::convert::Infallible;
+
+#[doc(inline)]
+pub use rounding::*;
 
 #[doc(inline)]
 pub use traits::*;

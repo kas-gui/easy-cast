@@ -27,9 +27,7 @@
 //! [`ConvTo`]: crate::ConvTo
 
 use crate::RangeError;
-
-#[doc(inline)]
-pub use crate::rounding::*;
+use crate::rounding::*;
 
 /// Generic "from" conversion trait for exact conversions
 ///

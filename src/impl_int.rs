@@ -7,7 +7,8 @@
 //!
 //! See also `impl_basic` which inherits integer impls from From.
 
-use crate::generic::{Approx, Convert, ConvertExact, Exact};
+use crate::generic::{Convert, ConvertExact};
+use crate::{Approx, Exact};
 use crate::{CastTo, Error, RangeError};
 use core::convert::Infallible;
 use core::mem::size_of;
@@ -368,7 +369,7 @@ macro_rules! impl_approx {
 
         // Note: `as` numeric int-to-float casts round to nearest
         #[cfg(any(feature = "std", feature = "libm"))]
-        impl Convert<$x, crate::generic::Nearest> for $y {
+        impl Convert<$x, crate::Nearest> for $y {
             type Error = Infallible;
 
             #[inline]
