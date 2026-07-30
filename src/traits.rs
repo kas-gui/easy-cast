@@ -110,12 +110,12 @@ impl<S, T: Convert<S, Exact>> Conv<S> for T {
 
     #[inline]
     fn try_conv(s: S) -> Result<Self, Self::Error> {
-        T::try_convert(s)
+        T::try_convert(Exact, s)
     }
 
     #[inline]
     fn conv(s: S) -> Self {
-        T::convert(s)
+        T::convert(Exact, s)
     }
 }
 
@@ -228,12 +228,12 @@ impl<S, T: Convert<S, Approx>> ConvApprox<S> for T {
 
     #[inline]
     fn try_conv_approx(s: S) -> Result<Self, Self::Error> {
-        T::try_convert(s)
+        T::try_convert(Approx, s)
     }
 
     #[inline]
     fn conv_approx(s: S) -> Self {
-        T::convert(s)
+        T::convert(Approx, s)
     }
 }
 
@@ -325,12 +325,12 @@ pub trait ConvTo<S, R: Rounding>: Sized {
 impl<R: Rounding, S, T: Convert<S, R>> ConvTo<S, R> for T {
     type Error = T::Error;
 
-    fn try_conv_to(_: R, s: S) -> Result<Self, Self::Error> {
-        T::try_convert(s)
+    fn try_conv_to(mode: R, s: S) -> Result<Self, Self::Error> {
+        T::try_convert(mode, s)
     }
 
-    fn conv_to(_: R, s: S) -> Self {
-        T::convert(s)
+    fn conv_to(mode: R, s: S) -> Self {
+        T::convert(mode, s)
     }
 }
 
@@ -374,11 +374,11 @@ pub trait CastTo<T, R: Rounding>: Sized {
 impl<R: Rounding, S, T: Convert<S, R>> CastTo<T, R> for S {
     type Error = T::Error;
 
-    fn try_cast_to(self, _: R) -> Result<T, Self::Error> {
-        T::try_convert(self)
+    fn try_cast_to(self, mode: R) -> Result<T, Self::Error> {
+        T::try_convert(mode, self)
     }
 
-    fn cast_to(self, _: R) -> T {
-        T::convert(self)
+    fn cast_to(self, mode: R) -> T {
+        T::convert(mode, self)
     }
 }

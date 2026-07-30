@@ -71,18 +71,18 @@ impl<R: Rounding, S, T: Convert<S, R> + Copy + Default, const N: usize> Convert<
     type Error = T::Error;
 
     #[inline]
-    fn try_convert(ss: [S; N]) -> Result<Self, Self::Error> {
+    fn try_convert(mode: R, ss: [S; N]) -> Result<Self, Self::Error> {
         let mut tt = [T::default(); N];
         for (s, t) in IntoIterator::into_iter(ss).zip(tt.iter_mut()) {
-            *t = T::try_convert(s)?;
+            *t = T::try_convert(mode, s)?;
         }
         Ok(tt)
     }
     #[inline]
-    fn convert(ss: [S; N]) -> Self {
+    fn convert(mode: R, ss: [S; N]) -> Self {
         let mut tt = [T::default(); N];
         for (s, t) in IntoIterator::into_iter(ss).zip(tt.iter_mut()) {
-            *t = T::convert(s);
+            *t = T::convert(mode, s);
         }
         tt
     }
@@ -92,22 +92,22 @@ impl<R: Rounding> Convert<(), R> for () {
     type Error = Infallible;
 
     #[inline]
-    fn try_convert(_: ()) -> Result<Self, Self::Error> {
+    fn try_convert(_: R, _: ()) -> Result<Self, Self::Error> {
         Ok(())
     }
     #[inline]
-    fn convert(_: ()) -> Self {}
+    fn convert(_: R, _: ()) -> Self {}
 }
 impl<R: Rounding, S0, T0: Convert<S0, R>> Convert<(S0,), R> for (T0,) {
     type Error = T0::Error;
 
     #[inline]
-    fn try_convert(ss: (S0,)) -> Result<Self, Self::Error> {
-        Ok((T0::try_convert(ss.0)?,))
+    fn try_convert(mode: R, ss: (S0,)) -> Result<Self, Self::Error> {
+        Ok((T0::try_convert(mode, ss.0)?,))
     }
     #[inline]
-    fn convert(ss: (S0,)) -> Self {
-        (T0::convert(ss.0),)
+    fn convert(mode: R, ss: (S0,)) -> Self {
+        (T0::convert(mode, ss.0),)
     }
 }
 impl<R: Rounding, S0, S1, T0: Convert<S0, R>, T1: Convert<S1, R>> Convert<(S0, S1), R>
@@ -116,15 +116,15 @@ impl<R: Rounding, S0, S1, T0: Convert<S0, R>, T1: Convert<S1, R>> Convert<(S0, S
     type Error = R::MaximumError;
 
     #[inline]
-    fn try_convert(ss: (S0, S1)) -> Result<Self, Self::Error> {
+    fn try_convert(mode: R, ss: (S0, S1)) -> Result<Self, Self::Error> {
         Ok((
-            T0::try_convert(ss.0).map_err(Into::into)?,
-            T1::try_convert(ss.1).map_err(Into::into)?,
+            T0::try_convert(mode, ss.0).map_err(Into::into)?,
+            T1::try_convert(mode, ss.1).map_err(Into::into)?,
         ))
     }
     #[inline]
-    fn convert(ss: (S0, S1)) -> Self {
-        (T0::convert(ss.0), T1::convert(ss.1))
+    fn convert(mode: R, ss: (S0, S1)) -> Self {
+        (T0::convert(mode, ss.0), T1::convert(mode, ss.1))
     }
 }
 impl<R: Rounding, S0, S1, S2, T0: Convert<S0, R>, T1: Convert<S1, R>, T2: Convert<S2, R>>
@@ -133,16 +133,20 @@ impl<R: Rounding, S0, S1, S2, T0: Convert<S0, R>, T1: Convert<S1, R>, T2: Conver
     type Error = R::MaximumError;
 
     #[inline]
-    fn try_convert(ss: (S0, S1, S2)) -> Result<Self, Self::Error> {
+    fn try_convert(mode: R, ss: (S0, S1, S2)) -> Result<Self, Self::Error> {
         Ok((
-            T0::try_convert(ss.0).map_err(Into::into)?,
-            T1::try_convert(ss.1).map_err(Into::into)?,
-            T2::try_convert(ss.2).map_err(Into::into)?,
+            T0::try_convert(mode, ss.0).map_err(Into::into)?,
+            T1::try_convert(mode, ss.1).map_err(Into::into)?,
+            T2::try_convert(mode, ss.2).map_err(Into::into)?,
         ))
     }
     #[inline]
-    fn convert(ss: (S0, S1, S2)) -> Self {
-        (T0::convert(ss.0), T1::convert(ss.1), T2::convert(ss.2))
+    fn convert(mode: R, ss: (S0, S1, S2)) -> Self {
+        (
+            T0::convert(mode, ss.0),
+            T1::convert(mode, ss.1),
+            T2::convert(mode, ss.2),
+        )
     }
 }
 impl<
@@ -160,21 +164,21 @@ impl<
     type Error = R::MaximumError;
 
     #[inline]
-    fn try_convert(ss: (S0, S1, S2, S3)) -> Result<Self, Self::Error> {
+    fn try_convert(mode: R, ss: (S0, S1, S2, S3)) -> Result<Self, Self::Error> {
         Ok((
-            T0::try_convert(ss.0).map_err(Into::into)?,
-            T1::try_convert(ss.1).map_err(Into::into)?,
-            T2::try_convert(ss.2).map_err(Into::into)?,
-            T3::try_convert(ss.3).map_err(Into::into)?,
+            T0::try_convert(mode, ss.0).map_err(Into::into)?,
+            T1::try_convert(mode, ss.1).map_err(Into::into)?,
+            T2::try_convert(mode, ss.2).map_err(Into::into)?,
+            T3::try_convert(mode, ss.3).map_err(Into::into)?,
         ))
     }
     #[inline]
-    fn convert(ss: (S0, S1, S2, S3)) -> Self {
+    fn convert(mode: R, ss: (S0, S1, S2, S3)) -> Self {
         (
-            T0::convert(ss.0),
-            T1::convert(ss.1),
-            T2::convert(ss.2),
-            T3::convert(ss.3),
+            T0::convert(mode, ss.0),
+            T1::convert(mode, ss.1),
+            T2::convert(mode, ss.2),
+            T3::convert(mode, ss.3),
         )
     }
 }
@@ -195,23 +199,23 @@ impl<
     type Error = R::MaximumError;
 
     #[inline]
-    fn try_convert(ss: (S0, S1, S2, S3, S4)) -> Result<Self, Self::Error> {
+    fn try_convert(mode: R, ss: (S0, S1, S2, S3, S4)) -> Result<Self, Self::Error> {
         Ok((
-            T0::try_convert(ss.0).map_err(Into::into)?,
-            T1::try_convert(ss.1).map_err(Into::into)?,
-            T2::try_convert(ss.2).map_err(Into::into)?,
-            T3::try_convert(ss.3).map_err(Into::into)?,
-            T4::try_convert(ss.4).map_err(Into::into)?,
+            T0::try_convert(mode, ss.0).map_err(Into::into)?,
+            T1::try_convert(mode, ss.1).map_err(Into::into)?,
+            T2::try_convert(mode, ss.2).map_err(Into::into)?,
+            T3::try_convert(mode, ss.3).map_err(Into::into)?,
+            T4::try_convert(mode, ss.4).map_err(Into::into)?,
         ))
     }
     #[inline]
-    fn convert(ss: (S0, S1, S2, S3, S4)) -> Self {
+    fn convert(mode: R, ss: (S0, S1, S2, S3, S4)) -> Self {
         (
-            T0::convert(ss.0),
-            T1::convert(ss.1),
-            T2::convert(ss.2),
-            T3::convert(ss.3),
-            T4::convert(ss.4),
+            T0::convert(mode, ss.0),
+            T1::convert(mode, ss.1),
+            T2::convert(mode, ss.2),
+            T3::convert(mode, ss.3),
+            T4::convert(mode, ss.4),
         )
     }
 }
@@ -228,25 +232,25 @@ where
     type Error = R::MaximumError;
 
     #[inline]
-    fn try_convert(ss: (S0, S1, S2, S3, S4, S5)) -> Result<Self, Self::Error> {
+    fn try_convert(mode: R, ss: (S0, S1, S2, S3, S4, S5)) -> Result<Self, Self::Error> {
         Ok((
-            T0::try_convert(ss.0).map_err(Into::into)?,
-            T1::try_convert(ss.1).map_err(Into::into)?,
-            T2::try_convert(ss.2).map_err(Into::into)?,
-            T3::try_convert(ss.3).map_err(Into::into)?,
-            T4::try_convert(ss.4).map_err(Into::into)?,
-            T5::try_convert(ss.5).map_err(Into::into)?,
+            T0::try_convert(mode, ss.0).map_err(Into::into)?,
+            T1::try_convert(mode, ss.1).map_err(Into::into)?,
+            T2::try_convert(mode, ss.2).map_err(Into::into)?,
+            T3::try_convert(mode, ss.3).map_err(Into::into)?,
+            T4::try_convert(mode, ss.4).map_err(Into::into)?,
+            T5::try_convert(mode, ss.5).map_err(Into::into)?,
         ))
     }
     #[inline]
-    fn convert(ss: (S0, S1, S2, S3, S4, S5)) -> Self {
+    fn convert(mode: R, ss: (S0, S1, S2, S3, S4, S5)) -> Self {
         (
-            T0::convert(ss.0),
-            T1::convert(ss.1),
-            T2::convert(ss.2),
-            T3::convert(ss.3),
-            T4::convert(ss.4),
-            T5::convert(ss.5),
+            T0::convert(mode, ss.0),
+            T1::convert(mode, ss.1),
+            T2::convert(mode, ss.2),
+            T3::convert(mode, ss.3),
+            T4::convert(mode, ss.4),
+            T5::convert(mode, ss.5),
         )
     }
 }

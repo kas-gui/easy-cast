@@ -29,15 +29,24 @@
 use crate::ConvExact;
 use crate::rounding::*;
 
-/// Generic "from" conversion trait
+/// Generic "from" conversion trait with specified rounding mode
 ///
-/// This trait is an extension over [`From`] and [`TryFrom`] for numeric casts.
+/// This trait is similar to [`TryFrom`] but for numeric conversions with a
+/// specified rounding mode. Usage with rounding mode [`Exact`] is equivalent to
+/// [`Conv`](crate::Conv).
+///
+/// The [`Rounding`] mode must be specified:
+/// ```
+/// # use easy_cast::{generic::Convert, Exact, Nearest};
+/// assert_eq!(i32::convert(Nearest, 7.6f32), 8);
+/// assert_eq!(f32::convert(Exact, 20), 20.0);
+/// ```
 pub trait Convert<S, R: Rounding>: Sized {
     /// Conversion error type
     type Error: Into<R::MaximumError> + core::error::Error;
 
     /// Try converting from `S` to `Self`
-    fn try_convert(s: S) -> Result<Self, Self::Error>;
+    fn try_convert(mode: R, s: S) -> Result<Self, Self::Error>;
 
     /// Convert from `S` to `Self`
     ///
@@ -51,10 +60,8 @@ pub trait Convert<S, R: Rounding>: Sized {
     ///
     /// [`as` numeric casts]: https://doc.rust-lang.org/reference/expressions/operator-expr.html#r-expr.as.numeric
     #[inline]
-    fn convert(s: S) -> Self {
-        Self::try_convert(s).unwrap_or_else(|e| {
-            panic!("Convert::convert(_) failed: {}", e);
-        })
+    fn convert(mode: R, s: S) -> Self {
+        Self::try_convert(mode, s).unwrap_or_else(|e| panic!("Convert::convert(_) failed: {e}"))
     }
 }
 
@@ -62,12 +69,12 @@ impl<S, T: ConvExact<S>> Convert<S, Exact> for T {
     type Error = T::Error;
 
     #[inline]
-    fn try_convert(s: S) -> Result<Self, Self::Error> {
+    fn try_convert(_: Exact, s: S) -> Result<Self, Self::Error> {
         T::try_conv_exact(s)
     }
 
     #[inline]
-    fn convert(s: S) -> Self {
+    fn convert(_: Exact, s: S) -> Self {
         T::conv_exact(s)
     }
 }
@@ -76,12 +83,12 @@ impl<S, T: ConvExact<S>> Convert<S, Approx> for T {
     type Error = T::Error;
 
     #[inline]
-    fn try_convert(s: S) -> Result<Self, Self::Error> {
+    fn try_convert(_: Approx, s: S) -> Result<Self, Self::Error> {
         T::try_conv_exact(s)
     }
 
     #[inline]
-    fn convert(s: S) -> Self {
+    fn convert(_: Approx, s: S) -> Self {
         T::conv_exact(s)
     }
 }
@@ -91,12 +98,12 @@ impl<S, T: ConvExact<S>> Convert<S, Trunc> for T {
     type Error = T::Error;
 
     #[inline]
-    fn try_convert(s: S) -> Result<Self, Self::Error> {
+    fn try_convert(_: Trunc, s: S) -> Result<Self, Self::Error> {
         T::try_conv_exact(s)
     }
 
     #[inline]
-    fn convert(s: S) -> Self {
+    fn convert(_: Trunc, s: S) -> Self {
         T::conv_exact(s)
     }
 }
@@ -106,12 +113,12 @@ impl<S, T: ConvExact<S>> Convert<S, Nearest> for T {
     type Error = T::Error;
 
     #[inline]
-    fn try_convert(s: S) -> Result<Self, Self::Error> {
+    fn try_convert(_: Nearest, s: S) -> Result<Self, Self::Error> {
         T::try_conv_exact(s)
     }
 
     #[inline]
-    fn convert(s: S) -> Self {
+    fn convert(_: Nearest, s: S) -> Self {
         T::conv_exact(s)
     }
 }
@@ -121,12 +128,12 @@ impl<S, T: ConvExact<S>> Convert<S, Floor> for T {
     type Error = T::Error;
 
     #[inline]
-    fn try_convert(s: S) -> Result<Self, Self::Error> {
+    fn try_convert(_: Floor, s: S) -> Result<Self, Self::Error> {
         T::try_conv_exact(s)
     }
 
     #[inline]
-    fn convert(s: S) -> Self {
+    fn convert(_: Floor, s: S) -> Self {
         T::conv_exact(s)
     }
 }
@@ -136,12 +143,12 @@ impl<S, T: ConvExact<S>> Convert<S, Ceil> for T {
     type Error = T::Error;
 
     #[inline]
-    fn try_convert(s: S) -> Result<Self, Self::Error> {
+    fn try_convert(_: Ceil, s: S) -> Result<Self, Self::Error> {
         T::try_conv_exact(s)
     }
 
     #[inline]
-    fn convert(s: S) -> Self {
+    fn convert(_: Ceil, s: S) -> Self {
         T::conv_exact(s)
     }
 }

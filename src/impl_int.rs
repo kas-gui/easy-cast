@@ -244,7 +244,7 @@ macro_rules! impl_via_digits_check {
             type Error = Error;
 
             #[inline]
-            fn convert(x: $x) -> Self {
+            fn convert(_: Exact, x: $x) -> Self {
                 if cfg!(any(debug_assertions, feature = "assert_digits")) {
                     x.try_cast_to(Exact).unwrap_or_else(|_| {
                         panic!(
@@ -257,7 +257,7 @@ macro_rules! impl_via_digits_check {
                 }
             }
             #[inline]
-            fn try_convert(x: $x) -> Result<Self, Error> {
+            fn try_convert(_: Exact, x: $x) -> Result<Self, Error> {
                 let src_ty_bits = (size_of::<$x>() * 8) as u32;
                 let src_digits = src_ty_bits.saturating_sub(x.leading_zeros() + x.trailing_zeros());
                 let dst_digits = $y::MANTISSA_DIGITS;
@@ -281,7 +281,7 @@ macro_rules! impl_via_digits_check_signed {
             type Error = Error;
 
             #[inline]
-            fn convert(x: $x) -> Self {
+            fn convert(_: Exact, x: $x) -> Self {
                 if cfg!(any(debug_assertions, feature = "assert_digits")) {
                     x.try_cast_to(Exact).unwrap_or_else(|_| {
                         panic!(
@@ -294,7 +294,7 @@ macro_rules! impl_via_digits_check_signed {
                 }
             }
             #[inline]
-            fn try_convert(x: $x) -> Result<Self, Error> {
+            fn try_convert(_: Exact, x: $x) -> Result<Self, Error> {
                 let src_ty_bits = (size_of::<$x>() * 8) as u32;
                 let src_digits = x.checked_abs()
                     .map(|y| src_ty_bits.saturating_sub(y.leading_zeros() + y.trailing_zeros()))
@@ -328,7 +328,7 @@ impl Convert<u128, Exact> for f32 {
     type Error = Error;
 
     #[inline]
-    fn convert(x: u128) -> Self {
+    fn convert(_: Exact, x: u128) -> Self {
         if cfg!(any(debug_assertions, feature = "assert_digits")) {
             x.try_cast_to(Exact)
                 .unwrap_or_else(|_| panic!("cast x: u128 to f32: inexact for x = {x}"))
@@ -337,7 +337,7 @@ impl Convert<u128, Exact> for f32 {
         }
     }
     #[inline]
-    fn try_convert(x: u128) -> Result<Self, Error> {
+    fn try_convert(_: Exact, x: u128) -> Result<Self, Error> {
         if x < 0xffff_ff80_0000_0000_0000_0000_0000_0000_u128 {
             let src_digits = 128u32.saturating_sub(x.leading_zeros() + x.trailing_zeros());
             if src_digits <= f32::MANTISSA_DIGITS {
@@ -357,11 +357,11 @@ macro_rules! impl_approx {
             type Error = Infallible;
 
             #[inline]
-            fn convert(x: $x) -> Self {
+            fn convert(_: Approx, x: $x) -> Self {
                 x as $y
             }
             #[inline]
-            fn try_convert(x: $x) -> Result<Self, Infallible> {
+            fn try_convert(_: Approx, x: $x) -> Result<Self, Infallible> {
                 Ok(x as $y)
             }
         }
@@ -372,11 +372,11 @@ macro_rules! impl_approx {
             type Error = Infallible;
 
             #[inline]
-            fn convert(x: $x) -> Self {
+            fn convert(_: crate::Nearest, x: $x) -> Self {
                 x as $y
             }
             #[inline]
-            fn try_convert(x: $x) -> Result<Self, Infallible> {
+            fn try_convert(_: crate::Nearest, x: $x) -> Result<Self, Infallible> {
                 Ok(x as $y)
             }
         }
