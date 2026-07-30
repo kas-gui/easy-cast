@@ -5,16 +5,16 @@
 
 //! Floating-point impls
 
-use crate::generic::{Convert, ConvertExact};
+use crate::generic::{ConvExact, Convert};
 use crate::{Approx, Exact};
 #[cfg(any(feature = "std", feature = "libm"))]
 use crate::{Ceil, Floor, Nearest, Trunc};
 use crate::{Error, RangeError};
 
-impl ConvertExact<f32> for f64 {
+impl ConvExact<f32> for f64 {
     type Error = RangeError;
 
-    fn try_convert(x: f32) -> Result<Self, RangeError> {
+    fn try_conv_exact(x: f32) -> Result<Self, RangeError> {
         match x.is_nan() {
             false => Ok(x as f64),
             true => Err(RangeError),
@@ -22,7 +22,7 @@ impl ConvertExact<f32> for f64 {
     }
 
     #[inline]
-    fn convert(x: f32) -> f64 {
+    fn conv_exact(x: f32) -> f64 {
         fn trap_nan(x: f32) {
             if x.is_nan() {
                 panic!("cast float-to-float: NaN")
@@ -70,7 +70,7 @@ impl Convert<f64, Exact> for f32 {
         match x.is_nan() {
             false => {
                 let y = x as f32;
-                if <f64 as ConvertExact<f32>>::try_convert(y) == Ok(x) {
+                if <f64 as ConvExact<f32>>::try_conv_exact(y) == Ok(x) {
                     Ok(y)
                 } else {
                     Err(Error::Inexact)

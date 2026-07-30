@@ -8,7 +8,7 @@
 use crate::{Rounding, generic::Convert};
 use core::convert::Infallible;
 
-/// Implement [`ConvertExact`] infallibly over a [`From`] implementation
+/// Implement [`ConvExact`] infallibly over a [`From`] implementation
 ///
 /// # Example
 ///
@@ -30,19 +30,19 @@ use core::convert::Infallible;
 /// easy_cast::impl_via_from!(MyInt: i32, i64);
 /// ```
 ///
-/// [`ConvertExact`]: crate::generic::ConvertExact
+/// [`ConvExact`]: crate::generic::ConvExact
 #[macro_export]
 macro_rules! impl_via_from {
     ($x:ty: $y:ty) => {
-        impl $crate::generic::ConvertExact<$x> for $y {
+        impl $crate::generic::ConvExact<$x> for $y {
             type Error = ::core::convert::Infallible;
 
             #[inline]
-            fn convert(x: $x) -> $y {
+            fn conv_exact(x: $x) -> $y {
                 <$y>::from(x)
             }
             #[inline]
-            fn try_convert(x: $x) -> Result<Self, Self::Error> {
+            fn try_conv_exact(x: $x) -> Result<Self, Self::Error> {
                 Ok(<$y>::from(x))
             }
         }
@@ -251,7 +251,7 @@ where
     }
 }
 
-/// Implement a trivial [`ConvertExact`] infallibly
+/// Implement a trivial [`ConvExact`] infallibly
 ///
 /// A trivial conversion is one which maps a type to itself.
 ///
@@ -263,19 +263,19 @@ where
 /// easy_cast::impl_via_trivial!(MyInt);
 /// ```
 ///
-/// [`ConvertExact`]: crate::generic::ConvertExact
+/// [`ConvExact`]: crate::generic::ConvExact
 #[macro_export]
 macro_rules! impl_via_trivial {
     ($x:ty) => {
-        impl $crate::generic::ConvertExact<$x> for $x {
+        impl $crate::generic::ConvExact<$x> for $x {
             type Error = ::core::convert::Infallible;
 
             #[inline]
-            fn convert(x: $x) -> Self {
+            fn conv_exact(x: $x) -> Self {
                 x
             }
             #[inline]
-            fn try_convert(x: $x) -> Result<Self, Self::Error> {
+            fn try_conv_exact(x: $x) -> Result<Self, Self::Error> {
                 Ok(x)
             }
         }

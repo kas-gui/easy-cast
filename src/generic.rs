@@ -15,7 +15,7 @@
 //! [`Rounding`] modes is required.
 //!
 //! Conversions which can never be inexact should be implemented using
-//! [`ConvertExact`].
+//! [`ConvExact`].
 //!
 //! Conversions which may apply rounding or may reject inputs not precisely
 //! representable by the target type should be implemented using [`Convert`].
@@ -34,7 +34,7 @@ use crate::rounding::*;
 /// Implement this trait instead of [`Convert`] where conversions can never be
 /// inexact. This allows impls of `Convert<S, R>` to be derived for all
 /// `R: Rounding` modes.
-pub trait ConvertExact<S>: Sized {
+pub trait ConvExact<S>: Sized {
     /// Conversion error type
     ///
     /// This is either [`Infallible`] or [`RangeError`].
@@ -43,11 +43,11 @@ pub trait ConvertExact<S>: Sized {
     type Error: Into<RangeError> + Into<crate::Error> + core::error::Error;
 
     /// Try converting from `S` to `Self`
-    fn try_convert(s: S) -> Result<Self, Self::Error>;
+    fn try_conv_exact(s: S) -> Result<Self, Self::Error>;
 
     /// Convert from `S` to `Self`
     ///
-    /// This method must return the same result as [`Self::try_convert`] where
+    /// This method must return the same result as [`Self::try_conv_exact`] where
     /// that method succeeds, but differs in the handling of errors:
     ///
     /// -   In debug builds the method must panic on error
@@ -57,9 +57,9 @@ pub trait ConvertExact<S>: Sized {
     ///
     /// [`as` numeric casts]: https://doc.rust-lang.org/reference/expressions/operator-expr.html#r-expr.as.numeric
     #[inline]
-    fn convert(s: S) -> Self {
-        Self::try_convert(s).unwrap_or_else(|e| {
-            panic!("ConvertExact::convert(_) failed: {}", e);
+    fn conv_exact(s: S) -> Self {
+        Self::try_conv_exact(s).unwrap_or_else(|e| {
+            panic!("ConvExact::conv_exact(_) failed: {}", e);
         })
     }
 }
@@ -93,90 +93,90 @@ pub trait Convert<S, R: Rounding>: Sized {
     }
 }
 
-impl<S, T: ConvertExact<S>> Convert<S, Exact> for T {
+impl<S, T: ConvExact<S>> Convert<S, Exact> for T {
     type Error = T::Error;
 
     #[inline]
     fn try_convert(s: S) -> Result<Self, Self::Error> {
-        T::try_convert(s)
+        T::try_conv_exact(s)
     }
 
     #[inline]
     fn convert(s: S) -> Self {
-        T::convert(s)
+        T::conv_exact(s)
     }
 }
 
-impl<S, T: ConvertExact<S>> Convert<S, Approx> for T {
+impl<S, T: ConvExact<S>> Convert<S, Approx> for T {
     type Error = T::Error;
 
     #[inline]
     fn try_convert(s: S) -> Result<Self, Self::Error> {
-        T::try_convert(s)
+        T::try_conv_exact(s)
     }
 
     #[inline]
     fn convert(s: S) -> Self {
-        T::convert(s)
-    }
-}
-
-#[cfg(any(feature = "std", feature = "libm"))]
-impl<S, T: ConvertExact<S>> Convert<S, Trunc> for T {
-    type Error = T::Error;
-
-    #[inline]
-    fn try_convert(s: S) -> Result<Self, Self::Error> {
-        T::try_convert(s)
-    }
-
-    #[inline]
-    fn convert(s: S) -> Self {
-        T::convert(s)
+        T::conv_exact(s)
     }
 }
 
 #[cfg(any(feature = "std", feature = "libm"))]
-impl<S, T: ConvertExact<S>> Convert<S, Nearest> for T {
+impl<S, T: ConvExact<S>> Convert<S, Trunc> for T {
     type Error = T::Error;
 
     #[inline]
     fn try_convert(s: S) -> Result<Self, Self::Error> {
-        T::try_convert(s)
+        T::try_conv_exact(s)
     }
 
     #[inline]
     fn convert(s: S) -> Self {
-        T::convert(s)
+        T::conv_exact(s)
     }
 }
 
 #[cfg(any(feature = "std", feature = "libm"))]
-impl<S, T: ConvertExact<S>> Convert<S, Floor> for T {
+impl<S, T: ConvExact<S>> Convert<S, Nearest> for T {
     type Error = T::Error;
 
     #[inline]
     fn try_convert(s: S) -> Result<Self, Self::Error> {
-        T::try_convert(s)
+        T::try_conv_exact(s)
     }
 
     #[inline]
     fn convert(s: S) -> Self {
-        T::convert(s)
+        T::conv_exact(s)
     }
 }
 
 #[cfg(any(feature = "std", feature = "libm"))]
-impl<S, T: ConvertExact<S>> Convert<S, Ceil> for T {
+impl<S, T: ConvExact<S>> Convert<S, Floor> for T {
     type Error = T::Error;
 
     #[inline]
     fn try_convert(s: S) -> Result<Self, Self::Error> {
-        T::try_convert(s)
+        T::try_conv_exact(s)
     }
 
     #[inline]
     fn convert(s: S) -> Self {
-        T::convert(s)
+        T::conv_exact(s)
+    }
+}
+
+#[cfg(any(feature = "std", feature = "libm"))]
+impl<S, T: ConvExact<S>> Convert<S, Ceil> for T {
+    type Error = T::Error;
+
+    #[inline]
+    fn try_convert(s: S) -> Result<Self, Self::Error> {
+        T::try_conv_exact(s)
+    }
+
+    #[inline]
+    fn convert(s: S) -> Self {
+        T::conv_exact(s)
     }
 }

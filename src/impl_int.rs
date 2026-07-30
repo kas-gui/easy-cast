@@ -7,7 +7,7 @@
 //!
 //! See also `impl_basic` which inherits integer impls from From.
 
-use crate::generic::{Convert, ConvertExact};
+use crate::generic::{ConvExact, Convert};
 use crate::{Approx, Exact};
 use crate::{CastTo, Error, RangeError};
 use core::convert::Infallible;
@@ -15,11 +15,11 @@ use core::mem::size_of;
 
 macro_rules! impl_via_as_neg_check {
     ($x:ty: $y:ty) => {
-        impl ConvertExact<$x> for $y {
+        impl ConvExact<$x> for $y {
             type Error = RangeError;
 
             #[inline]
-            fn convert(x: $x) -> $y {
+            fn conv_exact(x: $x) -> $y {
                 #[cfg(any(debug_assertions, feature = "assert_int"))]
                 assert!(
                     x >= 0,
@@ -29,7 +29,7 @@ macro_rules! impl_via_as_neg_check {
                 x as $y
             }
             #[inline]
-            fn try_convert(x: $x) -> Result<Self, RangeError> {
+            fn try_conv_exact(x: $x) -> Result<Self, RangeError> {
                 if x >= 0 {
                     Ok(x as $y)
                 } else {
@@ -53,11 +53,11 @@ impl_via_as_neg_check!(i128: u128);
 // Assumption: $y::MAX is representable as $x
 macro_rules! impl_via_as_max_check {
     ($x:ty: $y:tt) => {
-        impl ConvertExact<$x> for $y {
+        impl ConvExact<$x> for $y {
             type Error = RangeError;
 
             #[inline]
-            fn convert(x: $x) -> $y {
+            fn conv_exact(x: $x) -> $y {
                 #[cfg(any(debug_assertions, feature = "assert_int"))]
                 assert!(
                     x <= $y::MAX as $x,
@@ -67,7 +67,7 @@ macro_rules! impl_via_as_max_check {
                 x as $y
             }
             #[inline]
-            fn try_convert(x: $x) -> Result<Self, RangeError> {
+            fn try_conv_exact(x: $x) -> Result<Self, RangeError> {
                 if x <= $y::MAX as $x {
                     Ok(x as $y)
                 } else {
@@ -92,11 +92,11 @@ impl_via_as_max_check!(u128: u8, u16, u32, u64);
 // Assumption: $y::MAX and $y::MIN are representable as $x
 macro_rules! impl_via_as_range_check {
     ($x:ty: $y:tt) => {
-        impl ConvertExact<$x> for $y {
+        impl ConvExact<$x> for $y {
             type Error = RangeError;
 
             #[inline]
-            fn convert(x: $x) -> $y {
+            fn conv_exact(x: $x) -> $y {
                 #[cfg(any(debug_assertions, feature = "assert_int"))]
                 assert!(
                     $y::MIN as $x <= x && x <= $y::MAX as $x,
@@ -106,7 +106,7 @@ macro_rules! impl_via_as_range_check {
                 x as $y
             }
             #[inline]
-            fn try_convert(x: $x) -> Result<Self, RangeError> {
+            fn try_conv_exact(x: $x) -> Result<Self, RangeError> {
                 if $y::MIN as $x <= x && x <= $y::MAX as $x {
                     Ok(x as $y)
                 } else {
@@ -128,12 +128,12 @@ impl_via_as_range_check!(i128: i8, i16, i32, i64, u8, u16, u32, u64);
 
 macro_rules! impl_int_generic {
     ($x:tt: $y:tt) => {
-        impl ConvertExact<$x> for $y {
+        impl ConvExact<$x> for $y {
             type Error = RangeError;
 
             #[allow(unused_comparisons)]
             #[inline]
-            fn convert(x: $x) -> $y {
+            fn conv_exact(x: $x) -> $y {
                 let src_is_signed = $x::MIN != 0;
                 let dst_is_signed = $y::MIN != 0;
                 if size_of::<$x>() < size_of::<$y>() {
@@ -183,7 +183,7 @@ macro_rules! impl_int_generic {
             }
             #[allow(unused_comparisons)]
             #[inline]
-            fn try_convert(x: $x) -> Result<Self, Self::Error> {
+            fn try_conv_exact(x: $x) -> Result<Self, Self::Error> {
                 let src_is_signed = $x::MIN != 0;
                 let dst_is_signed = $y::MIN != 0;
                 if size_of::<$x>() < size_of::<$y>() {
