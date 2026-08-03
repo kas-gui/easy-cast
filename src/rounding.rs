@@ -50,10 +50,8 @@ impl Rounding for Approx {
 /// Example: `2.9_f32` converts to `2_i32`, `-2.9_f32` converts to `-2_i32`.
 ///
 /// [`as` numeric casts]: https://doc.rust-lang.org/reference/expressions/operator-expr.html#r-expr.as.numeric
-#[cfg(any(feature = "std", feature = "libm"))]
 #[derive(Clone, Copy, Debug, Default)]
 pub struct Trunc;
-#[cfg(any(feature = "std", feature = "libm"))]
 impl Rounding for Trunc {
     type MaximumError = RangeError;
 }

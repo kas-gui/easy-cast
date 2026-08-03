@@ -16,7 +16,7 @@
 //!     (rounding mode is implementation-defined just like `as`)
 //! -   Use [`ConvTo`] and [`CastTo`] with an explicit rounding mode
 //!     ([`Trunc`], [`Nearest`], [`Floor`], [`Ceil`]) for conversions with a
-//!     specified rounding mode (requires `std` or `libm` feature)
+//!     specified rounding mode
 //!
 //! ### Error handling
 //!
@@ -74,6 +74,7 @@
 
 #![deny(missing_docs)]
 #![cfg_attr(not(feature = "std"), no_std)]
+#![cfg_attr(docsrs, feature(doc_cfg))]
 
 mod impl_basic;
 mod impl_float;

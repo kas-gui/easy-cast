@@ -5,9 +5,9 @@
 
 //! Floating-point impls
 
-use crate::{Approx, ConvExact, ConvTo, Error, Exact, RangeError};
+use crate::{Approx, ConvExact, ConvTo, Error, Exact, RangeError, Trunc};
 #[cfg(any(feature = "std", feature = "libm"))]
-use crate::{Ceil, Floor, Nearest, Trunc};
+use crate::{Ceil, Floor, Nearest};
 
 impl ConvExact<f32> for f64 {
     type Error = RangeError;
@@ -110,7 +110,6 @@ impl FloatRound for f64 {
     }
 }
 
-#[cfg(any(feature = "std", feature = "libm"))]
 macro_rules! impl_float {
     ($x:ty: $y:tt) => {
         impl ConvTo<$x, Trunc> for $y {
@@ -143,6 +142,7 @@ macro_rules! impl_float {
             }
         }
 
+        #[cfg(any(feature = "std", feature = "libm"))]
         impl ConvTo<$x, Nearest> for $y {
             type Error = RangeError;
 
@@ -174,6 +174,7 @@ macro_rules! impl_float {
             }
         }
 
+        #[cfg(any(feature = "std", feature = "libm"))]
         impl ConvTo<$x, Floor> for $y {
             type Error = RangeError;
 
@@ -205,6 +206,7 @@ macro_rules! impl_float {
             }
         }
 
+        #[cfg(any(feature = "std", feature = "libm"))]
         impl ConvTo<$x, Ceil> for $y {
             type Error = RangeError;
 
@@ -256,16 +258,11 @@ macro_rules! impl_float {
 }
 
 // Assumption: usize < 128-bit
-#[cfg(any(feature = "std", feature = "libm"))]
 impl_float!(f32: i8, i16, i32, i64, i128, isize);
-#[cfg(any(feature = "std", feature = "libm"))]
 impl_float!(f32: u8, u16, u32, u64, usize);
-#[cfg(any(feature = "std", feature = "libm"))]
 impl_float!(f64: i8, i16, i32, i64, i128, isize);
-#[cfg(any(feature = "std", feature = "libm"))]
 impl_float!(f64: u8, u16, u32, u64, u128, usize);
 
-#[cfg(any(feature = "std", feature = "libm"))]
 impl ConvTo<f32, Trunc> for u128 {
     type Error = RangeError;
 
@@ -360,7 +357,6 @@ impl ConvTo<f32, Ceil> for u128 {
     }
 }
 
-#[cfg(any(feature = "std", feature = "libm"))]
 impl ConvTo<f32, Approx> for u128 {
     type Error = RangeError;
 
