@@ -1,6 +1,6 @@
-#[cfg(any(feature = "std", feature = "libm"))]
-use easy_cast::generic::{Ceil, Floor, Nearest, Trunc};
 use easy_cast::*;
+#[cfg(any(feature = "std", feature = "libm"))]
+use easy_cast::{Ceil, Floor, Nearest, Trunc};
 
 #[test]
 fn int_casts() {

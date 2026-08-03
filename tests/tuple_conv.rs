@@ -1,6 +1,6 @@
 #![cfg(any(feature = "std", feature = "libm"))]
 
-use easy_cast::generic::{Ceil, Floor, Nearest, Trunc};
+use easy_cast::{Ceil, Floor, Nearest, Trunc};
 use easy_cast::{Error, RangeError, traits::*};
 
 #[test]

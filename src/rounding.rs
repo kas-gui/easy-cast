@@ -5,7 +5,7 @@
 
 //! Rounding modes
 
-use crate::{Error, RangeError};
+use crate::{ConvExact, ConvTo, Error, RangeError};
 use core::convert::Infallible;
 
 /// Rounding mode
@@ -100,4 +100,92 @@ pub struct Ceil;
 #[cfg(any(feature = "std", feature = "libm"))]
 impl Rounding for Ceil {
     type MaximumError = RangeError;
+}
+
+impl<S, T: ConvExact<S>> ConvTo<S, Exact> for T {
+    type Error = T::Error;
+
+    #[inline]
+    fn try_conv_to(_: Exact, s: S) -> Result<Self, Self::Error> {
+        T::try_conv_exact(s)
+    }
+
+    #[inline]
+    fn conv_to(_: Exact, s: S) -> Self {
+        T::conv_exact(s)
+    }
+}
+
+impl<S, T: ConvExact<S>> ConvTo<S, Approx> for T {
+    type Error = T::Error;
+
+    #[inline]
+    fn try_conv_to(_: Approx, s: S) -> Result<Self, Self::Error> {
+        T::try_conv_exact(s)
+    }
+
+    #[inline]
+    fn conv_to(_: Approx, s: S) -> Self {
+        T::conv_exact(s)
+    }
+}
+
+#[cfg(any(feature = "std", feature = "libm"))]
+impl<S, T: ConvExact<S>> ConvTo<S, Trunc> for T {
+    type Error = T::Error;
+
+    #[inline]
+    fn try_conv_to(_: Trunc, s: S) -> Result<Self, Self::Error> {
+        T::try_conv_exact(s)
+    }
+
+    #[inline]
+    fn conv_to(_: Trunc, s: S) -> Self {
+        T::conv_exact(s)
+    }
+}
+
+#[cfg(any(feature = "std", feature = "libm"))]
+impl<S, T: ConvExact<S>> ConvTo<S, Nearest> for T {
+    type Error = T::Error;
+
+    #[inline]
+    fn try_conv_to(_: Nearest, s: S) -> Result<Self, Self::Error> {
+        T::try_conv_exact(s)
+    }
+
+    #[inline]
+    fn conv_to(_: Nearest, s: S) -> Self {
+        T::conv_exact(s)
+    }
+}
+
+#[cfg(any(feature = "std", feature = "libm"))]
+impl<S, T: ConvExact<S>> ConvTo<S, Floor> for T {
+    type Error = T::Error;
+
+    #[inline]
+    fn try_conv_to(_: Floor, s: S) -> Result<Self, Self::Error> {
+        T::try_conv_exact(s)
+    }
+
+    #[inline]
+    fn conv_to(_: Floor, s: S) -> Self {
+        T::conv_exact(s)
+    }
+}
+
+#[cfg(any(feature = "std", feature = "libm"))]
+impl<S, T: ConvExact<S>> ConvTo<S, Ceil> for T {
+    type Error = T::Error;
+
+    #[inline]
+    fn try_conv_to(_: Ceil, s: S) -> Result<Self, Self::Error> {
+        T::try_conv_exact(s)
+    }
+
+    #[inline]
+    fn conv_to(_: Ceil, s: S) -> Self {
+        T::conv_exact(s)
+    }
 }

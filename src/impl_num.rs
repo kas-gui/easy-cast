@@ -5,22 +5,21 @@
 
 //! `core::num` impls.
 
-use crate::RangeError;
-use crate::generic::ConvertExact;
+use crate::{ConvExact, RangeError};
 use core::convert::Infallible;
 use core::num::NonZero;
 
 macro_rules! impl_via_trivial {
     ($x:ty) => {
-        impl ConvertExact<NonZero<$x>> for NonZero<$x> {
+        impl ConvExact<NonZero<$x>> for NonZero<$x> {
             type Error = Infallible;
 
             #[inline]
-            fn convert(x: NonZero<$x>) -> Self {
+            fn conv_exact(x: NonZero<$x>) -> Self {
                 x
             }
             #[inline]
-            fn try_convert(x: NonZero<$x>) -> Result<Self, Infallible> {
+            fn try_conv_exact(x: NonZero<$x>) -> Result<Self, Infallible> {
                 Ok(x)
             }
         }
@@ -39,12 +38,12 @@ impl_via_trivial!(
 
 macro_rules! impl_nonzero {
     ($x:ty : $y:ty) => {
-        impl ConvertExact<NonZero<$x>> for NonZero<$y> {
+        impl ConvExact<NonZero<$x>> for NonZero<$y> {
             type Error = RangeError;
 
             #[inline]
-            fn try_convert(n: NonZero<$x>) -> Result<NonZero<$y>, Self::Error> {
-                let m: $y = <$y>::try_convert(n.get())?;
+            fn try_conv_exact(n: NonZero<$x>) -> Result<NonZero<$y>, Self::Error> {
+                let m: $y = <$y>::try_conv_exact(n.get())?;
                 // An error here should be impossible, but handling one is basically free:
                 NonZero::new(m).ok_or(RangeError)
             }

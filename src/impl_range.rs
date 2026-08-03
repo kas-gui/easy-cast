@@ -5,79 +5,79 @@
 
 //! `core::range` impls.
 
-use crate::generic::{Convert, Rounding};
+use crate::{ConvTo, Rounding};
 use core::range::{Range, RangeFrom, RangeInclusive, RangeToInclusive};
 
-impl<R: Rounding, F, T: Convert<F, R>> Convert<Range<F>, R> for Range<T> {
+impl<R: Rounding, F, T: ConvTo<F, R>> ConvTo<Range<F>, R> for Range<T> {
     type Error = T::Error;
 
     #[inline]
-    fn try_convert(n: Range<F>) -> Result<Range<T>, Self::Error> {
+    fn try_conv_to(mode: R, n: Range<F>) -> Result<Range<T>, Self::Error> {
         Ok(Range {
-            start: T::try_convert(n.start)?,
-            end: T::try_convert(n.end)?,
+            start: T::try_conv_to(mode, n.start)?,
+            end: T::try_conv_to(mode, n.end)?,
         })
     }
 
     #[inline]
-    fn convert(n: Range<F>) -> Range<T> {
+    fn conv_to(mode: R, n: Range<F>) -> Range<T> {
         Range {
-            start: T::convert(n.start),
-            end: T::convert(n.end),
+            start: T::conv_to(mode, n.start),
+            end: T::conv_to(mode, n.end),
         }
     }
 }
 
-impl<R: Rounding, F: Clone, T: Convert<F, R>> Convert<RangeInclusive<F>, R> for RangeInclusive<T> {
+impl<R: Rounding, F: Clone, T: ConvTo<F, R>> ConvTo<RangeInclusive<F>, R> for RangeInclusive<T> {
     type Error = T::Error;
 
     #[inline]
-    fn try_convert(n: RangeInclusive<F>) -> Result<RangeInclusive<T>, Self::Error> {
-        let start = T::try_convert(n.start.clone())?;
-        let last = T::try_convert(n.last.clone())?;
+    fn try_conv_to(mode: R, n: RangeInclusive<F>) -> Result<RangeInclusive<T>, Self::Error> {
+        let start = T::try_conv_to(mode, n.start.clone())?;
+        let last = T::try_conv_to(mode, n.last.clone())?;
         Ok(RangeInclusive { start, last })
     }
 
     #[inline]
-    fn convert(n: RangeInclusive<F>) -> RangeInclusive<T> {
-        let start = T::convert(n.start.clone());
-        let last = T::convert(n.last.clone());
+    fn conv_to(mode: R, n: RangeInclusive<F>) -> RangeInclusive<T> {
+        let start = T::conv_to(mode, n.start.clone());
+        let last = T::conv_to(mode, n.last.clone());
         RangeInclusive { start, last }
     }
 }
 
-impl<R: Rounding, F, T: Convert<F, R>> Convert<RangeFrom<F>, R> for RangeFrom<T> {
+impl<R: Rounding, F, T: ConvTo<F, R>> ConvTo<RangeFrom<F>, R> for RangeFrom<T> {
     type Error = T::Error;
 
     #[inline]
-    fn try_convert(n: RangeFrom<F>) -> Result<RangeFrom<T>, Self::Error> {
+    fn try_conv_to(mode: R, n: RangeFrom<F>) -> Result<RangeFrom<T>, Self::Error> {
         Ok(RangeFrom {
-            start: T::try_convert(n.start)?,
+            start: T::try_conv_to(mode, n.start)?,
         })
     }
 
     #[inline]
-    fn convert(n: RangeFrom<F>) -> RangeFrom<T> {
+    fn conv_to(mode: R, n: RangeFrom<F>) -> RangeFrom<T> {
         RangeFrom {
-            start: T::convert(n.start),
+            start: T::conv_to(mode, n.start),
         }
     }
 }
 
-impl<R: Rounding, F, T: Convert<F, R>> Convert<RangeToInclusive<F>, R> for RangeToInclusive<T> {
+impl<R: Rounding, F, T: ConvTo<F, R>> ConvTo<RangeToInclusive<F>, R> for RangeToInclusive<T> {
     type Error = T::Error;
 
     #[inline]
-    fn try_convert(n: RangeToInclusive<F>) -> Result<RangeToInclusive<T>, Self::Error> {
+    fn try_conv_to(mode: R, n: RangeToInclusive<F>) -> Result<RangeToInclusive<T>, Self::Error> {
         Ok(RangeToInclusive {
-            last: T::try_convert(n.last)?,
+            last: T::try_conv_to(mode, n.last)?,
         })
     }
 
     #[inline]
-    fn convert(n: RangeToInclusive<F>) -> RangeToInclusive<T> {
+    fn conv_to(mode: R, n: RangeToInclusive<F>) -> RangeToInclusive<T> {
         RangeToInclusive {
-            last: T::convert(n.last),
+            last: T::conv_to(mode, n.last),
         }
     }
 }
