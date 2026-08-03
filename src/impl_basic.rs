@@ -8,6 +8,50 @@
 use crate::{ConvTo, Rounding};
 use core::convert::Infallible;
 
+/// Implement an identity "conversion" via [`ConvExact`] infallibly
+///
+/// Note: [`ConvExact`] is not inherently reflexive (there is no
+/// `impl<T> ConvExact<T> for T`) since this would conflict with some other
+/// required impls. Use this instead.
+///
+/// # Example
+///
+/// ```
+/// struct MyInt(i32);
+///
+/// easy_cast::impl_via_identity!(MyInt);
+/// ```
+///
+/// [`ConvExact`]: crate::ConvExact
+#[macro_export]
+macro_rules! impl_via_identity {
+    ($x:ty) => {
+        impl $crate::ConvExact<$x> for $x {
+            type Error = ::core::convert::Infallible;
+
+            #[inline]
+            fn conv_exact(x: $x) -> Self {
+                x
+            }
+            #[inline]
+            fn try_conv_exact(x: $x) -> Result<Self, Self::Error> {
+                Ok(x)
+            }
+        }
+    };
+    ($x:ty $(, $xx:tt)* $(,)?) => {
+        $crate::impl_via_identity!($x);
+        $crate::impl_via_identity!($($xx),*);
+    };
+}
+
+#[rustfmt::skip]
+impl_via_identity!(
+    u8, u16, u32, u64, u128, usize,
+    i8, i16, i32, i64, i128, isize,
+    f32, f64,
+);
+
 /// Implement [`ConvExact`] infallibly over a [`From`] implementation
 ///
 /// # Example
@@ -252,45 +296,3 @@ where
         )
     }
 }
-
-/// Implement a trivial [`ConvExact`] infallibly
-///
-/// A trivial conversion is one which maps a type to itself.
-///
-/// # Example
-///
-/// ```
-/// struct MyInt(i32);
-///
-/// easy_cast::impl_via_trivial!(MyInt);
-/// ```
-///
-/// [`ConvExact`]: crate::ConvExact
-#[macro_export]
-macro_rules! impl_via_trivial {
-    ($x:ty) => {
-        impl $crate::ConvExact<$x> for $x {
-            type Error = ::core::convert::Infallible;
-
-            #[inline]
-            fn conv_exact(x: $x) -> Self {
-                x
-            }
-            #[inline]
-            fn try_conv_exact(x: $x) -> Result<Self, Self::Error> {
-                Ok(x)
-            }
-        }
-    };
-    ($x:ty $(, $xx:tt)* $(,)?) => {
-        $crate::impl_via_trivial!($x);
-        $crate::impl_via_trivial!($($xx),*);
-    };
-}
-
-#[rustfmt::skip]
-impl_via_trivial!(
-    u8, u16, u32, u64, u128, usize,
-    i8, i16, i32, i64, i128, isize,
-    f32, f64,
-);

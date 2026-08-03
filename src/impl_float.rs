@@ -77,6 +77,15 @@ impl ConvTo<f64, Exact> for f32 {
             true => Err(Error::Range),
         }
     }
+
+    #[inline]
+    fn conv_to(_: Exact, x: f64) -> f32 {
+        if cfg!(any(debug_assertions, feature = "assert_float")) {
+            f32::try_conv_to(Exact, x).unwrap_or_else(|e| panic!("cast float-to-float: {e}"))
+        } else {
+            x as f32
+        }
+    }
 }
 
 #[cfg(all(not(feature = "std"), feature = "libm"))]
