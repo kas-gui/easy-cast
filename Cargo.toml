@@ -14,7 +14,7 @@ rust-version = "1.96.0"
 [package.metadata.docs.rs]
 features = []
 # To build locally:
-# cargo +nightly doc --open
+# RUSTDOCFLAGS="--cfg docsrs" cargo +nightly doc --open
 
 [features]
 default = ["std"]
