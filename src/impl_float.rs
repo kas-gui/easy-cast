@@ -5,11 +5,10 @@
 
 //! Floating-point impls
 
-use crate::generic::{ConvExact, Convert};
-use crate::{Approx, Exact};
+use crate::generic::Convert;
+use crate::{Approx, ConvExact, Error, Exact, RangeError};
 #[cfg(any(feature = "std", feature = "libm"))]
 use crate::{Ceil, Floor, Nearest, Trunc};
-use crate::{Error, RangeError};
 
 impl ConvExact<f32> for f64 {
     type Error = RangeError;

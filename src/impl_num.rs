@@ -5,8 +5,7 @@
 
 //! `core::num` impls.
 
-use crate::RangeError;
-use crate::generic::ConvExact;
+use crate::{ConvExact, RangeError};
 use core::convert::Infallible;
 use core::num::NonZero;
 

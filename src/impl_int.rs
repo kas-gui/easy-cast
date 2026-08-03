@@ -7,9 +7,8 @@
 //!
 //! See also `impl_basic` which inherits integer impls from From.
 
-use crate::generic::{ConvExact, Convert};
-use crate::{Approx, Exact};
-use crate::{CastTo, Error, RangeError};
+use crate::generic::Convert;
+use crate::{Approx, CastTo, ConvExact, Error, Exact, RangeError};
 use core::convert::Infallible;
 use core::mem::size_of;
 

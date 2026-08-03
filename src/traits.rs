@@ -19,6 +19,41 @@ use crate::generic::Convert;
 use crate::{Approx, Exact, Rounding};
 use crate::{Error, RangeError};
 
+/// Generic "from" conversion trait for exact conversions
+///
+/// Implement this trait instead of [`Convert`] where conversions can never be
+/// inexact. This allows impls of `Convert<S, R>` to be derived for all
+/// `R: Rounding` modes.
+pub trait ConvExact<S>: Sized {
+    /// Conversion error type
+    ///
+    /// This is either [`Infallible`] or [`RangeError`].
+    ///
+    /// [`Infallible`]: std::convert::Infallible
+    type Error: Into<RangeError> + Into<crate::Error> + core::error::Error;
+
+    /// Try converting from `S` to `Self`
+    fn try_conv_exact(s: S) -> Result<Self, Self::Error>;
+
+    /// Convert from `S` to `Self`
+    ///
+    /// This method must return the same result as [`Self::try_conv_exact`] where
+    /// that method succeeds, but differs in the handling of errors:
+    ///
+    /// -   In debug builds the method must panic on error
+    /// -   In release builds the method may return a different value so long as
+    ///     the behaviour is well defined. This allows implementations to
+    ///     optimize to [`as` numeric casts].
+    ///
+    /// [`as` numeric casts]: https://doc.rust-lang.org/reference/expressions/operator-expr.html#r-expr.as.numeric
+    #[inline]
+    fn conv_exact(s: S) -> Self {
+        Self::try_conv_exact(s).unwrap_or_else(|e| {
+            panic!("ConvExact::conv_exact(_) failed: {}", e);
+        })
+    }
+}
+
 /// Like [`From`], but supports fallible conversions
 ///
 /// This trait is similar to [`From`], but limited to numeric conversions:

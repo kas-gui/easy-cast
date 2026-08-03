@@ -30,11 +30,11 @@ use core::convert::Infallible;
 /// easy_cast::impl_via_from!(MyInt: i32, i64);
 /// ```
 ///
-/// [`ConvExact`]: crate::generic::ConvExact
+/// [`ConvExact`]: crate::ConvExact
 #[macro_export]
 macro_rules! impl_via_from {
     ($x:ty: $y:ty) => {
-        impl $crate::generic::ConvExact<$x> for $y {
+        impl $crate::ConvExact<$x> for $y {
             type Error = ::core::convert::Infallible;
 
             #[inline]
@@ -263,11 +263,11 @@ where
 /// easy_cast::impl_via_trivial!(MyInt);
 /// ```
 ///
-/// [`ConvExact`]: crate::generic::ConvExact
+/// [`ConvExact`]: crate::ConvExact
 #[macro_export]
 macro_rules! impl_via_trivial {
     ($x:ty) => {
-        impl $crate::generic::ConvExact<$x> for $x {
+        impl $crate::ConvExact<$x> for $x {
             type Error = ::core::convert::Infallible;
 
             #[inline]
