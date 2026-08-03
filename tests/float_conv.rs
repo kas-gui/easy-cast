@@ -1,5 +1,3 @@
-#![cfg(any(feature = "std", feature = "libm"))]
-
 use easy_cast::{RangeError, traits::*};
 
 #[test]

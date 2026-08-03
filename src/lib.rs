@@ -16,7 +16,7 @@
 //!     (rounding mode is implementation-defined just like `as`)
 //! -   Use [`ConvTo`] and [`CastTo`] with an explicit rounding mode
 //!     ([`Trunc`], [`Nearest`], [`Floor`], [`Ceil`]) for conversions with a
-//!     specified rounding mode (requires `std` or `libm` feature)
+//!     specified rounding mode
 //!
 //! ### Error handling
 //!
