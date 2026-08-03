@@ -87,14 +87,19 @@ fn int_to_float_nearest() {
 
 #[test]
 fn int_to_float_overflow() {
-    assert_eq!(
-        f32::try_conv(0xFFFFFF00_00000000_00000000_00000000_u128),
-        Ok(f32::MAX)
-    );
-    assert_eq!(
-        f32::try_conv(0xFFFFFF80_00000000_00000000_00000000_u128),
-        Ok(f32::INFINITY)
-    );
+    // f32::MAX as u128
+    const MAX: u128 = 0xFFFFFF00_00000000_00000000_00000000_u128;
+    // The maximum value approximating to f32::MAX
+    const MAX_APPROX: u128 = 0xFFFFFF7F_FFFFFFFF_FFFFFFFF_FFFFFFFF_u128;
+
+    assert_eq!(f32::try_conv(MAX), Ok(f32::MAX));
+    assert_eq!(f32::try_conv(MAX + 1), Err(Error::Inexact));
+    assert_eq!(f32::try_conv(MAX_APPROX + 1), Ok(f32::INFINITY));
+
+    assert_eq!(f32::try_conv_approx(MAX), Ok(f32::MAX));
+    assert_eq!(f32::try_conv_approx(MAX_APPROX), Ok(f32::MAX));
+    assert_eq!(f32::try_conv_approx(MAX_APPROX + 1), Ok(f32::INFINITY));
+    assert_eq!(f32::try_conv_approx(u128::MAX), Ok(f32::INFINITY));
 }
 
 #[test]
