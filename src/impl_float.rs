@@ -5,8 +5,7 @@
 
 //! Floating-point impls
 
-use crate::generic::Convert;
-use crate::{Approx, ConvExact, Error, Exact, RangeError};
+use crate::{Approx, ConvExact, ConvTo, Error, Exact, RangeError};
 #[cfg(any(feature = "std", feature = "libm"))]
 use crate::{Ceil, Floor, Nearest, Trunc};
 
@@ -36,10 +35,10 @@ impl ConvExact<f32> for f64 {
     }
 }
 
-impl Convert<f64, Approx> for f32 {
+impl ConvTo<f64, Approx> for f32 {
     type Error = RangeError;
 
-    fn try_convert(_: Approx, x: f64) -> Result<f32, Self::Error> {
+    fn try_conv_to(_: Approx, x: f64) -> Result<f32, Self::Error> {
         match x.is_nan() {
             false => Ok(x as f32),
             true => Err(RangeError),
@@ -47,7 +46,7 @@ impl Convert<f64, Approx> for f32 {
     }
 
     #[inline]
-    fn convert(_: Approx, x: f64) -> f32 {
+    fn conv_to(_: Approx, x: f64) -> f32 {
         fn trap_nan(x: f64) {
             if x.is_nan() {
                 panic!("cast float-to-float: NaN")
@@ -62,10 +61,10 @@ impl Convert<f64, Approx> for f32 {
     }
 }
 
-impl Convert<f64, Exact> for f32 {
+impl ConvTo<f64, Exact> for f32 {
     type Error = Error;
 
-    fn try_convert(_: Exact, x: f64) -> Result<f32, Self::Error> {
+    fn try_conv_to(_: Exact, x: f64) -> Result<f32, Self::Error> {
         match x.is_nan() {
             false => {
                 let y = x as f32;
@@ -114,11 +113,11 @@ impl FloatRound for f64 {
 #[cfg(any(feature = "std", feature = "libm"))]
 macro_rules! impl_float {
     ($x:ty: $y:tt) => {
-        impl Convert<$x, Trunc> for $y {
+        impl ConvTo<$x, Trunc> for $y {
             type Error = RangeError;
 
             #[inline]
-            fn try_convert(_: Trunc, x: $x) -> Result<Self, RangeError> {
+            fn try_conv_to(_: Trunc, x: $x) -> Result<Self, RangeError> {
                 // Tested: these limits work for $x=f32 and all $y except u128
                 const LBOUND: $x = $y::MIN as $x - 1.0;
                 const UBOUND: $x = $y::MAX as $x + 1.0;
@@ -130,9 +129,9 @@ macro_rules! impl_float {
             }
 
             #[inline]
-            fn convert(_: Trunc, x: $x) -> Self {
+            fn conv_to(_: Trunc, x: $x) -> Self {
                 if cfg!(any(debug_assertions, feature = "assert_float")) {
-                    <$y>::try_convert(Trunc, x).unwrap_or_else(|_| {
+                    <$y>::try_conv_to(Trunc, x).unwrap_or_else(|_| {
                         panic!(
                             "cast x: {} to {} (trunc): range error for x = {}",
                             stringify!($x), stringify!($y), x
@@ -144,11 +143,11 @@ macro_rules! impl_float {
             }
         }
 
-        impl Convert<$x, Nearest> for $y {
+        impl ConvTo<$x, Nearest> for $y {
             type Error = RangeError;
 
             #[inline]
-            fn try_convert(_: Nearest, x: $x) -> Result<Self, RangeError> {
+            fn try_conv_to(_: Nearest, x: $x) -> Result<Self, RangeError> {
                 // Tested: these limits work for $x=f32 and all $y except u128
                 const LBOUND: $x = $y::MIN as $x;
                 const UBOUND: $x = $y::MAX as $x + 1.0;
@@ -161,9 +160,9 @@ macro_rules! impl_float {
             }
 
             #[inline]
-            fn convert(_: Nearest, x: $x) -> Self {
+            fn conv_to(_: Nearest, x: $x) -> Self {
                 if cfg!(any(debug_assertions, feature = "assert_float")) {
-                    <$y>::try_convert(Nearest, x).unwrap_or_else(|_| {
+                    <$y>::try_conv_to(Nearest, x).unwrap_or_else(|_| {
                         panic!(
                             "cast x: {} to {} (nearest): range error for x = {}",
                             stringify!($x), stringify!($y), x
@@ -175,11 +174,11 @@ macro_rules! impl_float {
             }
         }
 
-        impl Convert<$x, Floor> for $y {
+        impl ConvTo<$x, Floor> for $y {
             type Error = RangeError;
 
             #[inline]
-            fn try_convert(_: Floor, x: $x) -> Result<Self, RangeError> {
+            fn try_conv_to(_: Floor, x: $x) -> Result<Self, RangeError> {
                 // Tested: these limits work for $x=f32 and all $y except u128
                 const LBOUND: $x = $y::MIN as $x;
                 const UBOUND: $x = $y::MAX as $x + 1.0;
@@ -192,9 +191,9 @@ macro_rules! impl_float {
             }
 
             #[inline]
-            fn convert(_: Floor, x: $x) -> Self {
+            fn conv_to(_: Floor, x: $x) -> Self {
                 if cfg!(any(debug_assertions, feature = "assert_float")) {
-                    <$y>::try_convert(Floor, x).unwrap_or_else(|_| {
+                    <$y>::try_conv_to(Floor, x).unwrap_or_else(|_| {
                         panic!(
                             "cast x: {} to {} (floor): range error for x = {}",
                             stringify!($x), stringify!($y), x
@@ -206,11 +205,11 @@ macro_rules! impl_float {
             }
         }
 
-        impl Convert<$x, Ceil> for $y {
+        impl ConvTo<$x, Ceil> for $y {
             type Error = RangeError;
 
             #[inline]
-            fn try_convert(_: Ceil, x: $x) -> Result<Self, RangeError> {
+            fn try_conv_to(_: Ceil, x: $x) -> Result<Self, RangeError> {
                 // Tested: these limits work for $x=f32 and all $y except u128
                 const LBOUND: $x = $y::MIN as $x;
                 const UBOUND: $x = $y::MAX as $x + 1.0;
@@ -223,9 +222,9 @@ macro_rules! impl_float {
             }
 
             #[inline]
-            fn convert(_: Ceil, x: $x) -> Self {
+            fn conv_to(_: Ceil, x: $x) -> Self {
                 if cfg!(any(debug_assertions, feature = "assert_float")) {
-                    <$y>::try_convert(Ceil, x).unwrap_or_else(|_| {
+                    <$y>::try_conv_to(Ceil, x).unwrap_or_else(|_| {
                         panic!(
                             "cast x: {} to {} (ceil): range error for x = {}",
                             stringify!($x), stringify!($y), x
@@ -237,16 +236,16 @@ macro_rules! impl_float {
             }
         }
 
-        impl Convert<$x, Approx> for $y {
+        impl ConvTo<$x, Approx> for $y {
             type Error = RangeError;
 
             #[inline]
-            fn try_convert(_: Approx, x: $x) -> Result<Self, Self::Error> {
-                Self::try_convert(Trunc, x)
+            fn try_conv_to(_: Approx, x: $x) -> Result<Self, Self::Error> {
+                Self::try_conv_to(Trunc, x)
             }
             #[inline]
-            fn convert(_: Approx, x: $x) -> Self {
-                Self::convert(Trunc, x)
+            fn conv_to(_: Approx, x: $x) -> Self {
+                Self::conv_to(Trunc, x)
             }
         }
     };
@@ -267,11 +266,11 @@ impl_float!(f64: i8, i16, i32, i64, i128, isize);
 impl_float!(f64: u8, u16, u32, u64, u128, usize);
 
 #[cfg(any(feature = "std", feature = "libm"))]
-impl Convert<f32, Trunc> for u128 {
+impl ConvTo<f32, Trunc> for u128 {
     type Error = RangeError;
 
     #[inline]
-    fn try_convert(_: Trunc, x: f32) -> Result<Self, RangeError> {
+    fn try_conv_to(_: Trunc, x: f32) -> Result<Self, RangeError> {
         // Note: f32::MAX < u128::MAX
         if x >= 0.0 && x.is_finite() {
             Ok(x as u128)
@@ -281,9 +280,9 @@ impl Convert<f32, Trunc> for u128 {
     }
 
     #[inline]
-    fn convert(_: Trunc, x: f32) -> u128 {
+    fn conv_to(_: Trunc, x: f32) -> u128 {
         if cfg!(any(debug_assertions, feature = "assert_float")) {
-            <u128>::try_convert(Trunc, x).unwrap_or_else(|_| {
+            <u128>::try_conv_to(Trunc, x).unwrap_or_else(|_| {
                 panic!(
                     "cast x: f32 to u128 (trunc/floor): range error for x = {}",
                     x
@@ -296,11 +295,11 @@ impl Convert<f32, Trunc> for u128 {
 }
 
 #[cfg(any(feature = "std", feature = "libm"))]
-impl Convert<f32, Nearest> for u128 {
+impl ConvTo<f32, Nearest> for u128 {
     type Error = RangeError;
 
     #[inline]
-    fn try_convert(_: Nearest, x: f32) -> Result<Self, RangeError> {
+    fn try_conv_to(_: Nearest, x: f32) -> Result<Self, RangeError> {
         let x = x.round();
         if x >= 0.0 && x.is_finite() {
             Ok(x as u128)
@@ -310,9 +309,9 @@ impl Convert<f32, Nearest> for u128 {
     }
 
     #[inline]
-    fn convert(_: Nearest, x: f32) -> u128 {
+    fn conv_to(_: Nearest, x: f32) -> u128 {
         if cfg!(any(debug_assertions, feature = "assert_float")) {
-            <u128>::try_convert(Nearest, x).unwrap_or_else(|_| {
+            <u128>::try_conv_to(Nearest, x).unwrap_or_else(|_| {
                 panic!("cast x: f32 to u128 (nearest): range error for x = {}", x)
             })
         } else {
@@ -322,26 +321,26 @@ impl Convert<f32, Nearest> for u128 {
 }
 
 #[cfg(any(feature = "std", feature = "libm"))]
-impl Convert<f32, Floor> for u128 {
+impl ConvTo<f32, Floor> for u128 {
     type Error = RangeError;
 
     #[inline]
-    fn try_convert(_: Floor, x: f32) -> Result<Self, RangeError> {
-        Self::try_convert(Trunc, x)
+    fn try_conv_to(_: Floor, x: f32) -> Result<Self, RangeError> {
+        Self::try_conv_to(Trunc, x)
     }
 
     #[inline]
-    fn convert(_: Floor, x: f32) -> u128 {
-        Self::convert(Trunc, x)
+    fn conv_to(_: Floor, x: f32) -> u128 {
+        Self::conv_to(Trunc, x)
     }
 }
 
 #[cfg(any(feature = "std", feature = "libm"))]
-impl Convert<f32, Ceil> for u128 {
+impl ConvTo<f32, Ceil> for u128 {
     type Error = RangeError;
 
     #[inline]
-    fn try_convert(_: Ceil, x: f32) -> Result<Self, RangeError> {
+    fn try_conv_to(_: Ceil, x: f32) -> Result<Self, RangeError> {
         let x = x.ceil();
         if x >= 0.0 && x.is_finite() {
             Ok(x as u128)
@@ -351,9 +350,9 @@ impl Convert<f32, Ceil> for u128 {
     }
 
     #[inline]
-    fn convert(_: Ceil, x: f32) -> u128 {
+    fn conv_to(_: Ceil, x: f32) -> u128 {
         if cfg!(any(debug_assertions, feature = "assert_float")) {
-            u128::try_convert(Ceil, x)
+            u128::try_conv_to(Ceil, x)
                 .unwrap_or_else(|_| panic!("cast x: f32 to u128 (ceil): range error for x = {}", x))
         } else {
             x.ceil() as u128
@@ -362,15 +361,15 @@ impl Convert<f32, Ceil> for u128 {
 }
 
 #[cfg(any(feature = "std", feature = "libm"))]
-impl Convert<f32, Approx> for u128 {
+impl ConvTo<f32, Approx> for u128 {
     type Error = RangeError;
 
     #[inline]
-    fn try_convert(_: Approx, x: f32) -> Result<Self, Self::Error> {
-        Self::try_convert(Trunc, x)
+    fn try_conv_to(_: Approx, x: f32) -> Result<Self, Self::Error> {
+        Self::try_conv_to(Trunc, x)
     }
     #[inline]
-    fn convert(_: Approx, x: f32) -> Self {
-        Self::convert(Trunc, x)
+    fn conv_to(_: Approx, x: f32) -> Self {
+        Self::conv_to(Trunc, x)
     }
 }

@@ -62,19 +62,11 @@
 //! }
 //! ```
 //!
-//! ## Generic traits
+//! ## Implementing traits
 //!
-//! The [`generic`] traits support abstracting over rounding modes and tighter
-//! bounds on the `Error` type. Additionally, various blanket implementations
-//! supporting e.g. arrays, tuples and range types are implemented over these
-//! traits.
-//!
-//! It is recommended to implement the traits in [`generic`] instead of those in
-//! [`traits`] when supporting additional types.
-//!
-//! It is recommended to use the [`traits`] traits to convert values. In
-//! implementations of generic traits, [`ConvTo`] and [`CastTo`] are
-//! usually the most appropriate traits to use.
+//! It is recommended to implement conversions which cannot be inexact using
+//! [`ConvExact`] and other conversions using [`ConvTo`]. The latter trait may
+//! be implemented for multiple [`Rounding`] modes.
 //!
 //! [`TryFrom`]: core::convert::TryFrom
 //! [`TryInto`]: core::convert::TryInto
@@ -90,8 +82,6 @@ mod impl_num;
 mod impl_ops;
 mod impl_range;
 mod rounding;
-
-pub mod generic;
 
 pub mod traits;
 

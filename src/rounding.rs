@@ -5,8 +5,7 @@
 
 //! Rounding modes
 
-use crate::generic::Convert;
-use crate::{ConvExact, Error, RangeError};
+use crate::{ConvExact, ConvTo, Error, RangeError};
 use core::convert::Infallible;
 
 /// Rounding mode
@@ -103,90 +102,90 @@ impl Rounding for Ceil {
     type MaximumError = RangeError;
 }
 
-impl<S, T: ConvExact<S>> Convert<S, Exact> for T {
+impl<S, T: ConvExact<S>> ConvTo<S, Exact> for T {
     type Error = T::Error;
 
     #[inline]
-    fn try_convert(_: Exact, s: S) -> Result<Self, Self::Error> {
+    fn try_conv_to(_: Exact, s: S) -> Result<Self, Self::Error> {
         T::try_conv_exact(s)
     }
 
     #[inline]
-    fn convert(_: Exact, s: S) -> Self {
+    fn conv_to(_: Exact, s: S) -> Self {
         T::conv_exact(s)
     }
 }
 
-impl<S, T: ConvExact<S>> Convert<S, Approx> for T {
+impl<S, T: ConvExact<S>> ConvTo<S, Approx> for T {
     type Error = T::Error;
 
     #[inline]
-    fn try_convert(_: Approx, s: S) -> Result<Self, Self::Error> {
+    fn try_conv_to(_: Approx, s: S) -> Result<Self, Self::Error> {
         T::try_conv_exact(s)
     }
 
     #[inline]
-    fn convert(_: Approx, s: S) -> Self {
-        T::conv_exact(s)
-    }
-}
-
-#[cfg(any(feature = "std", feature = "libm"))]
-impl<S, T: ConvExact<S>> Convert<S, Trunc> for T {
-    type Error = T::Error;
-
-    #[inline]
-    fn try_convert(_: Trunc, s: S) -> Result<Self, Self::Error> {
-        T::try_conv_exact(s)
-    }
-
-    #[inline]
-    fn convert(_: Trunc, s: S) -> Self {
+    fn conv_to(_: Approx, s: S) -> Self {
         T::conv_exact(s)
     }
 }
 
 #[cfg(any(feature = "std", feature = "libm"))]
-impl<S, T: ConvExact<S>> Convert<S, Nearest> for T {
+impl<S, T: ConvExact<S>> ConvTo<S, Trunc> for T {
     type Error = T::Error;
 
     #[inline]
-    fn try_convert(_: Nearest, s: S) -> Result<Self, Self::Error> {
+    fn try_conv_to(_: Trunc, s: S) -> Result<Self, Self::Error> {
         T::try_conv_exact(s)
     }
 
     #[inline]
-    fn convert(_: Nearest, s: S) -> Self {
+    fn conv_to(_: Trunc, s: S) -> Self {
         T::conv_exact(s)
     }
 }
 
 #[cfg(any(feature = "std", feature = "libm"))]
-impl<S, T: ConvExact<S>> Convert<S, Floor> for T {
+impl<S, T: ConvExact<S>> ConvTo<S, Nearest> for T {
     type Error = T::Error;
 
     #[inline]
-    fn try_convert(_: Floor, s: S) -> Result<Self, Self::Error> {
+    fn try_conv_to(_: Nearest, s: S) -> Result<Self, Self::Error> {
         T::try_conv_exact(s)
     }
 
     #[inline]
-    fn convert(_: Floor, s: S) -> Self {
+    fn conv_to(_: Nearest, s: S) -> Self {
         T::conv_exact(s)
     }
 }
 
 #[cfg(any(feature = "std", feature = "libm"))]
-impl<S, T: ConvExact<S>> Convert<S, Ceil> for T {
+impl<S, T: ConvExact<S>> ConvTo<S, Floor> for T {
     type Error = T::Error;
 
     #[inline]
-    fn try_convert(_: Ceil, s: S) -> Result<Self, Self::Error> {
+    fn try_conv_to(_: Floor, s: S) -> Result<Self, Self::Error> {
         T::try_conv_exact(s)
     }
 
     #[inline]
-    fn convert(_: Ceil, s: S) -> Self {
+    fn conv_to(_: Floor, s: S) -> Self {
+        T::conv_exact(s)
+    }
+}
+
+#[cfg(any(feature = "std", feature = "libm"))]
+impl<S, T: ConvExact<S>> ConvTo<S, Ceil> for T {
+    type Error = T::Error;
+
+    #[inline]
+    fn try_conv_to(_: Ceil, s: S) -> Result<Self, Self::Error> {
+        T::try_conv_exact(s)
+    }
+
+    #[inline]
+    fn conv_to(_: Ceil, s: S) -> Self {
         T::conv_exact(s)
     }
 }

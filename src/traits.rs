@@ -15,14 +15,12 @@
 //! # }
 //! ```
 
-use crate::generic::Convert;
-use crate::{Approx, Exact, Rounding};
-use crate::{Error, RangeError};
+use crate::{Approx, Error, Exact, RangeError, Rounding};
 
 /// Generic "from" conversion trait for exact conversions
 ///
-/// Implement this trait instead of [`Convert`] where conversions can never be
-/// inexact. This allows impls of `Convert<S, R>` to be derived for all
+/// Implement this trait instead of [`ConvTo`] where conversions can never be
+/// inexact. This allows impls of `ConvTo<S, R>` to be derived for all
 /// `R: Rounding` modes.
 pub trait ConvExact<S>: Sized {
     /// Conversion error type
@@ -71,6 +69,9 @@ pub trait ConvExact<S>: Sized {
 ///
 /// The sister-trait [`Cast`] supports "into" style usage. The more generic
 /// trait [`ConvTo`] allows control over the rounding mode.
+///
+/// This trait should not be implemented directly; instead implement either
+/// [`ConvExact`] or [`ConvTo`] using the [`Exact`] rounding mode.
 pub trait Conv<S>: Sized {
     /// Conversion error type
     type Error: Into<Error> + core::error::Error;
@@ -105,17 +106,17 @@ pub trait Conv<S>: Sized {
     }
 }
 
-impl<S, T: Convert<S, Exact>> Conv<S> for T {
+impl<S, T: ConvTo<S, Exact>> Conv<S> for T {
     type Error = T::Error;
 
     #[inline]
     fn try_conv(s: S) -> Result<Self, Self::Error> {
-        T::try_convert(Exact, s)
+        T::try_conv_to(Exact, s)
     }
 
     #[inline]
     fn conv(s: S) -> Self {
-        T::convert(Exact, s)
+        T::conv_to(Exact, s)
     }
 }
 
@@ -179,8 +180,8 @@ impl<S, T: Conv<S>> Cast<T> for S {
 ///
 /// The sister-trait [`CastApprox`] supports "into" style usage.
 ///
-/// It is recommended not to implement this trait directly but to instead
-/// implement one of the [`generic`](crate::generic) traits.
+/// This trait should not be implemented directly; instead implement [`ConvTo`]
+/// using the [`Approx`] rounding mode.
 ///
 /// [`as` numeric casts]: https://doc.rust-lang.org/reference/expressions/operator-expr.html#r-expr.as.numeric
 pub trait ConvApprox<S>: Sized {
@@ -223,17 +224,17 @@ pub trait ConvApprox<S>: Sized {
     }
 }
 
-impl<S, T: Convert<S, Approx>> ConvApprox<S> for T {
+impl<S, T: ConvTo<S, Approx>> ConvApprox<S> for T {
     type Error = T::Error;
 
     #[inline]
     fn try_conv_approx(s: S) -> Result<Self, Self::Error> {
-        T::try_convert(Approx, s)
+        T::try_conv_to(Approx, s)
     }
 
     #[inline]
     fn conv_approx(s: S) -> Self {
-        T::convert(Approx, s)
+        T::conv_to(Approx, s)
     }
 }
 
@@ -319,18 +320,8 @@ pub trait ConvTo<S, R: Rounding>: Sized {
     ///     optimize to [`as` numeric casts].
     ///
     /// [`as` numeric casts]: https://doc.rust-lang.org/reference/expressions/operator-expr.html#r-expr.as.numeric
-    fn conv_to(mode: R, s: S) -> Self;
-}
-
-impl<R: Rounding, S, T: Convert<S, R>> ConvTo<S, R> for T {
-    type Error = T::Error;
-
-    fn try_conv_to(mode: R, s: S) -> Result<Self, Self::Error> {
-        T::try_convert(mode, s)
-    }
-
     fn conv_to(mode: R, s: S) -> Self {
-        T::convert(mode, s)
+        Self::try_conv_to(mode, s).unwrap_or_else(|e| panic!("ConvTo::conv_to(_) failed: {e}"))
     }
 }
 
@@ -371,14 +362,14 @@ pub trait CastTo<T, R: Rounding>: Sized {
     fn cast_to(self, mode: R) -> T;
 }
 
-impl<R: Rounding, S, T: Convert<S, R>> CastTo<T, R> for S {
+impl<R: Rounding, S, T: ConvTo<S, R>> CastTo<T, R> for S {
     type Error = T::Error;
 
     fn try_cast_to(self, mode: R) -> Result<T, Self::Error> {
-        T::try_convert(mode, self)
+        T::try_conv_to(mode, self)
     }
 
     fn cast_to(self, mode: R) -> T {
-        T::convert(mode, self)
+        T::conv_to(mode, self)
     }
 }

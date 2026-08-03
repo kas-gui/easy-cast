@@ -7,8 +7,7 @@
 //!
 //! See also `impl_basic` which inherits integer impls from From.
 
-use crate::generic::Convert;
-use crate::{Approx, CastTo, ConvExact, Error, Exact, RangeError};
+use crate::{Approx, CastTo, ConvExact, ConvTo, Error, Exact, RangeError};
 use core::convert::Infallible;
 use core::mem::size_of;
 
@@ -240,11 +239,11 @@ impl_int_generic!(usize: u8, u16, u32, u64, u128);
 
 macro_rules! impl_via_digits_check {
     ($x:ty: $y:tt) => {
-        impl Convert<$x, Exact> for $y {
+        impl ConvTo<$x, Exact> for $y {
             type Error = Error;
 
             #[inline]
-            fn convert(_: Exact, x: $x) -> Self {
+            fn conv_to(_: Exact, x: $x) -> Self {
                 if cfg!(any(debug_assertions, feature = "assert_digits")) {
                     x.try_cast_to(Exact).unwrap_or_else(|_| {
                         panic!(
@@ -257,7 +256,7 @@ macro_rules! impl_via_digits_check {
                 }
             }
             #[inline]
-            fn try_convert(_: Exact, x: $x) -> Result<Self, Error> {
+            fn try_conv_to(_: Exact, x: $x) -> Result<Self, Error> {
                 let src_ty_bits = (size_of::<$x>() * 8) as u32;
                 let src_digits = src_ty_bits.saturating_sub(x.leading_zeros() + x.trailing_zeros());
                 let dst_digits = $y::MANTISSA_DIGITS;
@@ -277,11 +276,11 @@ macro_rules! impl_via_digits_check {
 
 macro_rules! impl_via_digits_check_signed {
     ($x:ty: $y:tt) => {
-        impl Convert<$x, Exact> for $y {
+        impl ConvTo<$x, Exact> for $y {
             type Error = Error;
 
             #[inline]
-            fn convert(_: Exact, x: $x) -> Self {
+            fn conv_to(_: Exact, x: $x) -> Self {
                 if cfg!(any(debug_assertions, feature = "assert_digits")) {
                     x.try_cast_to(Exact).unwrap_or_else(|_| {
                         panic!(
@@ -294,7 +293,7 @@ macro_rules! impl_via_digits_check_signed {
                 }
             }
             #[inline]
-            fn try_convert(_: Exact, x: $x) -> Result<Self, Error> {
+            fn try_conv_to(_: Exact, x: $x) -> Result<Self, Error> {
                 let src_ty_bits = (size_of::<$x>() * 8) as u32;
                 let src_digits = x.checked_abs()
                     .map(|y| src_ty_bits.saturating_sub(y.leading_zeros() + y.trailing_zeros()))
@@ -324,11 +323,11 @@ impl_via_digits_check_signed!(i64: f32, f64);
 impl_via_digits_check_signed!(i128: f32, f64);
 impl_via_digits_check_signed!(isize: f32, f64);
 
-impl Convert<u128, Exact> for f32 {
+impl ConvTo<u128, Exact> for f32 {
     type Error = Error;
 
     #[inline]
-    fn convert(_: Exact, x: u128) -> Self {
+    fn conv_to(_: Exact, x: u128) -> Self {
         if cfg!(any(debug_assertions, feature = "assert_digits")) {
             x.try_cast_to(Exact)
                 .unwrap_or_else(|_| panic!("cast x: u128 to f32: inexact for x = {x}"))
@@ -337,7 +336,7 @@ impl Convert<u128, Exact> for f32 {
         }
     }
     #[inline]
-    fn try_convert(_: Exact, x: u128) -> Result<Self, Error> {
+    fn try_conv_to(_: Exact, x: u128) -> Result<Self, Error> {
         if x < 0xffff_ff80_0000_0000_0000_0000_0000_0000_u128 {
             let src_digits = 128u32.saturating_sub(x.leading_zeros() + x.trailing_zeros());
             if src_digits <= f32::MANTISSA_DIGITS {
@@ -353,30 +352,30 @@ impl Convert<u128, Exact> for f32 {
 
 macro_rules! impl_approx {
     ($x:ty: $y:tt) => {
-        impl Convert<$x, Approx> for $y {
+        impl ConvTo<$x, Approx> for $y {
             type Error = Infallible;
 
             #[inline]
-            fn convert(_: Approx, x: $x) -> Self {
+            fn conv_to(_: Approx, x: $x) -> Self {
                 x as $y
             }
             #[inline]
-            fn try_convert(_: Approx, x: $x) -> Result<Self, Infallible> {
+            fn try_conv_to(_: Approx, x: $x) -> Result<Self, Infallible> {
                 Ok(x as $y)
             }
         }
 
         // Note: `as` numeric int-to-float casts round to nearest
         #[cfg(any(feature = "std", feature = "libm"))]
-        impl Convert<$x, crate::Nearest> for $y {
+        impl ConvTo<$x, crate::Nearest> for $y {
             type Error = Infallible;
 
             #[inline]
-            fn convert(_: crate::Nearest, x: $x) -> Self {
+            fn conv_to(_: crate::Nearest, x: $x) -> Self {
                 x as $y
             }
             #[inline]
-            fn try_convert(_: crate::Nearest, x: $x) -> Result<Self, Infallible> {
+            fn try_conv_to(_: crate::Nearest, x: $x) -> Result<Self, Infallible> {
                 Ok(x as $y)
             }
         }

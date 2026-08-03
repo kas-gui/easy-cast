@@ -5,7 +5,7 @@
 
 //! Basic impls
 
-use crate::{Rounding, generic::Convert};
+use crate::{ConvTo, Rounding};
 use core::convert::Infallible;
 
 /// Implement [`ConvExact`] infallibly over a [`From`] implementation
@@ -65,87 +65,85 @@ impl_via_from!(u64: i128, u128);
 
 // TODO(unsize): remove T: Copy + Default bound
 // TODO(specialization): implement ConvApprox for arrays and tuples
-impl<R: Rounding, S, T: Convert<S, R> + Copy + Default, const N: usize> Convert<[S; N], R>
+impl<R: Rounding, S, T: ConvTo<S, R> + Copy + Default, const N: usize> ConvTo<[S; N], R>
     for [T; N]
 {
     type Error = T::Error;
 
     #[inline]
-    fn try_convert(mode: R, ss: [S; N]) -> Result<Self, Self::Error> {
+    fn try_conv_to(mode: R, ss: [S; N]) -> Result<Self, Self::Error> {
         let mut tt = [T::default(); N];
         for (s, t) in IntoIterator::into_iter(ss).zip(tt.iter_mut()) {
-            *t = T::try_convert(mode, s)?;
+            *t = T::try_conv_to(mode, s)?;
         }
         Ok(tt)
     }
     #[inline]
-    fn convert(mode: R, ss: [S; N]) -> Self {
+    fn conv_to(mode: R, ss: [S; N]) -> Self {
         let mut tt = [T::default(); N];
         for (s, t) in IntoIterator::into_iter(ss).zip(tt.iter_mut()) {
-            *t = T::convert(mode, s);
+            *t = T::conv_to(mode, s);
         }
         tt
     }
 }
 
-impl<R: Rounding> Convert<(), R> for () {
+impl<R: Rounding> ConvTo<(), R> for () {
     type Error = Infallible;
 
     #[inline]
-    fn try_convert(_: R, _: ()) -> Result<Self, Self::Error> {
+    fn try_conv_to(_: R, _: ()) -> Result<Self, Self::Error> {
         Ok(())
     }
     #[inline]
-    fn convert(_: R, _: ()) -> Self {}
+    fn conv_to(_: R, _: ()) -> Self {}
 }
-impl<R: Rounding, S0, T0: Convert<S0, R>> Convert<(S0,), R> for (T0,) {
+impl<R: Rounding, S0, T0: ConvTo<S0, R>> ConvTo<(S0,), R> for (T0,) {
     type Error = T0::Error;
 
     #[inline]
-    fn try_convert(mode: R, ss: (S0,)) -> Result<Self, Self::Error> {
-        Ok((T0::try_convert(mode, ss.0)?,))
+    fn try_conv_to(mode: R, ss: (S0,)) -> Result<Self, Self::Error> {
+        Ok((T0::try_conv_to(mode, ss.0)?,))
     }
     #[inline]
-    fn convert(mode: R, ss: (S0,)) -> Self {
-        (T0::convert(mode, ss.0),)
+    fn conv_to(mode: R, ss: (S0,)) -> Self {
+        (T0::conv_to(mode, ss.0),)
     }
 }
-impl<R: Rounding, S0, S1, T0: Convert<S0, R>, T1: Convert<S1, R>> Convert<(S0, S1), R>
-    for (T0, T1)
+impl<R: Rounding, S0, S1, T0: ConvTo<S0, R>, T1: ConvTo<S1, R>> ConvTo<(S0, S1), R> for (T0, T1) {
+    type Error = R::MaximumError;
+
+    #[inline]
+    fn try_conv_to(mode: R, ss: (S0, S1)) -> Result<Self, Self::Error> {
+        Ok((
+            T0::try_conv_to(mode, ss.0).map_err(Into::into)?,
+            T1::try_conv_to(mode, ss.1).map_err(Into::into)?,
+        ))
+    }
+    #[inline]
+    fn conv_to(mode: R, ss: (S0, S1)) -> Self {
+        (T0::conv_to(mode, ss.0), T1::conv_to(mode, ss.1))
+    }
+}
+impl<R: Rounding, S0, S1, S2, T0: ConvTo<S0, R>, T1: ConvTo<S1, R>, T2: ConvTo<S2, R>>
+    ConvTo<(S0, S1, S2), R> for (T0, T1, T2)
 {
     type Error = R::MaximumError;
 
     #[inline]
-    fn try_convert(mode: R, ss: (S0, S1)) -> Result<Self, Self::Error> {
+    fn try_conv_to(mode: R, ss: (S0, S1, S2)) -> Result<Self, Self::Error> {
         Ok((
-            T0::try_convert(mode, ss.0).map_err(Into::into)?,
-            T1::try_convert(mode, ss.1).map_err(Into::into)?,
+            T0::try_conv_to(mode, ss.0).map_err(Into::into)?,
+            T1::try_conv_to(mode, ss.1).map_err(Into::into)?,
+            T2::try_conv_to(mode, ss.2).map_err(Into::into)?,
         ))
     }
     #[inline]
-    fn convert(mode: R, ss: (S0, S1)) -> Self {
-        (T0::convert(mode, ss.0), T1::convert(mode, ss.1))
-    }
-}
-impl<R: Rounding, S0, S1, S2, T0: Convert<S0, R>, T1: Convert<S1, R>, T2: Convert<S2, R>>
-    Convert<(S0, S1, S2), R> for (T0, T1, T2)
-{
-    type Error = R::MaximumError;
-
-    #[inline]
-    fn try_convert(mode: R, ss: (S0, S1, S2)) -> Result<Self, Self::Error> {
-        Ok((
-            T0::try_convert(mode, ss.0).map_err(Into::into)?,
-            T1::try_convert(mode, ss.1).map_err(Into::into)?,
-            T2::try_convert(mode, ss.2).map_err(Into::into)?,
-        ))
-    }
-    #[inline]
-    fn convert(mode: R, ss: (S0, S1, S2)) -> Self {
+    fn conv_to(mode: R, ss: (S0, S1, S2)) -> Self {
         (
-            T0::convert(mode, ss.0),
-            T1::convert(mode, ss.1),
-            T2::convert(mode, ss.2),
+            T0::conv_to(mode, ss.0),
+            T1::conv_to(mode, ss.1),
+            T2::conv_to(mode, ss.2),
         )
     }
 }
@@ -155,30 +153,30 @@ impl<
     S1,
     S2,
     S3,
-    T0: Convert<S0, R>,
-    T1: Convert<S1, R>,
-    T2: Convert<S2, R>,
-    T3: Convert<S3, R>,
-> Convert<(S0, S1, S2, S3), R> for (T0, T1, T2, T3)
+    T0: ConvTo<S0, R>,
+    T1: ConvTo<S1, R>,
+    T2: ConvTo<S2, R>,
+    T3: ConvTo<S3, R>,
+> ConvTo<(S0, S1, S2, S3), R> for (T0, T1, T2, T3)
 {
     type Error = R::MaximumError;
 
     #[inline]
-    fn try_convert(mode: R, ss: (S0, S1, S2, S3)) -> Result<Self, Self::Error> {
+    fn try_conv_to(mode: R, ss: (S0, S1, S2, S3)) -> Result<Self, Self::Error> {
         Ok((
-            T0::try_convert(mode, ss.0).map_err(Into::into)?,
-            T1::try_convert(mode, ss.1).map_err(Into::into)?,
-            T2::try_convert(mode, ss.2).map_err(Into::into)?,
-            T3::try_convert(mode, ss.3).map_err(Into::into)?,
+            T0::try_conv_to(mode, ss.0).map_err(Into::into)?,
+            T1::try_conv_to(mode, ss.1).map_err(Into::into)?,
+            T2::try_conv_to(mode, ss.2).map_err(Into::into)?,
+            T3::try_conv_to(mode, ss.3).map_err(Into::into)?,
         ))
     }
     #[inline]
-    fn convert(mode: R, ss: (S0, S1, S2, S3)) -> Self {
+    fn conv_to(mode: R, ss: (S0, S1, S2, S3)) -> Self {
         (
-            T0::convert(mode, ss.0),
-            T1::convert(mode, ss.1),
-            T2::convert(mode, ss.2),
-            T3::convert(mode, ss.3),
+            T0::conv_to(mode, ss.0),
+            T1::conv_to(mode, ss.1),
+            T2::conv_to(mode, ss.2),
+            T3::conv_to(mode, ss.3),
         )
     }
 }
@@ -189,68 +187,68 @@ impl<
     S2,
     S3,
     S4,
-    T0: Convert<S0, R>,
-    T1: Convert<S1, R>,
-    T2: Convert<S2, R>,
-    T3: Convert<S3, R>,
-    T4: Convert<S4, R>,
-> Convert<(S0, S1, S2, S3, S4), R> for (T0, T1, T2, T3, T4)
+    T0: ConvTo<S0, R>,
+    T1: ConvTo<S1, R>,
+    T2: ConvTo<S2, R>,
+    T3: ConvTo<S3, R>,
+    T4: ConvTo<S4, R>,
+> ConvTo<(S0, S1, S2, S3, S4), R> for (T0, T1, T2, T3, T4)
 {
     type Error = R::MaximumError;
 
     #[inline]
-    fn try_convert(mode: R, ss: (S0, S1, S2, S3, S4)) -> Result<Self, Self::Error> {
+    fn try_conv_to(mode: R, ss: (S0, S1, S2, S3, S4)) -> Result<Self, Self::Error> {
         Ok((
-            T0::try_convert(mode, ss.0).map_err(Into::into)?,
-            T1::try_convert(mode, ss.1).map_err(Into::into)?,
-            T2::try_convert(mode, ss.2).map_err(Into::into)?,
-            T3::try_convert(mode, ss.3).map_err(Into::into)?,
-            T4::try_convert(mode, ss.4).map_err(Into::into)?,
+            T0::try_conv_to(mode, ss.0).map_err(Into::into)?,
+            T1::try_conv_to(mode, ss.1).map_err(Into::into)?,
+            T2::try_conv_to(mode, ss.2).map_err(Into::into)?,
+            T3::try_conv_to(mode, ss.3).map_err(Into::into)?,
+            T4::try_conv_to(mode, ss.4).map_err(Into::into)?,
         ))
     }
     #[inline]
-    fn convert(mode: R, ss: (S0, S1, S2, S3, S4)) -> Self {
+    fn conv_to(mode: R, ss: (S0, S1, S2, S3, S4)) -> Self {
         (
-            T0::convert(mode, ss.0),
-            T1::convert(mode, ss.1),
-            T2::convert(mode, ss.2),
-            T3::convert(mode, ss.3),
-            T4::convert(mode, ss.4),
+            T0::conv_to(mode, ss.0),
+            T1::conv_to(mode, ss.1),
+            T2::conv_to(mode, ss.2),
+            T3::conv_to(mode, ss.3),
+            T4::conv_to(mode, ss.4),
         )
     }
 }
 impl<R: Rounding, S0, S1, S2, S3, S4, S5, T0, T1, T2, T3, T4, T5>
-    Convert<(S0, S1, S2, S3, S4, S5), R> for (T0, T1, T2, T3, T4, T5)
+    ConvTo<(S0, S1, S2, S3, S4, S5), R> for (T0, T1, T2, T3, T4, T5)
 where
-    T0: Convert<S0, R>,
-    T1: Convert<S1, R>,
-    T2: Convert<S2, R>,
-    T3: Convert<S3, R>,
-    T4: Convert<S4, R>,
-    T5: Convert<S5, R>,
+    T0: ConvTo<S0, R>,
+    T1: ConvTo<S1, R>,
+    T2: ConvTo<S2, R>,
+    T3: ConvTo<S3, R>,
+    T4: ConvTo<S4, R>,
+    T5: ConvTo<S5, R>,
 {
     type Error = R::MaximumError;
 
     #[inline]
-    fn try_convert(mode: R, ss: (S0, S1, S2, S3, S4, S5)) -> Result<Self, Self::Error> {
+    fn try_conv_to(mode: R, ss: (S0, S1, S2, S3, S4, S5)) -> Result<Self, Self::Error> {
         Ok((
-            T0::try_convert(mode, ss.0).map_err(Into::into)?,
-            T1::try_convert(mode, ss.1).map_err(Into::into)?,
-            T2::try_convert(mode, ss.2).map_err(Into::into)?,
-            T3::try_convert(mode, ss.3).map_err(Into::into)?,
-            T4::try_convert(mode, ss.4).map_err(Into::into)?,
-            T5::try_convert(mode, ss.5).map_err(Into::into)?,
+            T0::try_conv_to(mode, ss.0).map_err(Into::into)?,
+            T1::try_conv_to(mode, ss.1).map_err(Into::into)?,
+            T2::try_conv_to(mode, ss.2).map_err(Into::into)?,
+            T3::try_conv_to(mode, ss.3).map_err(Into::into)?,
+            T4::try_conv_to(mode, ss.4).map_err(Into::into)?,
+            T5::try_conv_to(mode, ss.5).map_err(Into::into)?,
         ))
     }
     #[inline]
-    fn convert(mode: R, ss: (S0, S1, S2, S3, S4, S5)) -> Self {
+    fn conv_to(mode: R, ss: (S0, S1, S2, S3, S4, S5)) -> Self {
         (
-            T0::convert(mode, ss.0),
-            T1::convert(mode, ss.1),
-            T2::convert(mode, ss.2),
-            T3::convert(mode, ss.3),
-            T4::convert(mode, ss.4),
-            T5::convert(mode, ss.5),
+            T0::conv_to(mode, ss.0),
+            T1::conv_to(mode, ss.1),
+            T2::conv_to(mode, ss.2),
+            T3::conv_to(mode, ss.3),
+            T4::conv_to(mode, ss.4),
+            T5::conv_to(mode, ss.5),
         )
     }
 }
