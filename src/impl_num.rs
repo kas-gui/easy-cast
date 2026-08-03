@@ -5,36 +5,19 @@
 
 //! `core::num` impls.
 
-use crate::{ConvExact, RangeError};
-use core::convert::Infallible;
+use crate::{ConvExact, RangeError, impl_via_identity};
 use core::num::NonZero;
 
-macro_rules! impl_via_trivial {
-    ($x:ty) => {
-        impl ConvExact<NonZero<$x>> for NonZero<$x> {
-            type Error = Infallible;
-
-            #[inline]
-            fn conv_exact(x: NonZero<$x>) -> Self {
-                x
-            }
-            #[inline]
-            fn try_conv_exact(x: NonZero<$x>) -> Result<Self, Infallible> {
-                Ok(x)
-            }
-        }
-    };
-    ($x:ty $(, $xx:tt)* $(,)?) => {
-        impl_via_trivial!($x);
-        impl_via_trivial!($($xx),*);
+macro_rules! impl_identity {
+    ($($x:tt),*) => {
+        $(
+            impl_via_identity!(NonZero<$x>);
+        )*
     };
 }
 
-#[rustfmt::skip]
-impl_via_trivial!(
-    u8, u16, u32, u64, u128, usize,
-    i8, i16, i32, i64, i128, isize,
-);
+impl_identity!(u8, u16, u32, u64, u128, usize);
+impl_identity!(i8, i16, i32, i64, i128, isize);
 
 macro_rules! impl_nonzero {
     ($x:ty : $y:ty) => {
