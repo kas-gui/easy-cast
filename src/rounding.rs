@@ -16,11 +16,15 @@ pub trait Rounding: Copy + Default {
 
 /// Exact conversion only
 ///
-/// Successful conversions using this "rounding" mode must preserve value
+/// Successful conversions using this "rounding" mode must preserve the value
 /// exactly.
 ///
 /// Example: `2.0_f32` may convert to `2_i32`. `2.1_f32` is not convertible to
 /// `i32`.
+///
+/// Another example: `u128::MAX` (which is larger than `f32::MAX`) may not be
+/// converted to `f32` with `Exact` rounding (though with other modes it may
+/// convert to `f32::INFINITY`).
 #[derive(Clone, Copy, Debug, Default)]
 pub struct Exact;
 impl Rounding for Exact {

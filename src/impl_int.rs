@@ -345,7 +345,7 @@ impl ConvTo<u128, Exact> for f32 {
                 Err(Error::Inexact)
             }
         } else {
-            Ok(f32::INFINITY)
+            Err(Error::Range)
         }
     }
 }

@@ -94,7 +94,7 @@ fn int_to_float_overflow() {
 
     assert_eq!(f32::try_conv(MAX), Ok(f32::MAX));
     assert_eq!(f32::try_conv(MAX + 1), Err(Error::Inexact));
-    assert_eq!(f32::try_conv(MAX_APPROX + 1), Ok(f32::INFINITY));
+    assert_eq!(f32::try_conv(MAX_APPROX + 1), Err(Error::Range));
 
     assert_eq!(f32::try_conv_approx(MAX), Ok(f32::MAX));
     assert_eq!(f32::try_conv_approx(MAX_APPROX), Ok(f32::MAX));
