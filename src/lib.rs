@@ -108,8 +108,8 @@ use core::convert::Infallible;
 /// Source value lies outside of target type's range
 ///
 /// This error indicates that the input value is outside the range (domain) of
-/// the target type.
-/// It should only be used by conversions which cannot lose precision.
+/// the target type. This error type is used for both conversions where
+/// loss-of-precision is impossible and those where rounding is intended.
 #[derive(Clone, Copy, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct RangeError;
 

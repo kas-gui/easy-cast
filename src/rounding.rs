@@ -12,6 +12,14 @@ use core::convert::Infallible;
 ///
 /// Implementations of this trait are (probably) unit structs, used to mark the
 /// type of rounding used at the type level.
+///
+/// # Implied implementations
+///
+/// <code>impl&lt;S, T: [ConvExact]&lt;S&gt;&gt; [ConvTo]&lt;S, R&gt;</code> is
+/// is implemented for each rounding mode `R` provided by this crate since a
+/// more general impl over `R: Rounding` is not compatible with the wider trait
+/// design under the limitations of Rust's current trait solver. Any rounding
+/// mode added by a third-party crate should therefore provide a similar `impl`.
 pub trait Rounding: Copy + Default {
     /// Maximum error type
     type MaximumError: From<Infallible> + Into<Error> + core::error::Error;
@@ -87,8 +95,11 @@ impl Rounding for Trunc {
 
 /// Round to the nearest representable value
 ///
-/// Half-way cases are rounded away from zero. This is the rounding mode used by
-/// [`as` numeric casts] for integer to floating-point conversions.
+/// The precise behaviour of half-way cases is implementation-defined. Provided
+/// implementations follow common practices: float-to-int conversions use the
+/// `round()` inherent function which rounds away from zero while int-to-float
+/// conversions follow the behaviour of [`as` numeric casts] which rounds ties
+/// to even.
 ///
 /// Example: `2.5_f32` converts to `3_i32`, `-2.5_f32` converts to `-3_i32`.
 /// Another example: converting [`i32::MAX`] to [`f32`] rounds up to

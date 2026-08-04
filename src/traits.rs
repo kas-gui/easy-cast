@@ -9,20 +9,15 @@
 //! ```
 //! use easy_cast::{Nearest, traits::*};
 //!
-//! fn nth_root<X: CastApprox<f64>>(x: X, n: u32) {
+//! fn nth_power<X: CastApprox<f64>>(x: X, n: u32) {
 //!     let x = x.cast_approx();    // Into-like approximate conversion
-//!     if x < 0.0 && n % 2 == 0 {
-//!         println!("Imaginary values not supported!");
-//!         return;
-//!     }
 //!
-//!     let power = -i32::conv(n);  // From-like exact conversion
-//!     let root = x.powi(power);
-//!
-//!     println!("The {n}-th root of {x} is {root}");
+//!     let power = i32::conv(n);  // From-like exact conversion
+//!     let z = x.powi(power);
+//!     println!("The {n}-th power of {x} is {z}");
 //!
 //!     // TryFrom-like approximate (nearest) conversion
-//!     if let Ok(nearest) = isize::try_conv_to(Nearest, root) {
+//!     if let Ok(nearest) = isize::try_conv_to(Nearest, z) {
 //!         println!("Nearest integer: {nearest}");
 //!     }
 //! }
@@ -42,7 +37,8 @@ use core::convert::Infallible;
 ///
 /// Implement conversions which cannot lose precision using this trait.
 /// Implementations of <code>[ConvTo]&lt;S, R&gt;</code> are implied for all
-/// <code>R: [Rounding]</code> modes.
+/// <code>R: [Rounding]</code> modes provided by this crate (see
+/// [§ Implied implementations](Rounding#implied-implementations)).
 ///
 /// ### Example
 ///
