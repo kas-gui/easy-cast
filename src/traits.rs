@@ -7,27 +7,68 @@
 //!
 //! This module only contains traits, allowing relatively safe glob-import:
 //! ```
-//! use easy_cast::{Cast, ConvTo, Nearest};
+//! use easy_cast::{Nearest, traits::*};
 //!
-//! # fn main() {
-//! let x = i32::conv_to(Nearest, 8.5f32);
-//! let y: f32 = 12.cast();
-//! # }
+//! fn nth_power<X: CastApprox<f64>>(x: X, n: u32) {
+//!     let x = x.cast_approx();    // Into-like approximate conversion
+//!
+//!     let power = i32::conv(n);  // From-like exact conversion
+//!     let z = x.powi(power);
+//!     println!("The {n}-th power of {x} is {z}");
+//!
+//!     // TryFrom-like approximate (nearest) conversion
+//!     if let Ok(nearest) = isize::try_conv_to(Nearest, z) {
+//!         println!("Nearest integer: {nearest}");
+//!     }
+//! }
 //! ```
+//!
 
 use crate::{Approx, Error, Exact, RangeError, Rounding};
+#[allow(unused)]
+use core::convert::Infallible;
 
 /// Generic "from" conversion trait for exact conversions
 ///
-/// Implement this trait instead of [`ConvTo`] where conversions can never be
-/// inexact. This allows impls of `ConvTo<S, R>` to be derived for all
-/// `R: Rounding` modes.
+/// This trait is provided as an implementation aid only, hence there is no
+/// `CastExact` (in most cases you can just use [`Cast`]).
+///
+/// ## Implementing exact conversions
+///
+/// Implement conversions which cannot lose precision using this trait.
+/// Implementations of <code>[ConvTo]&lt;S, R&gt;</code> are implied for all
+/// <code>R: [Rounding]</code> modes provided by this crate (see
+/// [§ Implied implementations](Rounding#implied-implementations)).
+///
+/// ### Example
+///
+/// ```
+/// use easy_cast::ConvExact;
+/// use std::convert::Infallible;
+///
+/// struct MyBigInt { /* details */ }
+///
+/// // Support conversion from i32:
+/// impl ConvExact<i32> for MyBigInt {
+///     type Error = Infallible;
+///
+///     fn try_conv_exact(i: i32) -> Result<Self, Infallible> {
+///         Ok(todo!())
+///     }
+///
+///     // optionally also impl fn conv_exact
+/// }
+/// ```
+///
+/// Note that in practice you'll probably want to support conversion from many
+/// integer types using `macro_rules!`. Or you could "cheat" with a generic
+/// `impl<S: Into<i128>> ConvExact<S> for MyBigInt { ... }`.
+//
+// TODO(specialization): impl<T> ConvExact<T> for T
 pub trait ConvExact<S>: Sized {
     /// Conversion error type
     ///
-    /// This is either [`Infallible`] or [`RangeError`].
-    ///
-    /// [`Infallible`]: std::convert::Infallible
+    /// This should be either [`Infallible`] or [`RangeError`].
     type Error: Into<RangeError> + Into<crate::Error> + core::error::Error;
 
     /// Try converting from `S` to `Self`
@@ -35,15 +76,13 @@ pub trait ConvExact<S>: Sized {
 
     /// Convert from `S` to `Self`
     ///
-    /// This method must return the same result as [`Self::try_conv_exact`] where
-    /// that method succeeds, but differs in the handling of errors:
+    /// Use this method only when success is expected. On error, this method may
+    /// panic or may exhibit [§ Fallback behaviour](crate#fallback-behaviour).
     ///
-    /// -   In debug builds the method must panic on error
-    /// -   In release builds the method may return a different value so long as
-    ///     the behaviour is well defined. This allows implementations to
-    ///     optimize to [`as` numeric casts].
+    /// # Implementing
     ///
-    /// [`as` numeric casts]: https://doc.rust-lang.org/reference/expressions/operator-expr.html#r-expr.as.numeric
+    /// Implementing this method directly (with fallback behaviour) is optional.
+    /// In debug builds, this method must panic on error.
     #[inline]
     fn conv_exact(s: S) -> Self {
         Self::try_conv_exact(s).unwrap_or_else(|e| {
@@ -54,51 +93,32 @@ pub trait ConvExact<S>: Sized {
 
 /// Like [`From`], but supports fallible conversions
 ///
-/// This trait is similar to [`From`], but limited to numeric conversions:
-/// -   Like [`TryFrom`] (unlike [`From`]), conversions may be *fallible*.
-///     Unlike [`TryFrom`], precisely two failure modes are allowed:
-///     domain ([`Error::Range`]) and loss-of-precision ([`Error::Inexact`]).
-/// -   Like [`From`], conversions must be *lossless*. For example, `Conv<f64>`
-///     is not implemented for `f32` since `f64` carries more precision; use
-///     [`ConvApprox`] instead for cases where loss-of-precision is intended.
-/// -   Like [`From`], conversions must be *value-preserving*. For example,
+/// This trait has similarities to [`From`] and [`TryFrom`], but is limited to
+/// numeric conversions:
+/// -   Conversions may be *fallible*, like [`TryFrom`].
+/// -   Conversions must be *lossless*, like [`From`]; this corresponds to the
+///     [`Exact`] "rounding" mode. (See also [`ConvApprox`].)
+/// -   Conversions must be *value-preserving*, like [`From`]. For example,
 ///     `-1_i8` and `-1_i32` are conceptually the same value while `255_u8` is
-///     conceptually a different value, thus while `Conv<i8>` is implemented for
-///     both `i32` and `u8`, attempting to convert `-1` to `u8` will fail with
-///     [`RangeError`].
+///     conceptually a different value.
 ///
-/// The sister-trait [`Cast`] supports "into" style usage. The more generic
-/// trait [`ConvTo`] allows control over the rounding mode.
+/// The sister-trait [`Cast`] supports "into" style usage.
 ///
 /// This trait should not be implemented directly; instead implement either
-/// [`ConvExact`] or [`ConvTo`] using the [`Exact`] rounding mode.
+/// [`ConvExact`] or [`ConvTo`].
 pub trait Conv<S>: Sized {
     /// Conversion error type
+    ///
+    /// This should be one of [`Infallible`], [`RangeError`] or [`Error`].
     type Error: Into<Error> + core::error::Error;
 
     /// Try converting from `S` to `Self`
-    ///
-    /// This method must fail on inexact conversions.
     fn try_conv(s: S) -> Result<Self, Self::Error>;
 
     /// Convert from `S` to `Self`
     ///
-    /// This method must return the same result as [`Self::try_conv`] where that
-    /// method succeeds, but differs in the handling of errors:
-    ///
-    /// -   In debug builds the method panics on error
-    /// -   Otherwise, the method may panic or may return a different value,
-    ///     but like with the `as` keyword all results must be well-defined and
-    ///     *safe*.
-    ///
-    /// Default implementations use [`Self::try_conv`] and panic on error.
-    /// Implementations provided by this library will panic in debug builds
-    /// or if the `always_assert` feature flag is used, and otherwise will
-    /// behave identically to the `as` keyword.
-    ///
-    /// This mirrors the behaviour of Rust's overflow checks on integer
-    /// arithmetic in that it is a tool for diagnosing logic errors where
-    /// success is expected.
+    /// Use this method only when success is expected. On error, this method may
+    /// panic or may exhibit [§ Fallback behaviour](crate#fallback-behaviour).
     fn conv(s: S) -> Self {
         Self::try_conv(s).unwrap_or_else(|e| {
             panic!("Conv::conv(_) failed: {}", e);
@@ -122,30 +142,30 @@ impl<S, T: ConvTo<S, Exact>> Conv<S> for T {
 
 /// Like [`Into`], but for [`Conv`]
 ///
+/// This trait has similarities to [`Into`] and [`TryInto`], but limited to
+/// numeric conversions:
+/// -   Conversions may be *fallible*, like [`TryInto`].
+/// -   Conversions must be *lossless*, like [`Into`]; this corresponds to the
+///     [`Exact`] "rounding" mode. (See also [`CastApprox`].)
+/// -   Conversions must be *value-preserving*, like [`Into`]. For example,
+///     `-1_i8` and `-1_i32` are conceptually the same value while `255_u8` is
+///     conceptually a different value.
+///
 /// This trait is automatically implemented for every implementation of
 /// [`Conv`].
-///
-/// The more generic trait [`CastTo`] allows control over the rounding mode.
 pub trait Cast<T> {
     /// Conversion error type
+    ///
+    /// This should be one of [`Infallible`], [`RangeError`] or [`Error`].
     type Error: Into<Error> + core::error::Error;
 
     /// Try converting from `Self` to `T`
-    ///
-    /// Use this method to explicitly handle errors.
     fn try_cast(self) -> Result<T, Self::Error>;
 
     /// Cast from `Self` to `T`
     ///
-    /// Use this method *only* where success is expected: implementations are
-    /// permitted to panic or silently return a different (safe, defined) value
-    /// on error.
-    ///
-    /// In debug builds, implementations must panic.
-    ///
-    /// Implementations by this library will panic in debug builds or if the
-    /// `always_assert` feature flag is used, otherwise conversions have the
-    /// same behaviour as the `as` keyword.
+    /// Use this method only when success is expected. On error, this method may
+    /// panic or may exhibit [§ Fallback behaviour](crate#fallback-behaviour).
     fn cast(self) -> T;
 }
 
@@ -164,19 +184,21 @@ impl<S, T: Conv<S>> Cast<T> for S {
 
 /// Like [`From`], but for approximate numerical conversions
 ///
-/// Unlike [`Conv`], conversions are permitted to lose precision provided that
-/// the result is close to the input value. More precisely, the difference
-/// between the input and output values should be less than the difference
-/// between the two closest representable values in the target type.
-/// For example, one may have `i32::conv_approx(1.9f32) = 1` or
-/// `f32::conv_approx(1f64 + (f32::EPSILON as f64) / 2.0) = 1.0`.
+/// This trait supports [`From`]- and [`TryFrom`]-like conversions, but allowing
+/// approximation:
+/// -   Conversions may be *fallible*, like [`TryFrom`].
+/// -   Conversions may be *lossy*, provided that the result is close to the
+///     input value (see
+///     [`§ Limits of approximation`](Approx#limits-of-approximation)).
+/// -   Conversions must be *value-preserving*, like [`From`]. For example,
+///     `-1_i8` and `-1_i32` are conceptually the same value while `255_u8` is
+///     conceptually a different value.
 ///
-/// Only one failure mode is allowed: domain ([`RangeError`]).
-///
-/// The rounding mode is implementation-defined, usually aligning with the
-/// behavior of [`as` numeric casts]. Use [`ConvTo`] or [`CastTo`] with
-/// an explicit rounding mode (e.g. [`Nearest`](crate::Nearest))
-/// instead where control over rounding is required.
+/// The rounding mode used is implementation-defined. Conversions provided by
+/// this crate use the same behaviour as [`as` numeric casts]: float-to-int
+/// conversions round towards zero while conversions to floating-point formats
+/// produce the closest possible float (rounding ties to even).
+/// Use [`ConvTo`] where specific rounding is required.
 ///
 /// The sister-trait [`CastApprox`] supports "into" style usage.
 ///
@@ -186,36 +208,17 @@ impl<S, T: Conv<S>> Cast<T> for S {
 /// [`as` numeric casts]: https://doc.rust-lang.org/reference/expressions/operator-expr.html#r-expr.as.numeric
 pub trait ConvApprox<S>: Sized {
     /// Conversion error type
+    ///
+    /// This should be either [`Infallible`] or [`RangeError`].
     type Error: Into<RangeError> + core::error::Error;
 
-    /// Try converting from `S` to `Self`, allowing approximation of value
-    ///
-    /// This conversion may truncate excess precision not supported by the
-    /// target type, so long as the *value* is approximately equal, from the
-    /// point of view of precision of the target type.
-    ///
-    /// This method should allow approximate conversion, but fail on input not
-    /// (approximately) in the target's range.
+    /// Try converting from `S` to `Self`, allowing approximation
     fn try_conv_approx(s: S) -> Result<Self, Self::Error>;
 
-    /// Converting from `S` to `Self`, allowing approximation of value
+    /// Convert from `S` to `Self`, allowing approximation
     ///
-    /// This method must return the same result as [`Self::try_conv_approx`]
-    /// where that method succeeds, but differs in the handling of errors:
-    ///
-    /// -   In debug builds the method panics on error
-    /// -   Otherwise, the method may panic or may return a different value,
-    ///     but like with the `as` keyword all results must be well-defined and
-    ///     *safe*.
-    ///
-    /// Default implementations use [`Self::try_conv_approx`] and panic on error.
-    /// Implementations provided by this library will panic in debug builds
-    /// or if the `always_assert` feature flag is used, and otherwise will
-    /// behave identically to the `as` keyword.
-    ///
-    /// This mirrors the behaviour of Rust's overflow checks on integer
-    /// arithmetic in that it is a tool for diagnosing logic errors where
-    /// success is expected.
+    /// Use this method only when success is expected. On error, this method may
+    /// panic or may exhibit [§ Fallback behaviour](crate#fallback-behaviour).
     #[inline]
     fn conv_approx(s: S) -> Self {
         Self::try_conv_approx(s).unwrap_or_else(|e| {
@@ -240,40 +243,39 @@ impl<S, T: ConvTo<S, Approx>> ConvApprox<S> for T {
 
 /// Like [`Into`], but for [`ConvApprox`]
 ///
-/// Unlike [`Cast`], conversions are permitted to lose precision provided that
-/// the result is close to the input value. More precisely, the difference
-/// between the input and output values should be less than the difference
-/// between the two closest representable values in the target type.
-/// For example, one may have `i32::conv_approx(1.9f32) = 1` or
-/// `f32::conv_approx(1f64 + (f32::EPSILON as f64) / 2.0) = 1.0`.
+/// This trait supports [`Into`]- and [`TryInto`]-like conversions, but allowing
+/// approximation:
+/// -   Conversions may be *fallible*, like [`TryInto`].
+/// -   Conversions may be *lossy*, provided that the result is close to the
+///     input value (see
+///     [`§ Limits of approximation`](Approx#limits-of-approximation)).
+/// -   Conversions must be *value-preserving*, like [`Into`]. For example,
+///     `-1_i8` and `-1_i32` are conceptually the same value while `255_u8` is
+///     conceptually a different value.
 ///
-/// The rounding mode is implementation-defined, usually aligning with the
-/// behavior of [`as` numeric casts]. Use [`ConvTo`] or [`CastTo`] with
-/// an explicit rounding mode (e.g. [`Nearest`](crate::Nearest))
-/// instead where control over rounding is required.
+/// The rounding mode used is implementation-defined. Conversions provided by
+/// this crate use the same behaviour as [`as` numeric casts]: float-to-int
+/// conversions round towards zero while conversions to floating-point formats
+/// produce the closest possible float (rounding ties to even).
+/// Use [`CastTo`] where specific rounding is required.
 ///
 /// This trait is automatically implemented for every implementation of
 /// [`ConvApprox`].
+///
+/// [`as` numeric casts]: https://doc.rust-lang.org/reference/expressions/operator-expr.html#r-expr.as.numeric
 pub trait CastApprox<T> {
     /// Conversion error type
+    ///
+    /// This should be either [`Infallible`] or [`RangeError`].
     type Error: Into<RangeError> + core::error::Error;
 
     /// Try approximate conversion from `Self` to `T`
-    ///
-    /// Use this method to explicitly handle errors.
     fn try_cast_approx(self) -> Result<T, Self::Error>;
 
     /// Cast approximately from `Self` to `T`
     ///
-    /// Use this method *only* where success is expected: implementations are
-    /// permitted to panic or silently return a different (safe, defined) value
-    /// on error.
-    ///
-    /// In debug builds, implementations must panic.
-    ///
-    /// Implementations by this library will panic in debug builds or if the
-    /// `always_assert` feature flag is used, otherwise conversions have the
-    /// same behaviour as the `as` keyword.
+    /// Use this method only when success is expected. On error, this method may
+    /// panic or may exhibit [§ Fallback behaviour](crate#fallback-behaviour).
     fn cast_approx(self) -> T;
 }
 
@@ -292,9 +294,13 @@ impl<S, T: ConvApprox<S>> CastApprox<T> for S {
 
 /// Generic "from" conversion trait with specified rounding mode
 ///
-/// This trait is similar to [`TryFrom`] but for numeric conversions with a
-/// specified rounding mode. Usage with rounding mode [`Exact`] is equivalent to
-/// [`Conv`].
+/// This trait supports [`From`]- and [`TryFrom`]-like conversions, but with a
+/// specified rounding mode:
+/// -   Conversions may be *fallible*, like [`TryFrom`].
+/// -   Conversions may be *lossy*, according to the [`Rounding`] mode used.
+/// -   Conversions must be *value-preserving*, like [`From`]. For example,
+///     `-1_i8` and `-1_i32` are conceptually the same value while `255_u8` is
+///     conceptually a different value.
 ///
 /// The [`Rounding`] mode must be specified:
 /// ```
@@ -302,24 +308,80 @@ impl<S, T: ConvApprox<S>> CastApprox<T> for S {
 /// assert_eq!(i32::conv_to(Nearest, 7.6f32), 8);
 /// assert_eq!(f32::conv_to(Exact, 20), 20.0);
 /// ```
+/// Usage with [`Exact`] and [`Approx`] is equivalent to usage of [`Conv`] and
+/// [`ConvApprox`] respectively.
+///
+/// The sister-trait [`CastTo`] supports "into" style usage.
+///
+/// ## Implementing conversions
+///
+/// Implement conversions which cannot lose precision using [`ConvExact`] and
+/// other conversions using this trait. Separate implementations may be provided
+/// for each [`Rounding`] mode.
+///
+/// ### Example
+///
+/// ```
+/// use easy_cast::{Approx, ConvTo, Error, Exact, RangeError};
+///
+/// struct MyFloat { /* details */ }
+/// # impl MyFloat {
+/// #   fn is_in_range_of<T>(&self) -> bool { todo!() }
+/// #   fn is_integral(&self) -> bool { todo!() }
+/// # }
+///
+/// impl ConvTo<MyFloat, Exact> for i32 {
+///     type Error = Error;
+///
+///     fn try_conv_to(_: Exact, f: MyFloat) -> Result<Self, Self::Error> {
+///         if f.is_in_range_of::<i32>() {
+///             if f.is_integral() {
+///                 Ok(todo!())
+///             } else {
+///                 Err(Error::Inexact)
+///             }
+///         } else {
+///             Err(Error::Range)
+///         }
+///     }
+///
+///     // optionally also impl fn conv
+/// }
+///
+/// impl ConvTo<MyFloat, Approx> for i32 {
+///     type Error = RangeError;
+///
+///     fn try_conv_to(_: Approx, f: MyFloat) -> Result<Self, Self::Error> {
+///         if f.is_in_range_of::<i32>() {
+///             Ok(todo!())
+///         } else {
+///             Err(RangeError)
+///         }
+///     }
+///
+///     // optionally also impl fn conv
+/// }
+///
+/// // optionally also implement ConvTo for other rounding modes
+/// ```
 pub trait ConvTo<S, R: Rounding>: Sized {
     /// Conversion error type
+    ///
+    /// This should be one of [`Infallible`], [`RangeError`] or [`Error`].
     type Error: Into<R::MaximumError> + core::error::Error;
 
-    /// Try converting from `S` to `Self`
+    /// Try converting from `S` to `Self`, rounding according to `mode`
     fn try_conv_to(mode: R, s: S) -> Result<Self, Self::Error>;
 
-    /// Convert from `S` to `Self`
+    /// Convert from `S` to `Self`, rounding according to `mode`
     ///
-    /// This method must return the same result as [`Self::try_conv_to`] where
-    /// that method succeeds, but differs in the handling of errors:
+    /// Use this method only when success is expected. On error, this method may
+    /// panic or may exhibit [§ Fallback behaviour](crate#fallback-behaviour).
     ///
-    /// -   In debug builds the method must panic on error
-    /// -   In release builds the method may return a different value so long as
-    ///     the behaviour is well defined. This allows implementations to
-    ///     optimize to [`as` numeric casts].
+    /// # Implementing
     ///
-    /// [`as` numeric casts]: https://doc.rust-lang.org/reference/expressions/operator-expr.html#r-expr.as.numeric
+    /// Implementing this method directly (with fallback behaviour) is optional.
+    /// In debug builds, this method must panic on error.
     fn conv_to(mode: R, s: S) -> Self {
         Self::try_conv_to(mode, s).unwrap_or_else(|e| panic!("ConvTo::conv_to(_) failed: {e}"))
     }
@@ -327,9 +389,13 @@ pub trait ConvTo<S, R: Rounding>: Sized {
 
 /// Generic "into" conversion trait with specified rounding mode
 ///
-/// This trait is like [`TryInto`] but for for numeric conversions with a
-/// specified rounding mode. Usage with rounding mode [`Exact`] is equivalent to
-/// [`Cast`].
+/// This trait supports [`Into`]- and [`TryInto`]-like conversions, but with a
+/// specified rounding mode:
+/// -   Conversions may be *fallible*, like [`TryInto`].
+/// -   Conversions may be *lossy*, according to the [`Rounding`] mode used.
+/// -   Conversions must be *value-preserving*, like [`Into`]. For example,
+///     `-1_i8` and `-1_i32` are conceptually the same value while `255_u8` is
+///     conceptually a different value.
 ///
 /// The [`Rounding`] mode must be specified:
 /// ```
@@ -341,24 +407,23 @@ pub trait ConvTo<S, R: Rounding>: Sized {
 /// let z: f32 = y.cast_to(Nearest);  // this example rounds up
 /// assert_eq!(z as i32, 1i32 << 30);
 /// ```
+/// Usage with [`Exact`] and [`Approx`] is equivalent to usage of [`Cast`] and
+/// [`CastApprox`] respectively.
+///
+/// This trait is automatically implemented for every implementation of [`ConvTo`].
 pub trait CastTo<T, R: Rounding>: Sized {
     /// Conversion error type
+    ///
+    /// This should be one of [`Infallible`], [`RangeError`] or [`Error`].
     type Error: Into<R::MaximumError> + core::error::Error;
 
-    /// Try converting from `Self` to `T`
+    /// Try converting from `Self` to `T`, rounding according to `mode`
     fn try_cast_to(self, mode: R) -> Result<T, Self::Error>;
 
-    /// Convert from `Self` to `T`
+    /// Convert from `Self` to `T`, rounding according to `mode`
     ///
-    /// This method must return the same result as [`Self::try_cast_to`] where
-    /// that method succeeds, but differs in the handling of errors:
-    ///
-    /// -   In debug builds the method must panic on error
-    /// -   In release builds the method may return a different value so long as
-    ///     the behaviour is well defined. This allows implementations to
-    ///     optimize to [`as` numeric casts].
-    ///
-    /// [`as` numeric casts]: https://doc.rust-lang.org/reference/expressions/operator-expr.html#r-expr.as.numeric
+    /// Use this method only when success is expected. On error, this method may
+    /// panic or may exhibit [§ Fallback behaviour](crate#fallback-behaviour).
     fn cast_to(self, mode: R) -> T;
 }
 

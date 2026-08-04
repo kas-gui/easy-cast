@@ -3,70 +3,82 @@
 // You may obtain a copy of the License in the LICENSE-APACHE file or at:
 //     https://www.apache.org/licenses/LICENSE-2.0
 
-//! Type conversion, success expected
+//! # Converting values
 //!
-//! ## Converting values
-//!
-//! This library exists to make fallible numeric type conversions easy, without
-//! resorting to the `as` keyword.
+//! This library exists to make numeric type conversions easy and generic
+//! without resorting to the `as` keyword.
 //!
 //! -   Use [`Cast`] and [`Conv`] instead of [`Into`] and [`From`] for exact
 //!     conversions
 //! -   Use [`CastApprox`] and [`ConvApprox`] for approximate conversions
 //!     (rounding mode is implementation-defined just like `as`)
-//! -   Use [`ConvTo`] and [`CastTo`] with an explicit rounding mode
-//!     ([`Trunc`], [`Nearest`], [`Floor`], [`Ceil`]) for conversions with a
-//!     specified rounding mode
+//! -   Use [`CastTo`] and [`ConvTo`] for conversions with a specific rounding
+//!     mode (see [§ Rounding modes](#rounding-modes)).
 //!
-//! ### Error handling
+//! If this sounds like a lot of traits, consider the above are all essentially
+//! syntactic sugar for [`ConvTo`] (see
+//! [§ Implementing traits](#implementing-traits)).
 //!
-//! All trait methods have two variants:
-//!
-//! -   A `try_` variant (e.g. `try_cast`) which returns a `Result` and fails if
-//!     the requested conversion is not possible.
-//! -   A "plain" variant (e.g. `cast`) which returns the same result on success
-//!     but may return a different result on error (see below).
-//!
-//! In debug builds, methods not returning `Result` must panic on failure. As
-//! with the overflow checks on Rust's standard integer arithmetic, this is
-//! considered a tool for finding logic errors. In release builds, these methods
-//! are permitted to return a different (implementation-defined) result, usually
-//! matching the behaviour of [`as` numeric casts].
-//!
-//! If the `always_assert` feature flag is set, assertions will be turned on in
-//! all builds (i.e. "plain" variants will panic on failure). Some additional
-//! feature flags are available for finer-grained control (see `Cargo.toml`).
-//!
-//! ### Example
+//! ### Quick example
 //!
 //! ```
-//! use easy_cast::traits::*;
-//! use easy_cast::{ConvTo, Nearest};
-//!
-//! fn nth_root<X: CastApprox<f64>>(x: X, n: u32) {
-//!     let x = x.cast_approx();    // Into-like approximate conversion
-//!     if x < 0.0 && n % 2 == 0 {
-//!         println!("Imaginary values not supported!");
-//!         return;
-//!     }
-//!
-//!     let power = -i32::conv(n);  // From-like exact conversion
-//!     let root = x.powi(power);
-//!
-//!     println!("The {n}-th root of {x} is {root}");
-//!
-//!     // TryFrom-like approximate (nearest) conversion
-//!     if let Ok(nearest) = isize::try_conv_to(Nearest, root) {
-//!         println!("Nearest integer: {nearest}");
-//!     }
-//! }
+//! use easy_cast::{Cast, Conv, CastApprox, CastTo, Nearest};
+//! let _: i32 = 15_usize.cast();           // exact conversion
+//! let _ = usize::conv(20_u32);            // exact conversion
+//! let _: f32 = u32::MAX.cast_approx();    // approximates to 2^32
+//! let _: i32 = 11.9_f32.cast_to(Nearest); // rounds to 12
 //! ```
+//!
+//! ## Rounding modes
+//!
+//! The [`Rounding`] trait (used with [`CastTo`] and [`ConvTo`]) supports
+//! genericity over rounding modes:
+//!
+//! -   [`Exact`] specifies that no rounding is allowed (loss of precision is an
+//!     error)
+//! -   [`Approx`] specifies that rounding is allowed. The rounding mode used is
+//!     a property of the implementation, but usually aligns with
+//!     [`as` numeric casts].
+//! -   [`Trunc`], [`Floor`], [`Ceil`] and [`Nearest`] allow more precise
+//!     control over rounding
+//!
+//! All rounding modes require that the result is close to the input value. For
+//! a more precise definition, see
+//! [`§ Limits of approximation`](Approx#limits-of-approximation).
+//!
+//! ## Error handling
+//!
+//! Unlike [`From`] or [`TryFrom`], this library's traits are implemented
+//! regardless of fallibility. All conversion traits have an associated `Error`
+//! type which is expected to be one of:
+//!
+//! -   [`std::convert::Infallible`] for infallible conversions
+//! -   [`RangeError`] for conversions which may fail due to domain errors
+//! -   [`Error`] for conversions which may fail due to domain or
+//!     loss-of-precision errors.
+//!
+//! Further, all traits have two methods:
+//!
+//! -   A `try_` method (e.g. [`Cast::try_cast`]) which returns a [`Result`]
+//! -   A "derived" method (e.g. [`Cast::cast`]) with
+//!     [§ Fallback behaviour](#fallback-behaviour)
+//!
+//! ### Fallback behaviour
+//!
+//! In debug builds, the "derived" method must panic on failure. This is also
+//! the case if the `always_assert` feature flag is enabled (for this library's
+//! implementations).
+//!
+//! Otherwise (in release builds without extra assertions enabled), more
+//! flexible behaviour of the "derived" methods is allowed. The implementations
+//! provided by `easy-cast` mostly reduce to [`as` numeric casts] (with extra
+//! rounding where required).
 //!
 //! ## Implementing traits
 //!
-//! It is recommended to implement conversions which cannot be inexact using
-//! [`ConvExact`] and other conversions using [`ConvTo`]. The latter trait may
-//! be implemented for multiple [`Rounding`] modes.
+//! Implement conversions which cannot lose precision using [`ConvExact`].
+//! Implement all other conversions using [`ConvTo`] for one or several
+//! [`Rounding`] modes.
 //!
 //! [`TryFrom`]: core::convert::TryFrom
 //! [`TryInto`]: core::convert::TryInto
@@ -86,19 +98,18 @@ mod rounding;
 
 pub mod traits;
 
-use core::convert::Infallible;
-
 #[doc(inline)]
 pub use rounding::*;
-
 #[doc(inline)]
 pub use traits::*;
 
+use core::convert::Infallible;
+
 /// Source value lies outside of target type's range
 ///
-/// More precisely, all values of the target type's domain are either
-/// incomparable to the source value or are closer to another value within
-/// the target type's domain than to the source value.
+/// This error indicates that the input value is outside the range (domain) of
+/// the target type. This error type is used for both conversions where
+/// loss-of-precision is impossible and those where rounding is intended.
 #[derive(Clone, Copy, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct RangeError;
 
@@ -122,11 +133,25 @@ impl core::error::Error for RangeError {}
 pub enum Error {
     /// Source value lies outside of target type's range
     ///
+    /// This error indicates that the input value is outside the range (domain)
+    /// of the target type.
     /// More precisely, all values of the target type's domain are either
     /// incomparable to the source value or are closer to another value within
     /// the target type's domain than to the source value.
+    ///
+    /// As typical example, attempting to convert `-1_i8` to `u8` results in a
+    /// `Range` error. A special case is [`f32::NAN`] which, being (literally)
+    /// "Not a Number" is outside the domain of the target type and thus a
+    /// `Range` error (even where the target type has its own `NAN` value).
     Range,
-    /// Loss of precision and/or outside of target type's range
+    /// Loss of precision
+    ///
+    /// This error indicates that, though the input value is inside the range
+    /// (domain) of the target type, conversion without loss of precision is
+    /// impossible.
+    ///
+    /// For example, attempting to convert `2.1_f32` to `i32` without rounding
+    /// results in an `Inexact` error.
     Inexact,
 }
 
