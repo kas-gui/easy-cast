@@ -5,8 +5,8 @@
 
 //! # Converting values
 //!
-//! This library exists to make numeric type conversions easy and generic
-//! without resorting to the `as` keyword.
+//! This library exists to make numeric type conversions **easy** and
+//! **generic** without resorting to the `as` keyword.
 //!
 //! -   Use [`Cast`] and [`Conv`] instead of [`Into`] and [`From`] for exact
 //!     conversions
