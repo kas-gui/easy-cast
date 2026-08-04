@@ -1,6 +1,39 @@
 Changelog
 =========
 
+## [0.7.0] — 2026-08-05
+
+This version is a substantial revision of `easy-cast`, introducing generics over rounding modes via the new `Rounding` trait.
+
+Simple usage via the `Conv`, `Cast`, `ConvApprox` and `CastApprox` traits is largely unchanged. Usage with other rounding modes should be moved to the new `ConvTo` and `CastTo` traits (e.g. `i32::conv_to(Nearest, 5.3)`, `x.cast_to(Floor)`).
+
+External implementations of conversions should be moved to the `ConvExact` and `ConvTo` traits.
+
+Added:
+
+-   `Rounding` trait with `Exact`, `Approx` rounding modes (#58)
+-   `Trunc`, `Nearest`, `Floor`, `Ceil` rounding modes (#61)
+-   `ConvExact` trait as an implementation helper for conversions which are never inexact (#58, #65)
+-   `ConvTo` trait for implementation and usage of conversions with a specific rounding mode (#58, #60, #63, #65)
+-   `CastTo` trait for casting with a specific rounding mode (#58, #60, #63)
+-   `RangeError` as a new error type (#56)
+
+Changed:
+
+-   Added an associated `Error` type to the `Conv` and `Cast` traits (#62)
+-   Rename `impl_via_trivial!` to `impl_via_identity!` (#68)
+-   Implement `Exact` `f64 → f32` conversion (#59)
+-   Implement `Approx` and `Nearest` int-to-float conversions (#59, #63)
+-   `u128::MAX` and other too-large values no longer coerce to `f32::INFINITY` under `Exact` rounding, as used by `Conv` and `Cast` (#67)
+-   Truncating-conversions (`Trunc`) no longer require the `std` or `libm` feature (#66)
+-   Implement `core::error::Error` on no-std (#57)
+-   Enabled the `doc_cfg` feature (#66)
+
+Removed:
+
+-   `Result` type-def (#56)
+-   `ConvFloat`, `CastFloat` traits; this functionality remains available through the new rounding modes (#61)
+
 ## [0.6.1] — 2026-07-24
 
 Added:
