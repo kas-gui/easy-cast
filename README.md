@@ -4,68 +4,57 @@ Easy-cast
 [![Test Status](https://github.com/kas-gui/easy-cast/workflows/Tests/badge.svg?event=push)](https://github.com/kas-gui/easy-cast/actions)
 [![Docs](https://docs.rs/easy-cast/badge.svg)](https://docs.rs/easy-cast)
 
-Type conversion, success expected
+This library exists to make numeric type conversions **easy** and **generic** without resorting to the `as` keyword.
 
-This library exists to make fallible numeric type conversions easy, without
-resorting to the `as` keyword.
+-   Use [`Cast`] and [`Conv`] instead of [`Into`] and [`From`] for exact conversions
+-   Use [`CastApprox`] and [`ConvApprox`] for approximate conversions with implementation-defined rounding
+-   Use [`CastTo`] and [`ConvTo`] for conversions with a specific [`Rounding`] mode
 
--   [`Conv`] is like [`From`], but supports fallible conversions
--   [`Cast`] is to [`Conv`] what [`Into`] is to [`From`]
--   [`ConvApprox`] and [`CastApprox`] support fallible, approximate conversion
--   [`ConvFloat`] and [`CastFloat`] are similar, providing precise control over rounding
+### Quick example
 
-If you are wondering "why not just use `as`", there are a few reasons:
+```rust
+use easy_cast::{Cast, Conv, CastApprox, CastTo, Nearest};
+let _: i32 = 15_usize.cast();           // exact conversion
+let _ = usize::conv(20_u32);            // exact conversion
+let _: f32 = u32::MAX.cast_approx();    // approximates to 2^32
+let _: i32 = 11.9_f32.cast_to(Nearest); // rounds to 12
+```
 
--   integer conversions may silently truncate or sign-extend which does not
-    preserve value
--   prior to Rust 1.45.0 float-to-int conversions were not fully defined;
-    since this version they use saturating conversion (NaN converts to 0)
--   you want some assurance (at least in debug builds) that the conversion
-    will preserve values correctly
+## Motivation
+
+"Why not just use `as` / `.into()` / `.try_into()`", you ask?
+
+-   You want some assurance that conversions will preserve values and not silently approximate, truncate, saturate or sign-extend like [`as` numeric casts]
+-   You want simple `.cast()` syntax across all type conversions, not the inconsistent and incomplete mix that [`From`] and [`TryFrom`] provide
+-   You want consistent `.cast_approx()` syntax across all type conversions
+-   You want control over rounding: `.cast_to(Nearest)`, `.cast_to(Floor)` etc.
+-   You want to use generics like `T: CastApprox<f64>`
 
 Why might you *not* want to use this library?
 
--   You want saturating / truncating / other non-value-preserving conversion
--   You want to convert non-numeric types ([`From`] supports a lot more
-    conversions than [`Conv`] does)!
--   You want a thoroughly tested library (we're not quite there yet)
+-   You want saturating conversions (unimplemented)
+-   You want non-numeric types ([`Into`] supports a lot more type conversions than [`Cast`] does)!
 
-### Error handling
+## Error handling and fallback behaviour
 
-All traits support two methods:
+All traits provide two conversion methods; for example [`Cast`]:
 
--   `try_*` methods return a `Result` and always fail if the correct
-    conversion is not possible
--   other methods may panic or return incorrect results
+-   `fn try_cast(self) -> Result<T, Self::Error>` for usage where error handling is required
+-   `fn cast(self) -> T` for usage where success is expected
 
-In debug builds, methods not returning `Result` must panic on failure. As
-with the overflow checks on Rust's standard integer arithmetic, this is
-considered a tool for finding logic errors. In release builds, these methods
-are permitted to return defined but incorrect results similar to the `as`
-keyword.
+While the behaviour of `try_cast()` (and other `try_` methods) is obvious, `cast()` requires an explanation.
 
-If the `always_assert` feature flag is set, assertions will be turned on in
-all builds. Some additional feature flags are available for finer-grained
-control (see `Cargo.toml`).
+In debug builds, non-"try" methods like `cast()` must panic on failure. This is also the case if the `always_assert` feature flag is enabled (for this library's implementations).
 
-### Performance
-
-Performance is "good enough that it hasn't been a concern".
-
-In debug builds and when `always_assert` is enabled, the priority is testing
-but overhead should be small.
-
-In release builds without `always_assert`, `conv*` methods should reduce to
-`x as T` (with necessary additions for rounding).
+Otherwise (in release builds without extra assertions enabled), more flexible behaviour is allowed: the implementations provided by `easy-cast` mostly reduce to [`as` numeric casts] (with rounding as required). This is designed to encourage usage of `.cast()` / `.conv(_)` instead of `_ as T` *even where you are pretty sure the conversion will succeed*.
 
 ## Features
 
 ### no_std support
 
-When the crate's default features are disabled (and `std` is not enabled)
-then the library supports `no_std`. In this case, [`ConvFloat`] and
-[`CastFloat`] are only available if the `libm` optional dependency is
-enabled.
+The `std` feature is optional, enabled-by-default. Disabling it removes support for the `Floor`, `Ceil` and `Nearest` rounding modes.
+
+The `libm` feature may be used instead of `std` to re-enable support for `Floor`, `Ceil` and `Nearest`.
 
 [`From`]: https://doc.rust-lang.org/stable/std/convert/trait.From.html
 [`Into`]: https://doc.rust-lang.org/stable/std/convert/trait.Into.html
@@ -75,10 +64,12 @@ enabled.
 [`Cast`]: https://docs.rs/easy-cast/latest/easy_cast/trait.Cast.html
 [`Conv::try_conv`]: https://docs.rs/easy-cast/latest/easy_cast/trait.Conv.html#tymethod.try_conv
 [`Conv::try_cast`]: https://docs.rs/easy-cast/latest/easy_cast/trait.Conv.html#tymethod.try_cast
-[`ConvFloat`]: https://docs.rs/easy-cast/latest/easy_cast/trait.ConvFloat.html
-[`CastFloat`]: https://docs.rs/easy-cast/latest/easy_cast/trait.CastFloat.html
 [`ConvApprox`]: https://docs.rs/easy-cast/latest/easy_cast/trait.ConvApprox.html
 [`CastApprox`]: https://docs.rs/easy-cast/latest/easy_cast/trait.CastApprox.html
+[`ConvTo`]: https://docs.rs/easy-cast/latest/easy_cast/trait.ConvTo.html
+[`CastTo`]: https://docs.rs/easy-cast/latest/easy_cast/trait.CastTo.html
+[`Rounding`]: https://docs.rs/easy-cast/latest/easy_cast/trait.Rounding.html
+[`as` numeric casts]: https://doc.rust-lang.org/reference/expressions/operator-expr.html#r-expr.as.numeric
 
 
 Copyright and Licence
