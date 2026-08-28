@@ -166,6 +166,11 @@ pub trait Cast<T> {
     ///
     /// Use this method only when success is expected. On error, this method may
     /// panic or may exhibit [§ Fallback behaviour](crate#fallback-behaviour).
+    ///
+    /// Note: the unstable `float_conversions` feature adds an inherent `cast`
+    /// method to float types which in some cases will conflict with usage of
+    /// this method. We recommend using `Cast::cast(x)` instead of `x.cast()`
+    /// as a work-around until this feature stabilizes.
     fn cast(self) -> T;
 }
 

@@ -82,6 +82,9 @@ fn float_casts() {
     assert_eq!(u8::conv_to(Floor, 13.8f64), 13);
     assert_eq!(u32::conv_to(Ceil, 13.1f32), 14);
     assert_eq!(i64::conv_to(Floor, -3168565.13f64), -3168566);
+
+    let x: f32 = Cast::cast(1.5f64);
+    assert_eq!(x, 1.5f32);
 }
 
 #[test]
