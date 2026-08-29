@@ -1,6 +1,12 @@
 Changelog
 =========
 
+## [0.7.1] — 2026-08-28
+
+Added:
+
+-   Note on work-around to fn `Cast::cast`, usage of which may conflict with the unstable `float_conversions` feature (#71)
+
 ## [0.7.0] — 2026-08-05
 
 This version is a substantial revision of `easy-cast`, introducing generics over rounding modes via the new `Rounding` trait.

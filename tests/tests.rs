@@ -15,7 +15,7 @@ fn int_casts() {
 fn signed_to_unsigned() {
     u32::conv(0i32);
     u32::conv(1i32);
-    u32::conv(core::i32::MAX);
+    u32::conv(i32::MAX);
 }
 
 #[test]
@@ -82,6 +82,9 @@ fn float_casts() {
     assert_eq!(u8::conv_to(Floor, 13.8f64), 13);
     assert_eq!(u32::conv_to(Ceil, 13.1f32), 14);
     assert_eq!(i64::conv_to(Floor, -3168565.13f64), -3168566);
+
+    let x: f32 = Cast::cast(1.5f64);
+    assert_eq!(x, 1.5f32);
 }
 
 #[test]
@@ -104,7 +107,7 @@ fn float_trunc_fail1() {
 #[test]
 #[should_panic(expected = "cast x: u32 to f32: inexact for x = 4294967295")]
 fn u32_max_f32() {
-    f32::conv(core::u32::MAX);
+    f32::conv(u32::MAX);
 }
 
 #[test]
